@@ -3,7 +3,7 @@ function Disputes(){
     return(
         <div>
             <h1>
-                BioSync Disputes
+                BioSync Disputes 123
             </h1>
         </div>
     )
