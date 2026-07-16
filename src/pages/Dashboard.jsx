@@ -12,6 +12,7 @@ function Dashboard() {
 
         <p style={{color:"black"}}>
           If you see this, Dashboard is working.
+          If you don't see this then idk.
         </p>
 
       </div>

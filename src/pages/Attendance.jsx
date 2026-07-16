@@ -34,6 +34,7 @@ function Attendance() {
 
             <h1>BioSYnc Attendance Records</h1>
             <p>Attendance logs and tracking records will show up here.</p>
+            <p>Anything Updates will appear</p>
 
             {attendance.map(record => (
 
