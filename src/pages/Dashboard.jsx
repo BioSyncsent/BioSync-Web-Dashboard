@@ -8,7 +8,7 @@ function Dashboard() {
       <div>
         <h1 style={{color:"black"}}>
           BioSync Dashboard TEST Hello cbs
-          This is BioSync 123
+          
         </h1>
 
         <p style={{color:"black"}}>
