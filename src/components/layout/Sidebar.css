@@ -1,0 +1,83 @@
+.db-sidebar {
+  position: relative;
+  z-index: 1;
+  width: 240px;
+  flex-shrink: 0;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  border-right: 1px solid var(--db-border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.db-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.db-sidebar-logo {
+  color: var(--db-primary);
+}
+
+.db-sidebar-brand-text {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 1px;
+  color: var(--db-text);
+}
+
+.db-sidebar-separator {
+  height: 1px;
+  background: var(--db-border);
+  margin: 18px 4px 20px;
+}
+
+.db-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.db-sidebar-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  color: var(--db-text-soft);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.db-sidebar-icon {
+  color: var(--db-text-soft);
+  transition: color 0.2s ease;
+}
+
+.db-sidebar-link:hover {
+  background: rgba(86, 182, 255, 0.08);
+  color: var(--db-text);
+  box-shadow: 0 0 0 1px var(--db-border);
+}
+
+.db-sidebar-link:hover .db-sidebar-icon {
+  color: var(--db-primary);
+}
+
+.db-sidebar-link-active {
+  background: rgba(86, 182, 255, 0.12);
+  color: var(--db-text);
+  box-shadow: inset 3px 0 0 var(--db-primary);
+}
+
+.db-sidebar-link-active .db-sidebar-icon {
+  color: var(--db-primary);
+}

@@ -1,22 +1,23 @@
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import "./DashboardLayout.css";
 
 function DashboardLayout({ children }) {
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {/* Left side: Persistent Sidebar */}
+    <div className="db-shell">
+      <div className="db-shell-grid" />
+      <div className="db-shell-glow" />
+
       <Sidebar />
 
-      {/* Right side: Top Navbar + Scrollable Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="db-shell-main">
         <Navbar />
-        <main style={{ flex: 1, padding: '20px', background: '#f8fafc', overflowY: 'auto' }}>
+        <main className="db-shell-content">
           {children}
         </main>
       </div>
     </div>
   );
 }
-
 
 export default DashboardLayout;

@@ -1,0 +1,376 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;600&display=swap');
+
+:root {
+  --biosync-primary: #59B8FF;
+  --biosync-secondary: #CFEFFF;
+  --biosync-bg: #F9FCFF;
+  --biosync-text: #3D4A5A;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.biosync-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  background: var(--biosync-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--biosync-text);
+  animation: biosyncFadeIn 0.9s ease both;
+}
+
+@keyframes biosyncFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Grid overlay — full bleed */
+.biosync-grid {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image:
+    linear-gradient(rgba(89, 184, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(89, 184, 255, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.biosync-page::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 900px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(89, 184, 255, 0.16) 0%, rgba(89, 184, 255, 0) 65%);
+  pointer-events: none;
+  z-index: 0;
+  animation: biosyncGlowPulse 5s ease-in-out infinite;
+}
+
+.biosync-scanline {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(89, 184, 255, 0.55) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 16px 1px rgba(89, 184, 255, 0.35);
+  pointer-events: none;
+  z-index: 0;
+  animation: biosyncPulse 4s ease-in-out infinite;
+}
+
+@keyframes biosyncPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.biosync-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 2vh, 24px);
+  width: 100%;
+  height: 100%;
+}
+
+/* Header / logo */
+.biosync-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: clamp(16px, 3vh, 32px);
+}
+
+.biosync-logo-wrap {
+  position: relative;
+  width: clamp(96px, 14vh, 150px);
+  height: clamp(96px, 14vh, 150px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: biosyncFloat 5s ease-in-out infinite;
+}
+
+@keyframes biosyncFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.biosync-logo-glow {
+  position: absolute;
+  inset: -50px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(89, 184, 255, 0.4) 0%, rgba(89, 184, 255, 0) 70%);
+  animation: biosyncGlowPulse 3.5s ease-in-out infinite;
+}
+
+@keyframes biosyncGlowPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+.biosync-logo {
+  position: relative;
+  width: 85%;
+  height: 85%;
+}
+
+.biosync-logo-ring-outer {
+  fill: none;
+  stroke: var(--biosync-secondary);
+  stroke-width: 1.5;
+}
+
+.biosync-logo-ring-inner {
+  fill: none;
+  stroke: var(--biosync-primary);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.biosync-logo-shield {
+  fill: rgba(89, 184, 255, 0.06);
+  stroke: var(--biosync-primary);
+  stroke-width: 1.6;
+}
+
+.biosync-logo-print {
+  fill: none;
+  stroke: var(--biosync-primary);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.biosync-title {
+  margin: clamp(14px, 2vh, 24px) 0 0 0;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(30px, 5vh, 48px);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--biosync-text);
+  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.biosync-tagline {
+  margin: clamp(10px, 1.6vh, 16px) 0 0 0;
+  font-size: clamp(11px, 1.4vh, 13px);
+  letter-spacing: 7px;
+  text-transform: uppercase;
+  color: var(--biosync-primary);
+  font-weight: 600;
+}
+
+.biosync-hairline {
+  width: 60px;
+  height: 1px;
+  background: var(--biosync-primary);
+  opacity: 0.4;
+  margin: clamp(16px, 2.5vh, 32px) 0;
+}
+
+/* Login panel */
+.biosync-panel {
+  position: relative;
+  width: 500px;
+  max-width: 92vw;
+  background: #FFFFFF;
+  border: 1px solid var(--biosync-secondary);
+  box-shadow: 0 4px 32px rgba(89, 184, 255, 0.12);
+  padding: clamp(24px, 3.5vh, 44px);
+  overflow: hidden;
+}
+
+.biosync-panel-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  transform: translate(-50%, -50%);
+  opacity: 0.035;
+  pointer-events: none;
+}
+
+.biosync-panel-watermark svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--biosync-primary);
+  stroke-width: 2;
+}
+
+.biosync-panel-title {
+  position: relative;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin: 0 0 clamp(14px, 2.4vh, 26px) 0;
+  color: var(--biosync-text);
+  text-align: center;
+}
+
+.biosync-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2vh, 20px);
+}
+
+.biosync-field {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.9vh, 9px);
+}
+
+.biosync-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--biosync-primary);
+}
+
+.biosync-input {
+  width: 100%;
+  padding: clamp(11px, 1.7vh, 16px) 16px;
+  font-size: 15px;
+  font-family: 'Space Grotesk', sans-serif;
+  background: #FFFFFF;
+  border: 1px solid var(--biosync-secondary);
+  color: var(--biosync-text);
+  outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.biosync-input::placeholder {
+  color: #A9C4D9;
+}
+
+.biosync-input:focus {
+  border-color: var(--biosync-primary);
+  box-shadow: 0 0 0 3px rgba(89, 184, 255, 0.18);
+}
+
+.biosync-button {
+  margin-top: clamp(4px, 0.8vh, 8px);
+  width: 100%;
+  padding: clamp(13px, 1.8vh, 17px);
+  background: #EAF6FF;
+  border: 1px solid #7EC8FF;
+  color: var(--biosync-text);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+}
+
+.biosync-button:hover {
+  background: #D6EEFF;
+  box-shadow: 0 0 22px rgba(89, 184, 255, 0.5);
+}
+
+.biosync-button:active {
+  transform: translateY(1px);
+}
+
+.biosync-error {
+  margin: clamp(10px, 1.6vh, 16px) 0 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: #E0576B;
+}
+
+.biosync-panel-footer {
+  position: relative;
+  margin-top: clamp(16px, 2.6vh, 28px);
+  padding-top: clamp(10px, 1.6vh, 16px);
+  border-top: 1px solid var(--biosync-secondary);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  color: #9BB3C7;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .biosync-title {
+    letter-spacing: 3px;
+  }
+
+  .biosync-panel {
+    width: 440px;
+  }
+}
+
+@media (max-width: 520px) {
+  .biosync-panel {
+    width: 100%;
+  }
+
+  .biosync-title {
+    letter-spacing: 1.5px;
+    font-size: clamp(22px, 6vh, 34px);
+  }
+
+  .biosync-tagline {
+    letter-spacing: 4px;
+  }
+}
+
+/* Very short viewports (e.g. landscape phones) — shrink further, allow scroll as last resort */
+@media (max-height: 600px) {
+  .biosync-page {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biosync-page,
+  .biosync-page::before,
+  .biosync-scanline,
+  .biosync-logo-wrap,
+  .biosync-logo-glow {
+    animation: none;
+  }
+}
