@@ -1,4 +1,9 @@
-import { collection, getDocs } from "firebase/firestore";
+import {
+    collection,
+    getDocs,
+    doc,
+    getDoc,
+  } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
 function extractDate(raw) {
@@ -25,8 +30,8 @@ function normalizeRecord(doc) {
 
   return {
     id: doc.id,
-    userId: raw.userId || raw.usedId || raw.uid || "—",
-    name: raw.name || raw.fullName || raw.userName || raw.userId || raw.usedId || "Unknown",
+    userId: raw.userId?.trim() || raw.usedId?.trim() || raw.uid?.trim() || "—",
+    name: raw.name || raw.fullName || raw.userName || "Unknown",
     method: raw.authMethod || raw.method || "Unknown",
     status: normalizeStatus(raw),
     date,
@@ -39,7 +44,48 @@ function normalizeRecord(doc) {
 
 export async function fetchAttendanceRecords() {
   const snapshot = await getDocs(collection(db, "attendance"));
-  return snapshot.docs.map(normalizeRecord);
+
+  const records = await Promise.all(
+    snapshot.docs.map(async (attendanceDoc) => {
+
+      const record = normalizeRecord(attendanceDoc);
+
+      if (record.userId && record.userId !== "—") {
+
+        try {
+
+          const userSnapshot = await getDoc(
+            doc(db, "users", record.userId)
+          );
+
+          if (userSnapshot.exists()) {
+
+            const user = userSnapshot.data();
+
+            record.name = [user.firstName, user.lastName].filter(Boolean).join(" ");
+
+            // Optional extra fields
+            record.role = user.role;
+            record.email = user.email;
+            record.active = user.active;
+            record.studentId = user.studentId;
+          }
+
+        } catch (error) {
+          console.error("Error loading user:", error);
+        }
+
+      }
+
+      return record;
+
+    })
+  );
+
+  // Newest first
+  records.sort((a, b) => (b.date || 0) - (a.date || 0));
+
+  return records;
 }
 
 export function getSummary(records) {

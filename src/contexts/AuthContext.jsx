@@ -14,98 +14,103 @@ import {
     getDoc
 } from "firebase/firestore";
 
-
-import { auth, db } from "../firebase/firebase";
-
+import {
+    auth,
+    db
+} from "../firebase/firebase";
 
 const AuthContext = createContext();
 
+export function AuthProvider({ children }) {
 
-export function AuthProvider({children}){
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
 
-const [user,setUser] = useState(null);
-const [loading,setLoading] = useState(true);
+        const unsubscribe = onAuthStateChanged(
+            auth,
+            async (firebaseUser) => {
 
+                if (firebaseUser) {
 
+                    try {
 
-useEffect(()=>{
+                        const userRef = doc(
+                            db,
+                            "users",
+                            firebaseUser.uid
+                        );
 
+                        const userDoc = await getDoc(userRef);
 
-const unsubscribe = onAuthStateChanged(
-auth,
-async(firebaseUser)=>{
+                        if (userDoc.exists()) {
 
+                            const data = userDoc.data();
 
-if(firebaseUser){
+                            setUser({
 
+                                // Firebase Auth
+                                uid: firebaseUser.uid,
+                                email: firebaseUser.email,
 
-const userDoc =
-await getDoc(
-doc(
-db,
-"users",
-firebaseUser.uid
-)
-);
+                                // Firestore Data
+                                ...data,
 
+                                // Computed Values
+                                fullName: `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim()
 
+                            });
 
-if(userDoc.exists()){
+                        } else {
 
+                            console.warn("User document not found.");
 
-setUser({
+                            setUser({
+                                uid: firebaseUser.uid,
+                                email: firebaseUser.email,
+                            });
 
-uid: firebaseUser.uid,
+                        }
 
-...userDoc.data()
+                    } catch (error) {
 
-});
+                        console.error("Error loading user:", error);
 
+                        setUser({
+                            uid: firebaseUser.uid,
+                            email: firebaseUser.email,
+                        });
 
+                    }
+
+                } else {
+
+                    setUser(null);
+
+                }
+
+                setLoading(false);
+
+            }
+        );
+
+        return () => unsubscribe();
+
+    }, []);
+
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                loading
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
 }
 
-
-}
-else{
-
-setUser(null);
-
-}
-
-
-setLoading(false);
-
-
-});
-
-
-return ()=>unsubscribe();
-
-
-},[]);
-
-
-
-return(
-
-<AuthContext.Provider
-value={{user,loading}}
->
-
-{children}
-
-</AuthContext.Provider>
-
-
-);
-
-
-}
-
-
-export function useAuth(){
-
-return useContext(AuthContext);
-
+export function useAuth() {
+    return useContext(AuthContext);
 }

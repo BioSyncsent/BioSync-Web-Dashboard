@@ -29,6 +29,12 @@ import {
 } from "recharts";
 import "./Profile.css";
 
+function capitalize(text) {
+  if (!text) return "";
+
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 // TODO: replace these mocked sections with real Firestore data
 const weeklyTrend = [
   { day: "Mon", value: 100 },
@@ -102,7 +108,7 @@ function Profile() {
           <div className="profile-header-info">
             <h1 className="profile-name">{user?.fullName || "User"}</h1>
             <span className="role-badge">
-              <ShieldCheck size={13} /> {user?.role || "Member"}
+              <ShieldCheck size={13} /> {capitalize(user?.role || "Member")}
             </span>
             <span className={`status-badge ${isActive ? "active" : "inactive"}`}>
               {isActive ? "🟢 Active" : "🔴 Inactive"}
@@ -157,7 +163,7 @@ function Profile() {
                   <Hash size={16} />
                   <div>
                     <p className="info-label">User ID</p>
-                    <p className="info-value">{user?.uid?.slice(0, 10) || "N/A"}</p>
+                    <p className="info-value">{user?.studentId ? user.studentId.slice(0, 10) : "N/A" || "N/A"}</p>
                   </div>
                 </div>
                 <div className="info-item">
@@ -171,7 +177,15 @@ function Profile() {
                   <CalendarDays size={16} />
                   <div>
                     <p className="info-label">Join Date</p>
-                    <p className="info-value">{user?.joinDate || "N/A"}</p>
+                    <p className="info-value">
+                      {user?.createdAt
+                        ? user.createdAt.toDate().toLocaleDateString("en-MY", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
