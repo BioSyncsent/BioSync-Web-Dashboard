@@ -42,10 +42,10 @@ return(
 
     <div className="db-navbar-user">
       <div className="db-navbar-avatar">
-        {(user?.fullName || "U").charAt(0).toUpperCase()}
+        {(user?.name || "U").charAt(0).toUpperCase()}
       </div>
       <span className="db-navbar-username">
-        {user?.fullName || "User"}
+        {user?.name || "User"}
       </span>
     </div>
 

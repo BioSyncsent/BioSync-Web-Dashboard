@@ -1,11 +1,15 @@
+import DashboardLayout from "../components/layout/DashboardLayout";
+
 function Disputes(){
 
     return(
-        <div>
-            <h1>
-                BioSync Disputes 123
-            </h1>
-        </div>
+        <DashboardLayout>
+            <div>
+                <h1 style={{color:"black"}}>
+                    BioSync Disputes
+                </h1>
+            </div>
+        </DashboardLayout>
     )
 
 }

@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarCheck, AlertTriangle, Users, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, CalendarCheck, AlertTriangle, User, ShieldCheck } from "lucide-react";
 import "./Sidebar.css";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/attendance", label: "Attendance", icon: CalendarCheck },
   { to: "/disputes", label: "Disputes", icon: AlertTriangle },
-  { to: "/users", label: "Users", icon: Users },
+  { to: "/profile", label: "Profile", icon: User },
 ];
 
 function Sidebar() {
