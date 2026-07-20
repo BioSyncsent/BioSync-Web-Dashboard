@@ -19,7 +19,7 @@ return <h1>Loading...</h1>;
 
 if(!user){
 
-return <Navigate to="/" />;
+return <Navigate to="/login" />;
 
 }
 

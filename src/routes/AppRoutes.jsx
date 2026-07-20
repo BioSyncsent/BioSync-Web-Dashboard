@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import ProtectedRoute from "./ProtectedRoute";
 
+import LandingPage from "../pages/LandingPage";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Attendance from "../pages/Attendance";
@@ -16,9 +17,14 @@ function AppRoutes() {
       <Routes>
 
 
-        {/* Public route */}
+        {/* Public routes */}
         <Route 
           path="/" 
+          element={<LandingPage />} 
+        />
+
+        <Route 
+          path="/login" 
           element={<Login />} 
         />
 
