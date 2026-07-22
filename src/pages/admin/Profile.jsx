@@ -155,7 +155,7 @@ function Profile() {
                   <Phone size={16} />
                   <div>
                     <p className="info-label">Phone Number</p>
-                    <p className="info-value">{user?.phone || "N/A"}</p>
+                    <p className="info-value">{user?.phoneNum || "N/A"}</p>
                   </div>
                 </div>
                 <div className="info-item">
@@ -168,7 +168,7 @@ function Profile() {
                 <div className="info-item">
                   <Building2 size={16} />
                   <div>
-                    <p className="info-label">Department / Organization</p>
+                    <p className="info-label">Department</p>
                     <p className="info-value">{user?.department || "N/A"}</p>
                   </div>
                 </div>
