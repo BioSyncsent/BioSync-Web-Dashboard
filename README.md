@@ -74,15 +74,15 @@ Features:
           |
     Role Verification
           |
-  +-------+-------+-------+
-  |               |       |
-Admin          Teacher  Student
-  |               |       |
-  +---------------+-------+
-                  |
-          React Dashboard
-                  |
-            Firestore Database
+      +-------+-------+-------+
+      |               |       |
+    Admin          Teacher  Student
+      |               |       |
+      +---------------+-------+
+                      |
+              React Dashboard
+                      |
+                Firestore Database
 
 ---
 
@@ -112,3 +112,14 @@ Admin          Teacher  Student
 - Node.js
 - npm
 
+## Future Improvements
+- Hardware biometric integration
+- Real-time attendance synchronization
+- Advanced analytics dashboard
+- Multi-factor authentication
+- Improved audit logging
+- Mobile Web support
+
+##Contributors
+BioSync Team - Development Team
+FYP Project - German-Malaysian Institute
