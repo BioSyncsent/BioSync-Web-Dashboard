@@ -120,6 +120,6 @@ Features:
 - Improved audit logging
 - Mobile Web support
 
-##Contributors
-BioSync Team - Development Team
-FYP Project - German-Malaysian Institute
+## Contributors
+- BioSyncSentinal Team - Development Team
+- FYP Project - German-Malaysian Institute
