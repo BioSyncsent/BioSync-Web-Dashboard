@@ -1,6 +1,5 @@
 import { useState } from "react";
-import DashboardLayout from "../components/layout/DashboardLayout";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
 import {
   Mail,
@@ -94,7 +93,7 @@ function Profile() {
   }
 
   return (
-    <DashboardLayout>
+    
       <div className="profile-page">
         <Toaster position="top-right" />
 
@@ -412,7 +411,7 @@ function Profile() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    
   );
 }
 

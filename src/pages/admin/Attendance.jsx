@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Users, CheckCircle2, XCircle, Clock3, ShieldCheck } from "lucide-react";
-
-import DashboardLayout from "../components/layout/DashboardLayout";
-import SummaryCard from "../components/attendance/SummaryCard";
-import WeeklyAttendanceChart from "../components/attendance/WeeklyAttendanceChart";
-import AttendanceTrendChart from "../components/attendance/AttendanceTrendChart";
-import AttendanceTable from "../components/attendance/AttendanceTable";
-import RecentActivityPanel from "../components/attendance/RecentActivityPanel";
+import SummaryCard from "../../components/attendance/SummaryCard";
+import WeeklyAttendanceChart from "../../components/attendance/WeeklyAttendanceChart";
+import AttendanceTrendChart from "../../components/attendance/AttendanceTrendChart";
+import AttendanceTable from "../../components/attendance/AttendanceTable";
+import RecentActivityPanel from "../../components/attendance/RecentActivityPanel";
 
 import {
   fetchAttendanceRecords,
@@ -14,7 +12,7 @@ import {
   getWeeklyChartData,
   getTrendData,
   getRecentActivity,
-} from "../services/attendanceService";
+} from "../../services/attendanceService";
 
 import "./Attendance.css";
 
@@ -51,7 +49,7 @@ function Attendance() {
   const recentActivity = useMemo(() => getRecentActivity(attendance), [attendance]);
 
   return (
-    <DashboardLayout>
+    
       <div className="bs-attendance-page">
         <div className="bs-page-header">
           <div className="bs-page-title">
@@ -101,7 +99,7 @@ function Attendance() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    
   );
 }
 

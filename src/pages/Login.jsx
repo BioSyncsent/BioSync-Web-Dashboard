@@ -52,18 +52,29 @@ function Login(){
 
 
                 // Redirect based on role
-                navigate("/dashboard")
-                //if(userData.role==="admin"){
-                //    navigate("/admin");
-                //}
+                if(userData.role === "admin"){
 
-                //else if(userData.role==="teacher"){
-                  //  navigate("/teacher");
-                //}
+                    navigate("/admin/dashboard");
 
-                //else if(userData.role==="student"){
-                 //   navigate("/student");
-                //}
+                }
+
+                else if(userData.role === "teacher"){
+
+                    navigate("/teacher/dashboard");
+
+                }
+
+                else if(userData.role === "student"){
+
+                    navigate("/student/dashboard");
+
+                }
+
+                else{
+
+                    setError("Invalid user role");
+
+                }
 
             }
             else{

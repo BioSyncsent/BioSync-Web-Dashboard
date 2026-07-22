@@ -1,4 +1,4 @@
-import DashboardLayout from "../components/layout/DashboardLayout";
+
 import {
   Users, UserCheck, UserX, TrendingUp, AlertCircle, Eye
 } from "lucide-react";
@@ -58,7 +58,7 @@ function statusClass(status) {
 function Dashboard() {
 
   return (
-    <DashboardLayout>
+    
 
       <div className="db-page">
 
@@ -171,7 +171,7 @@ function Dashboard() {
 
       </div>
 
-    </DashboardLayout>
+    
   );
 
 }
