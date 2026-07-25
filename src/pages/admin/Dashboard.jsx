@@ -63,7 +63,7 @@ function Dashboard() {
       <div className="db-page">
 
         <div className="db-page-header">
-          <h1 className="db-page-title">Welcome to BioSync Dashboard</h1>
+          <h1 className="db-page-title">Welcome to BioSync Dashboard Fyp</h1>
           <p className="db-page-subtitle">
             Real-time attendance and biometric access overview.
           </p>
