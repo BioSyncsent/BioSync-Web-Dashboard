@@ -15,7 +15,7 @@
 }
 
 .db-page-title {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', 'Orbitron', sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--db-text);
@@ -33,17 +33,23 @@
   background: var(--db-white);
   border: 1px solid var(--db-border);
   border-radius: 18px;
-  box-shadow: 0 2px 14px rgba(86, 182, 255, 0.06);
+  box-shadow: var(--shadow-sm);
   padding: 22px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
+.db-card:hover {
+  border-color: rgba(0, 212, 255, 0.25);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
 .db-card-title {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: var(--db-text);
   margin: 0 0 14px 0;
+  letter-spacing: 0.5px;
 }
 
 .db-stat-grid {
@@ -60,15 +66,13 @@
 
 .db-stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(86, 182, 255, 0.16);
-  border-color: var(--db-primary-light);
 }
 
 .db-stat-icon {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(86, 182, 255, 0.1);
+  background: rgba(0, 212, 255, 0.1);
   color: var(--db-primary);
   display: flex;
   align-items: center;
@@ -76,7 +80,7 @@
 }
 
 .db-stat-value {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Space Grotesk', 'Orbitron', sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--db-text);
@@ -95,7 +99,7 @@
 }
 
 .db-chart-card:hover {
-  box-shadow: 0 8px 20px rgba(86, 182, 255, 0.1);
+  border-color: rgba(0, 212, 255, 0.25);
 }
 
 .db-table-card {
@@ -126,7 +130,7 @@
 .db-table td {
   padding: 13px 14px;
   color: var(--db-text);
-  border-bottom: 1px solid #EEF5FC;
+  border-bottom: 1px solid var(--db-border);
 }
 
 .db-table tbody tr {
@@ -134,7 +138,7 @@
 }
 
 .db-table tbody tr:hover {
-  background: rgba(86, 182, 255, 0.05);
+  background: rgba(0, 212, 255, 0.04);
 }
 
 .db-status {
@@ -146,18 +150,18 @@
 }
 
 .db-status-ontime {
-  background: rgba(86, 182, 255, 0.12);
-  color: #1E7FCC;
+  background: rgba(46, 229, 157, 0.1);
+  color: var(--color-success);
 }
 
 .db-status-late {
-  background: rgba(255, 176, 32, 0.14);
-  color: #B37200;
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
 }
 
 .db-status-absent {
-  background: rgba(224, 87, 107, 0.12);
-  color: #C23A50;
+  background: rgba(255, 93, 115, 0.1);
+  color: var(--color-error);
 }
 
 .db-table-action {
@@ -165,17 +169,19 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--db-white);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--db-border);
   border-radius: 8px;
   color: var(--db-text-soft);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: box-shadow 0.2s ease, color 0.2s ease;
+  transition: box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
 }
 
 .db-table-action:hover {
   color: var(--db-primary);
+  background: rgba(0, 212, 255, 0.05);
+  border-color: var(--db-primary);
   box-shadow: 0 0 0 3px var(--db-glow);
 }

@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Shield, CreditCard, ScanFace, Eye, Fingerprint, Clock,
   ShieldAlert, Database, LayoutDashboard, TrendingUp, Sparkles,
-  ArrowRight, Users, CheckCircle2, AlertTriangle, Menu, X, HelpCircle
+  ArrowRight, Users, CheckCircle2, AlertTriangle, Menu, X, HelpCircle,
+  Lock, Cpu, Server, Activity, FileText, Settings, Key, Check, AlertCircle,
+  Terminal, ShieldCheck, ChevronRight, Info
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
@@ -11,22 +13,15 @@ import {
 } from "recharts";
 import "./LandingPage.css";
 
-// Sample data for the Dashboard Preview inside the Landing Page
-const previewStats = [
-  { label: "Today's Attendance", value: "212 / 248", change: "85.5% present", icon: Users },
-  { label: "Active Terminals", value: "4 Online", change: "All systems green", icon: Database },
-  { label: "Fraud Alerts (Today)", value: "0 Detected", change: "1 attempt blocked", icon: ShieldAlert },
-  { label: "Attendance Rate", value: "+2.4%", change: "vs last week", icon: TrendingUp }
-];
-
-const attendanceHistory = [
-  { name: "Mon", rate: 82 },
-  { name: "Tue", rate: 88 },
-  { name: "Wed", rate: 79 },
-  { name: "Thu", rate: 91 },
-  { name: "Fri", rate: 85 },
-  { name: "Sat", rate: 74 },
-  { name: "Sun", rate: 68 }
+// Recharts mockup data
+const attendanceTrend = [
+  { day: "Mon", rate: 82 },
+  { day: "Tue", rate: 88 },
+  { day: "Wed", rate: 79 },
+  { day: "Thu", rate: 91 },
+  { day: "Fri", rate: 85 },
+  { day: "Sat", rate: 74 },
+  { day: "Sun", rate: 68 }
 ];
 
 const distributionData = [
@@ -34,52 +29,128 @@ const distributionData = [
   { name: "Absent", value: 36 }
 ];
 
-const COLORS = ["#3B82F6", "#D6E4F0"];
+const COLORS = ["#00D4FF", "#0B2545"];
 
 const recentLogs = [
-  { id: 1, name: "Aiman Rasyid", time: "08:02 AM", method: "RFID + Face", status: "On Time" },
-  { id: 2, name: "Nur Aisyah", time: "08:14 AM", method: "RFID + Face", status: "Late" },
-  { id: 3, name: "Kevin Tan", time: "08:35 AM", method: "RFID + Fingerprint", status: "Late (Fallback)" },
-  { id: 4, name: "Sarah Jenkins", time: "08:55 AM", method: "RFID + Face", status: "On Time" }
+  { id: 1, name: "Aiman Rasyid", time: "08:02 AM", method: "RFID + Liveness", status: "Verified" },
+  { id: 2, name: "Nur Aisyah", time: "08:14 AM", method: "RFID + Liveness", status: "Verified" },
+  { id: 3, name: "Kevin Tan", time: "08:35 AM", method: "RFID + Fingerprint", status: "Fallback" },
+  { id: 4, name: "Sarah Jenkins", time: "08:55 AM", method: "RFID + Liveness", status: "Verified" }
 ];
 
 function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeWorkflowStep, setActiveWorkflowStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
+  const [activeOverviewStep, setActiveOverviewStep] = useState(0);
+  const [hoveredArchNode, setHoveredArchNode] = useState(null);
+  const autoCycleTimer = useRef(null);
+  const layoutRef = useRef(null);
   const navigate = useNavigate();
+
+  // Auto-cycle timeline steps
+  useEffect(() => {
+    autoCycleTimer.current = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 6);
+    }, 4500);
+
+    return () => {
+      if (autoCycleTimer.current) clearInterval(autoCycleTimer.current);
+    };
+  }, []);
+
+  // Scroll-triggered reveal animations (fade-up + blur reveal)
+  useEffect(() => {
+    const revealEls = document.querySelectorAll(".reveal");
+    if (!revealEls.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
+    );
+
+    revealEls.forEach((el, idx) => {
+      el.style.setProperty("--reveal-delay", `${(idx % 6) * 70}ms`);
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Mouse-follow spotlight + subtle parallax on hero glows
+  useEffect(() => {
+    const layout = layoutRef.current;
+    if (!layout) return;
+
+    let frame = null;
+    const handleMouseMove = (e) => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const xPct = (e.clientX / window.innerWidth) * 100;
+        const yPct = (e.clientY / (window.innerHeight || 1)) * 100;
+        layout.style.setProperty("--mx", `${xPct}%`);
+        layout.style.setProperty("--my", `${yPct}%`);
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  const handleStepClick = (idx) => {
+    setActiveStep(idx);
+    if (autoCycleTimer.current) {
+      clearInterval(autoCycleTimer.current); // Stop auto cycling on user interaction
+    }
+  };
 
   const handleGetStarted = () => {
     navigate("/login");
   };
 
-  const handleViewDashboard = () => {
-    navigate("/dashboard");
-  };
-
   return (
-    <div className="landing-layout">
+    <div className="landing-layout" ref={layoutRef}>
+      {/* Mouse-follow spotlight */}
+      <div className="mouse-spotlight"></div>
+
       {/* Background decoration */}
       <div className="landing-bg-glows">
         <div className="bg-glow bg-glow-1"></div>
         <div className="bg-glow bg-glow-2"></div>
+        <div className="bg-glow bg-glow-3"></div>
       </div>
+
+      {/* Cyber Grid Overlay */}
+      <div className="landing-cyber-grid"></div>
 
       {/* Navigation Header */}
       <header className="landing-header glass-panel">
         <div className="header-container">
           <div className="header-logo">
             <div className="logo-icon-bg">
-              <Shield className="logo-icon" size={24} />
+              <Shield className="logo-icon" size={20} />
             </div>
             <span className="logo-text">Bio-Sync <span className="text-accent">Sentinel</span></span>
           </div>
 
           {/* Desktop Nav */}
           <nav className="desktop-nav">
-            <a href="#workflow" className="nav-item">Workflow</a>
-            <a href="#features" className="nav-item">Features</a>
-            <a href="#preview" className="nav-item">Dashboard Preview</a>
-            <a href="#overview" className="nav-item">System Overview</a>
+            <a href="#overview" className="nav-item">Overview</a>
+            <a href="#problems" className="nav-item">Problems</a>
+            <a href="#workflow" className="nav-item">Timeline</a>
+            <a href="#features" className="nav-item">Bento Features</a>
+            <a href="#architecture" className="nav-item">Architecture</a>
+            <a href="#preview" className="nav-item">Dashboard</a>
+            <a href="#security" className="nav-item">Trust Layers</a>
           </nav>
 
           <div className="header-actions">
@@ -87,7 +158,7 @@ function LandingPage() {
               Sign In
             </button>
             <button onClick={handleGetStarted} className="btn-getstarted btn-glow">
-              Get Started <ArrowRight size={16} />
+              Get Started <ArrowRight size={14} />
             </button>
           </div>
 
@@ -104,10 +175,13 @@ function LandingPage() {
         {/* Mobile Nav Dropdown */}
         {mobileMenuOpen && (
           <div className="mobile-nav glass-panel">
-            <a href="#workflow" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Workflow</a>
-            <a href="#features" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Features</a>
-            <a href="#preview" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Dashboard Preview</a>
-            <a href="#overview" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>System Overview</a>
+            <a href="#overview" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Overview</a>
+            <a href="#problems" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Problems</a>
+            <a href="#workflow" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Timeline</a>
+            <a href="#features" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Bento Features</a>
+            <a href="#architecture" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Architecture</a>
+            <a href="#preview" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Dashboard</a>
+            <a href="#security" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Trust Layers</a>
             <div className="mobile-nav-divider"></div>
             <button onClick={() => { setMobileMenuOpen(false); handleGetStarted(); }} className="mobile-btn-signin">Sign In</button>
             <button onClick={() => { setMobileMenuOpen(false); handleGetStarted(); }} className="mobile-btn-getstarted">Get Started</button>
@@ -116,28 +190,29 @@ function LandingPage() {
       </header>
 
       <main className="landing-main">
-        {/* Hero Section */}
+        
+        {/* ================= HERO SECTION ================= */}
         <section id="hero" className="hero-section">
           <div className="section-container hero-grid">
             <div className="hero-content">
               <div className="badge">
-                <Sparkles size={14} className="badge-icon" />
-                <span>Next-Gen Biometric Authentication</span>
+                <Sparkles size={12} className="badge-icon" />
+                <span>Enterprise Biometric Access Control</span>
               </div>
               <h1 className="hero-title">
-                Secure Multi-Layered <br />
-                <span className="text-gradient">Attendance Verification</span>
+                Secure Attendance <br />
+                <span className="text-gradient">Beyond Identity</span>
               </h1>
               <p className="hero-subtitle">
-                Bio-Sync Sentinel combines fast RFID authentication, AI-powered live facial recognition with spoofing detection, and high-security capacitive fingerprint verification to eliminate proxy attendance and streamline institutional tracking.
+                Bio-Sync Sentinel combines RFID authentication, AI-powered liveness facial recognition, fingerprint verification, and real-time fraud monitoring into one intelligent attendance platform.
               </p>
               <div className="hero-ctas">
-                <button onClick={handleGetStarted} className="btn-primary-large btn-glow">
-                  Get Started
-                </button>
-                <button onClick={handleViewDashboard} className="btn-secondary-large">
-                  View Dashboard
-                </button>
+                <a href="#overview" className="btn-primary-large btn-glow">
+                  Explore System
+                </a>
+                <a href="#architecture" className="btn-secondary-large">
+                  View Architecture
+                </a>
               </div>
               <div className="hero-trust">
                 <div className="trust-item">
@@ -157,211 +232,532 @@ function LandingPage() {
               </div>
             </div>
 
-            {/* Futuristic Animated SVG Hero Illustration */}
+            {/* Right side: 3D Visualization */}
             <div className="hero-visual">
               <div className="visual-wrapper glass-panel">
-                <svg className="hero-illustration" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Grid background */}
-                  <defs>
-                    <pattern id="illustration-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(214, 228, 240, 0.2)" strokeWidth="1" />
-                    </pattern>
-                    <linearGradient id="gradient-primary" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#1E3A5F" />
-                      <stop offset="100%" stopColor="#3B82F6" />
-                    </linearGradient>
-                    <linearGradient id="gradient-accent" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#3B82F6" />
-                      <stop offset="100%" stopColor="#5EEAD4" />
-                    </linearGradient>
-                    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-                      <feGaussianBlur stdDeviation="8" result="blur" />
-                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                    </filter>
-                  </defs>
+                <div className="visual-3d-grid">
+                  <svg className="hero-illustration" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Background gridlines */}
+                    <defs>
+                      <pattern id="hero-grid-pattern" width="30" height="30" patternUnits="userSpaceOnUse">
+                        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(58, 110, 165, 0.15)" strokeWidth="1" />
+                      </pattern>
+                      <linearGradient id="line-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#00D4FF" />
+                        <stop offset="50%" stopColor="#2EE59D" />
+                        <stop offset="100%" stopColor="#00D4FF" />
+                      </linearGradient>
+                      <filter id="hero-blur" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="10" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    </defs>
+                    
+                    <rect width="100%" height="100%" fill="url(#hero-grid-pattern)" />
 
-                  <rect width="100%" height="100%" fill="url(#illustration-grid)" rx="20" />
+                    {/* Laser scanning beam */}
+                    <line className="scan-line-horizontal" x1="50" y1="100" x2="450" y2="100" stroke="#00D4FF" strokeWidth="2" filter="url(#hero-blur)" />
 
-                  {/* Connection cables / light paths */}
-                  <g className="cables">
-                    {/* Left node (RFID) to center */}
-                    <path d="M 120 180 Q 200 150 250 220" fill="none" stroke="#D6E4F0" strokeWidth="2" strokeDasharray="5,5" />
-                    {/* Top node (Face) to center */}
-                    <path d="M 250 100 V 220" fill="none" stroke="#D6E4F0" strokeWidth="2" />
-                    {/* Right node (Fingerprint) to center */}
-                    <path d="M 380 180 Q 300 150 250 220" fill="none" stroke="#D6E4F0" strokeWidth="2" strokeDasharray="5,5" />
-                    {/* Center (Terminal) to Database (Bottom) */}
-                    <path className="pulse-path" d="M 250 280 V 380" fill="none" stroke="url(#gradient-accent)" strokeWidth="3" strokeDasharray="6,6" filter="url(#glow)" />
-                  </g>
-
-                  {/* Node 1: RFID Tap */}
-                  <g className="hero-node node-rfid" transform="translate(100, 160)">
-                    <circle cx="20" cy="20" r="32" fill="#FFFFFF" stroke="#D6E4F0" strokeWidth="2" />
-                    <rect x="5" y="10" width="30" height="20" rx="3" fill="#1E3A5F" opacity="0.1" />
-                    <rect x="5" y="10" width="30" height="20" rx="3" stroke="#1E3A5F" strokeWidth="2" />
-                    <circle cx="15" cy="20" r="4" fill="#3B82F6" />
-                    <path d="M 24 16 A 6 6 0 0 1 24 24" stroke="#1E3A5F" strokeWidth="1.5" fill="none" />
-                    <path d="M 28 13 A 10 10 0 0 1 28 27" stroke="#1E3A5F" strokeWidth="1.5" fill="none" />
-                    <circle className="node-ping" cx="20" cy="20" r="30" stroke="#3B82F6" strokeWidth="1.5" opacity="0" />
-                  </g>
-
-                  {/* Node 2: Face Scan */}
-                  <g className="hero-node node-face" transform="translate(230, 60)">
-                    <circle cx="20" cy="20" r="36" fill="#FFFFFF" stroke="#D6E4F0" strokeWidth="2" />
-                    {/* Face Silhouette */}
-                    <path d="M 20 10 C 25 10 29 14 29 19 C 29 23 27 24 28 26 C 29 28 27 30 20 30 C 13 30 11 28 12 26 C 13 24 11 23 11 19 C 11 14 15 10 20 10 Z" fill="none" stroke="#1E3A5F" strokeWidth="2" />
-                    {/* Scanning bracket corner top-left */}
-                    <path d="M 5 5 H 12 V 12" fill="none" stroke="#5EEAD4" strokeWidth="2.5" />
-                    <path d="M 35 5 H 28 V 12" fill="none" stroke="#5EEAD4" strokeWidth="2.5" />
-                    <path d="M 5 35 H 12 V 28" fill="none" stroke="#5EEAD4" strokeWidth="2.5" />
-                    <path d="M 35 35 H 28 V 28" fill="none" stroke="#5EEAD4" strokeWidth="2.5" />
-                    {/* Scanning bar */}
-                    <line className="scan-bar" x1="4" y1="12" x2="36" y2="12" stroke="#5EEAD4" strokeWidth="2" filter="url(#glow)" />
-                  </g>
-
-                  {/* Node 3: Fingerprint Fallback */}
-                  <g className="hero-node node-fingerprint" transform="translate(360, 160)">
-                    <circle cx="20" cy="20" r="32" fill="#FFFFFF" stroke="#D6E4F0" strokeWidth="2" />
-                    {/* Fingerprint Loops */}
-                    <path d="M 12 25 C 12 18, 16 12, 20 12 C 24 12, 28 18, 28 25 M 15 25 C 15 20, 17 15, 20 15 C 23 15, 25 20, 25 25 M 18 25 C 18 22, 19 18, 20 18 C 21 18, 22 22, 22 25" stroke="#1E3A5F" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-                  </g>
-
-                  {/* Center Node: Terminal Core */}
-                  <g className="hero-node node-terminal" transform="translate(210, 210)">
-                    <rect x="0" y="0" width="80" height="90" rx="12" fill="url(#gradient-primary)" stroke="#3B82F6" strokeWidth="2" filter="url(#glow)" />
-                    {/* Screen area */}
-                    <rect x="8" y="8" width="64" height="42" rx="6" fill="#0A192F" />
-                    {/* Scan indicator */}
-                    <circle className="radar-circle" cx="40" cy="29" r="14" stroke="#5EEAD4" strokeWidth="1" opacity="0.6" />
-                    <circle className="radar-sweep" cx="40" cy="29" r="6" fill="#5EEAD4" />
-                    {/* Green Verification Check */}
-                    <path className="verif-check" d="M 32 54 L 38 60 L 48 50" fill="none" stroke="#5EEAD4" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                    {/* Text indicators */}
-                    <rect x="15" y="68" width="50" height="4" rx="2" fill="#FFFFFF" opacity="0.2" />
-                    <rect x="25" y="76" width="30" height="4" rx="2" fill="#5EEAD4" opacity="0.8" />
-                  </g>
-
-                  {/* Node 4: Cloud / Database Sync */}
-                  <g className="hero-node node-database" transform="translate(215, 370)">
-                    <circle cx="35" cy="35" r="35" fill="#FFFFFF" stroke="#D6E4F0" strokeWidth="2" />
-                    {/* Database cylinders */}
-                    <g fill="none" stroke="#1E3A5F" strokeWidth="2" transform="translate(18, 15)">
-                      <rect x="0" y="0" width="34" height="12" rx="4" fill="#3B82F6" opacity="0.1" />
-                      <rect x="0" y="0" width="34" height="12" rx="4" />
-                      <path d="M 0 6 C 0 10, 34 10, 34 6" />
-
-                      <rect x="0" y="14" width="34" height="12" rx="4" fill="#3B82F6" opacity="0.1" />
-                      <rect x="0" y="14" width="34" height="12" rx="4" />
-                      <path d="M 0 20 C 0 24, 34 24, 34 20" />
-
-                      <rect x="0" y="28" width="34" height="12" rx="4" fill="#5EEAD4" opacity="0.15" />
-                      <rect x="0" y="28" width="34" height="12" rx="4" />
-                      <path d="M 0 34 C 0 38, 34 38, 34 34" />
+                    {/* Animated Connection Paths */}
+                    <g className="connection-paths">
+                      <path d="M 90 250 Q 170 200 250 250" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="2" strokeDasharray="6,4" />
+                      <path d="M 250 140 V 250" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="2" strokeDasharray="6,4" />
+                      <path d="M 410 250 Q 330 200 250 250" fill="none" stroke="rgba(0, 212, 255, 0.4)" strokeWidth="2" strokeDasharray="6,4" />
+                      <path d="M 250 250 V 380" fill="none" stroke="url(#line-glow)" strokeWidth="3" className="pulse-path" />
                     </g>
-                  </g>
-                </svg>
-                {/* Floating tags */}
-                <div className="floating-tag tag-rfid">
-                  <CreditCard size={12} className="tag-icon" /> RFID Registered
-                </div>
-                <div className="floating-tag tag-liveness">
-                  <Eye size={12} className="tag-icon" /> Liveness Detected
-                </div>
-                <div className="floating-tag tag-verified">
-                  <CheckCircle2 size={12} className="tag-icon" /> Identity Verified
+
+                    {/* RFID Card Node */}
+                    <g className="visual-node node-rfid" transform="translate(50, 210)">
+                      <circle cx="40" cy="40" r="36" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                      <rect x="22" y="28" width="36" height="24" rx="3" fill="none" stroke="#00D4FF" strokeWidth="2" />
+                      <line x1="28" y1="34" x2="34" y2="34" stroke="#2EE59D" strokeWidth="2" />
+                      <path d="M 48 34 A 4 4 0 0 1 48 42" stroke="#00D4FF" strokeWidth="1.5" fill="none" />
+                      <circle cx="40" cy="40" r="36" className="node-pulse-ring" stroke="#00D4FF" />
+                    </g>
+
+                    {/* Face Recognition Node */}
+                    <g className="visual-node node-face" transform="translate(210, 60)">
+                      <circle cx="40" cy="40" r="40" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                      <path d="M 40 22 C 45 22 49 26 49 31 C 49 35 47 37 48 39 C 49 41 47 43 40 43 C 33 43 31 41 32 39 C 33 37 31 35 31 31 C 31 26 35 22 40 22 Z" fill="none" stroke="#00D4FF" strokeWidth="2" />
+                      <path d="M 22 22 H 28 V 28" fill="none" stroke="#2EE59D" strokeWidth="2" />
+                      <path d="M 58 22 H 52 V 28" fill="none" stroke="#2EE59D" strokeWidth="2" />
+                      <path d="M 22 58 H 28 V 52" fill="none" stroke="#2EE59D" strokeWidth="2" />
+                      <path d="M 58 58 H 52 V 52" fill="none" stroke="#2EE59D" strokeWidth="2" />
+                      <circle cx="40" cy="40" r="40" className="node-pulse-ring" stroke="#00D4FF" />
+                    </g>
+
+                    {/* Fingerprint Node */}
+                    <g className="visual-node node-print" transform="translate(370, 210)">
+                      <circle cx="40" cy="40" r="36" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                      <path d="M 28 45 C 28 35, 34 28, 40 28 C 46 28, 52 35, 52 45 M 32 45 C 32 38, 36 32, 40 32 C 44 32, 48 38, 48 45 M 36 45 C 36 41, 38 37, 40 37 C 42 37, 44 41, 44 45" stroke="#00D4FF" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                      <circle cx="40" cy="40" r="36" className="node-pulse-ring" stroke="#00D4FF" />
+                    </g>
+
+                    {/* Central Core Gateway (Engine) */}
+                    <g className="visual-node node-gateway" transform="translate(200, 210)">
+                      <rect x="0" y="0" width="100" height="90" rx="12" fill="#071426" stroke="#00D4FF" strokeWidth="2.5" />
+                      {/* Shield element inside gateway */}
+                      <path d="M 50 25 L 72 33 V 50 C 72 63 62 72 50 77 C 38 72 28 63 28 50 V 33 Z" fill="none" stroke="#2EE59D" strokeWidth="2" />
+                      <path d="M 43 48 L 48 53 L 57 43" fill="none" stroke="#00D4FF" strokeWidth="2" />
+                    </g>
+
+                    {/* Secure Database Server Node */}
+                    <g className="visual-node node-server" transform="translate(205, 360)">
+                      <circle cx="45" cy="45" r="40" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                      {/* Database icon */}
+                      <g transform="translate(28, 25)" fill="none" stroke="#00D4FF" strokeWidth="2">
+                        <rect x="0" y="0" width="34" height="11" rx="3" fill="rgba(0, 212, 255, 0.1)" />
+                        <rect x="0" y="14" width="34" height="11" rx="3" fill="rgba(0, 212, 255, 0.1)" />
+                        <rect x="0" y="28" width="34" height="11" rx="3" fill="rgba(46, 229, 157, 0.1)" stroke="#2EE59D" />
+                        <circle cx="6" cy="5.5" r="2.5" fill="#00D4FF" />
+                        <circle cx="6" cy="19.5" r="2.5" fill="#00D4FF" />
+                        <circle cx="6" cy="33.5" r="2.5" fill="#2EE59D" />
+                      </g>
+                      <circle cx="45" cy="45" r="40" className="node-pulse-ring" stroke="#2EE59D" />
+                    </g>
+                  </svg>
+                  
+                  {/* Floating HTML labels */}
+                  <div className="flow-badge flow-rfid">RFID Registered</div>
+                  <div className="flow-badge flow-liveness">Liveness Ok</div>
+                  <div className="flow-badge flow-fallback">Bio Fail-safe</div>
+                  <div className="flow-badge flow-sync">DB Synchronized</div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* System Workflow Section */}
+        {/* ================= PROJECT OVERVIEW ================= */}
+        <section id="overview" className="overview-section">
+          <div className="section-container overview-grid">
+            
+            {/* Left Column: Premium Typography */}
+            <div className="overview-info">
+              <span className="section-label">Institutional Safety</span>
+              <h2 className="section-title text-left">
+                Next-Gen Security for Modern Enterprises
+              </h2>
+              <p className="overview-desc">
+                Bio-Sync Sentinel provides a bulletproof multi-layered authentication workflow. Traditional RFID badges are easily shared, and face scanners can be fooled by photos. 
+              </p>
+              <p className="overview-desc">
+                Our platform locks access controls by verifying the physical presence of the cardholder using AI liveness facial vectors, fallback fingerprinting, and transactional database integrity.
+              </p>
+              
+              <div className="overview-steps-trigger">
+                {[
+                  "MiFare RFID Verification",
+                  "AI Liveness Mapping Scan",
+                  "Fingerprint Verification Fallback",
+                  "Real-Time Database Sync"
+                ].map((title, i) => (
+                  <div 
+                    key={i} 
+                    className={`overview-trigger-item ${activeOverviewStep === i ? "active" : ""}`}
+                    onMouseEnter={() => setActiveOverviewStep(i)}
+                  >
+                    <span className="trigger-num">0{i+1}</span>
+                    <span className="trigger-text">{title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column: Animated Illustration */}
+            <div className="overview-visual-right">
+              <div className="flow-illustration-card glass-panel">
+                <div className="flow-indicator-header">
+                  <div className="flow-dot red"></div>
+                  <div className="flow-dot yellow"></div>
+                  <div className="flow-dot green"></div>
+                  <span className="flow-title">Verification State Machine</span>
+                </div>
+                
+                <div className="state-flow-vertical">
+                  {[
+                    { label: "Student taps RFID", detail: "MiFare card reader decodes card serial and fetches user UUID." },
+                    { label: "Camera scans face", detail: "HD terminal camera triggers video capture and streams landmarks." },
+                    { label: "AI verifies liveness", detail: "Active anti-spoofing logic verifies real human blink & depth vectors." },
+                    { label: "Fingerprint backup if needed", detail: "If light is low, 508 DPI capacitive scanner activates automatically." },
+                    { label: "Attendance logged", detail: "Verification packet commits securely to localized transaction queue." },
+                    { label: "Admin dashboard updates", detail: "Logs write to central MySQL DB, triggering immediate dashboard feeds." }
+                  ].map((step, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`state-flow-step ${activeOverviewStep === Math.floor(idx / 1.5) ? "highlight" : ""}`}
+                    >
+                      <div className="state-circle-container">
+                        <div className="state-circle">
+                          {idx < 5 ? <ChevronRight size={12} className="rotate-90" /> : <Check size={12} />}
+                        </div>
+                        {idx < 5 && <div className="state-line"></div>}
+                      </div>
+                      <div className="state-text">
+                        <h5>{step.label}</h5>
+                        <p>{step.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* ================= PROBLEM STATEMENT ================= */}
+        <section id="problems" className="problems-section">
+          <div className="section-container">
+            <div className="section-header reveal">
+              <span className="section-label">Institutional Risks</span>
+              <h2 className="section-title">The Limitations of Traditional Attendance</h2>
+              <p className="section-subtitle">
+                Legacy systems suffer from deep vulnerabilities that create administrative overhead and security holes.
+              </p>
+            </div>
+
+            <div className="problems-grid">
+              {/* Card 1 */}
+              <div className="problem-card glass-panel reveal">
+                <div className="problem-icon-wrapper">
+                  <Clock size={24} className="problem-icon" />
+                </div>
+                <h3 className="problem-title">Inefficient Manual Attendance</h3>
+                <ul className="problem-list">
+                  <li>Paper attendance sheets waste valuable teaching and meeting hours.</li>
+                  <li>Hefty administrative burdens for manual entry.</li>
+                  <li>Slow record keeping and difficult historical lookups.</li>
+                </ul>
+              </div>
+
+              {/* Card 2 */}
+              <div className="problem-card glass-panel reveal">
+                <div className="problem-icon-wrapper">
+                  <ShieldAlert size={24} className="problem-icon" />
+                </div>
+                <h3 className="problem-title">Fraud & Human Error</h3>
+                <ul className="problem-list">
+                  <li>Buddy punching and proxy attendance are easily exploited.</li>
+                  <li>Lost, misplaced, or damaged paper sheets.</li>
+                  <li>Manual database recording mistakes cause billing & record disputes.</li>
+                </ul>
+              </div>
+
+              {/* Card 3 */}
+              <div className="problem-card glass-panel reveal">
+                <div className="problem-icon-wrapper">
+                  <AlertTriangle size={24} className="problem-icon" />
+                </div>
+                <h3 className="problem-title">Weak Access Control</h3>
+                <ul className="problem-list">
+                  <li>Unauthorized individuals entering high-security server rooms/labs.</li>
+                  <li>Complete lack of accountability or verification of who is inside.</li>
+                  <li>Absence of a centralized real-time diagnostic dashboard.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ================= HOW THE SYSTEM WORKS ================= */}
         <section id="workflow" className="workflow-section">
           <div className="section-container">
-            <div className="section-header">
-              <span className="section-label">Operational Process</span>
-              <h2 className="section-title">How Bio-Sync Sentinel Works</h2>
+            <div className="section-header reveal">
+              <span className="section-label">Active Protocol</span>
+              <h2 className="section-title">Step-by-Step Security Loop</h2>
               <p className="section-subtitle">
-                Our verification engine processes users sequentially through physical, biometric, and network steps in under 1.5 seconds.
+                Observe the sequence our authentication engine executes upon every check-in event.
               </p>
             </div>
 
-            {/* Connected Cards Timeline */}
-            <div className="workflow-grid">
-              {[
-                { title: "RFID Card Tap", desc: "User taps MIFARE card on terminal reader to fetch baseline encryption ID.", icon: CreditCard },
-                { title: "Record Retrieval", desc: "System syncs with secure local cache to retrieve user parameters.", icon: Users },
-                { title: "Face Recognition", desc: "AI maps facial keypoints and runs active liveness scans.", icon: ScanFace },
-                { title: "Fingerprint Fallback", desc: "Optional capacitive scan verifies fingerprints if face recognition fails.", icon: Fingerprint },
-                { title: "Attendance Logged", desc: "System locks in employee status, timing, location and verification score.", icon: Clock },
-                { title: "MySQL DB Sync", desc: "Secure encrypted logs write directly to central administrative database.", icon: Database },
-                { title: "Dashboard Monitoring", desc: "Real-time feeds update charts, dashboards, and notify admins of anomalies.", icon: LayoutDashboard }
-              ].map((step, idx) => (
-                <div 
-                  key={idx} 
-                  className={`workflow-card glass-panel ${activeWorkflowStep === idx ? "active" : ""}`}
-                  onMouseEnter={() => setActiveWorkflowStep(idx)}
-                >
-                  <div className="workflow-step-num">0{idx + 1}</div>
-                  <div className="workflow-icon-bg">
-                    <step.icon className="workflow-icon" size={24} />
-                  </div>
-                  <h3 className="workflow-card-title">{step.title}</h3>
-                  <p className="workflow-card-desc">{step.desc}</p>
-                  {idx < 6 && (
-                    <div className="workflow-arrow-line">
-                      <ArrowRight className="workflow-arrow" size={16} />
+            {/* Horizontal Timeline */}
+            <div className="timeline-horizontal-container">
+              <div className="timeline-progress-line">
+                <div className="timeline-progress-fill" style={{ width: `${(activeStep / 5) * 100}%` }}></div>
+              </div>
+              
+              <div className="timeline-steps-grid">
+                {[
+                  { title: "RFID Auth", desc: "User taps MiFare RFID card to retrieve identity index.", icon: CreditCard },
+                  { title: "Facial Scanning", desc: "Terminal camera captures face image parameters.", icon: ScanFace },
+                  { title: "Liveness Check", desc: "AI models verify physical presence and anti-spoof checks.", icon: Eye },
+                  { title: "Fingerprint Fallback", desc: "Biometric semiconductor backup triggers if needed.", icon: Fingerprint },
+                  { title: "Attendance Logged", desc: "Record encrypted and validated in database queues.", icon: ShieldCheck },
+                  { title: "Live Dashboard", desc: "Updates dashboard metrics and pushes fraud alerts.", icon: LayoutDashboard }
+                ].map((step, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`timeline-step-card glass-panel ${activeStep === idx ? "active" : ""}`}
+                    onClick={() => handleStepClick(idx)}
+                  >
+                    <div className="step-badge">Step 0{idx + 1}</div>
+                    <div className="step-icon-bg">
+                      <step.icon size={20} className="step-icon-element" />
                     </div>
-                  )}
-                </div>
-              ))}
+                    <h4>{step.title}</h4>
+                    <p>{step.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
+        {/* ================= FEATURES BENTO GRID ================= */}
         <section id="features" className="features-section">
           <div className="section-container">
-            <div className="section-header">
-              <span className="section-label">Enterprise Architecture</span>
-              <h2 className="section-title">Advanced Core Capabilities</h2>
+            <div className="section-header reveal">
+              <span className="section-label">Capabilities</span>
+              <h2 className="section-title">System Features Bento Grid</h2>
               <p className="section-subtitle">
-                A secure biometric platform designed for resilience, fraud prevention, and performance.
+                Explore the components that make Bio-Sync Sentinel the premier biosecurity attendance suite.
               </p>
             </div>
 
-            <div className="features-grid">
-              {[
-                { title: "RFID Authentication", desc: "NFC/MIFARE card support. Reads, authenticates, and cross-references unique credentials in under 200ms.", icon: CreditCard },
-                { title: "AI Facial Recognition", desc: "High-performance convolutional neural networks verify faces against secure local templates.", icon: ScanFace },
-                { title: "Liveness Detection", desc: "Active and passive anti-spoofing logic blocks high-resolution photos, tablet videos, and 3D print masks.", icon: Eye },
-                { title: "Fingerprint Backup", desc: "High-resolution capacitive semiconductor sensor provides 508 DPI scanning fallback in low-light settings.", icon: Fingerprint },
-                { title: "Real-Time Syncing", desc: "Local queues buffer records instantly and synchronize upstream as soon as server connection resumes.", icon: Clock },
-                { title: "Fraud Detection", desc: "Instantly flags mismatched credentials, multi-terminal check-ins, or liveness failure alerts.", icon: ShieldAlert },
-                { title: "Secure MySQL Database", desc: "Relational database schema with indexes, transactional safety, and field-level encryption for logs.", icon: Database },
-                { title: "Admin Portal", desc: "Responsive layout with user provisioning, terminal diagnostic panels, logs, and dispute workflows.", icon: LayoutDashboard },
-                { title: "Advanced Analytics", desc: "Tracks team metrics, absentee trends, terminal workload statistics, and anomalies dynamically.", icon: TrendingUp }
-              ].map((feat, idx) => (
-                <div key={idx} className="feature-card glass-panel">
-                  <div className="feature-card-icon-bg">
-                    <feat.icon className="feature-card-icon" size={22} />
-                  </div>
-                  <h3 className="feature-card-title">{feat.title}</h3>
-                  <p className="feature-card-desc">{feat.desc}</p>
+            <div className="bento-grid">
+              
+              {/* Feature 1 (Large Card) */}
+              <div className="bento-card card-lg glass-panel float-bento reveal">
+                <div className="bento-glow-blob c-cyan"></div>
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><CreditCard size={22} /></div>
+                  <h3>RFID Authentication</h3>
+                  <p>MIFARE contactless RFID card integration handles card-handshake lookups in under 200 milliseconds. Built-in AES key verification blocks cloned cards and unauthorized credential injections.</p>
                 </div>
-              ))}
+              </div>
+
+              {/* Feature 2 (Medium Card) */}
+              <div className="bento-card card-md glass-panel float-bento reveal">
+                <div className="bento-glow-blob c-green"></div>
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><ScanFace size={22} /></div>
+                  <h3>Facial Recognition</h3>
+                  <p>Using edge neural processing, faces are scanned and mapped to secure mathematical vector hashes. Local databases store facial landmarks, making lookups immediate even during offline states.</p>
+                </div>
+              </div>
+
+              {/* Feature 3 (Small Card) */}
+              <div className="bento-card card-sm glass-panel float-bento reveal">
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><Eye size={20} /></div>
+                  <h3>AI Liveness Detection</h3>
+                  <p>Advanced passive blinking analysis and 3D depth-sensing logic reject photoprint, mobile video playback, and rubber mask spoof attempts.</p>
+                </div>
+              </div>
+
+              {/* Feature 4 (Small Card) */}
+              <div className="bento-card card-sm glass-panel float-bento reveal">
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><Fingerprint size={20} /></div>
+                  <h3>Fingerprint Backup</h3>
+                  <p>508 DPI semiconductor capacitive fingerprint reader provides seamless verification if camera occlusion or facial injuries occur.</p>
+                </div>
+              </div>
+
+              {/* Feature 5 (Medium Card) */}
+              <div className="bento-card card-md glass-panel float-bento reveal">
+                <div className="bento-glow-blob c-cyan"></div>
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><LayoutDashboard size={22} /></div>
+                  <h3>Real-Time Dashboard</h3>
+                  <p>Enterprise layout displaying terminals, dispute queues, active rosters, and telemetry maps. Build layouts dynamically and control settings remotely with WebSockets updates.</p>
+                </div>
+              </div>
+
+              {/* Feature 6 (Large Card) */}
+              <div className="bento-card card-lg glass-panel float-bento reveal">
+                <div className="bento-glow-blob c-red"></div>
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><ShieldAlert size={22} /></div>
+                  <h3>Fraud Detection Engine</h3>
+                  <p>Anomalies like multi-location concurrent scanning, database value drifts, facial matches failing, and liveness mismatch scores are flagged instantly to administrators via websocket notifications.</p>
+                </div>
+              </div>
+
+              {/* Feature 7 (Small Card) */}
+              <div className="bento-card card-sm glass-panel float-bento reveal">
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><Lock size={20} /></div>
+                  <h3>Role-Based Access</h3>
+                  <p>Granular dashboard permissions separate Students, Teachers, and System Administrators securely.</p>
+                </div>
+              </div>
+
+              {/* Feature 8 (Small Card) */}
+              <div className="bento-card card-sm glass-panel float-bento reveal">
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><Database size={20} /></div>
+                  <h3>MySQL Database</h3>
+                  <p>Relational databases manage users, logs, audit reports, and device settings with synchronous security.</p>
+                </div>
+              </div>
+
+              {/* Feature 9 (Small Card) */}
+              <div className="bento-card card-sm glass-panel float-bento reveal">
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><Clock size={20} /></div>
+                  <h3>Live Attendance Logs</h3>
+                  <p>Observe employee arrival schedules instantly. Sort by department, verification type, or delay states.</p>
+                </div>
+              </div>
+
+              {/* Feature 10 (Small Card) */}
+              <div className="bento-card card-sm glass-panel float-bento reveal">
+                <div className="bento-card-inner">
+                  <div className="bento-icon-bg"><FileText size={20} /></div>
+                  <h3>Audit Trails</h3>
+                  <p>Chronological system activity logs store setting changes and database audits for security analysis.</p>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
 
-        {/* Dashboard Preview Section */}
+        {/* ================= SYSTEM ARCHITECTURE ================= */}
+        <section id="architecture" className="architecture-section">
+          <div className="section-container">
+            <div className="section-header reveal">
+              <span className="section-label">Topology Diagram</span>
+              <h2 className="section-title">System Architecture</h2>
+              <p className="section-subtitle">
+                An elegant flow chart outlining data pathways from user interaction up to real-time security alerts.
+              </p>
+            </div>
+
+            {/* Architecture SVG diagram */}
+            <div className="architecture-diagram-wrapper glass-panel">
+              <div className="diagram-node-info">
+                {hoveredArchNode ? (
+                  <div className="node-tooltip">
+                    <span className="info-title">{hoveredArchNode.title}</span>
+                    <p className="info-desc">{hoveredArchNode.desc}</p>
+                  </div>
+                ) : (
+                  <div className="node-tooltip default">
+                    <Info size={16} className="info-icon" />
+                    <span>Hover over any architecture node to see detailed telemetry</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="arch-svg-container">
+                <svg viewBox="0 0 900 500" fill="none" className="arch-svg" xmlns="http://www.w3.org/2000/svg">
+                  {/* Definition for gradients and marker arrows */}
+                  <defs>
+                    <linearGradient id="arch-grad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#00D4FF" />
+                      <stop offset="100%" stopColor="#2EE59D" />
+                    </linearGradient>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 2 L 8 5 L 0 8 z" fill="#3A6EA5" />
+                    </marker>
+                  </defs>
+
+                  {/* Connecting lines */}
+                  {/* Row 1 to Row 2 connections */}
+                  <path d="M 150 135 H 330" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 450 135 H 630" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  
+                  {/* Right node of Row 1 down to Row 2 */}
+                  <path d="M 750 135 V 230" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+
+                  {/* Row 2 connections */}
+                  <path d="M 750 290 H 570" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 450 290 H 270" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  
+                  {/* Left node of Row 2 down to Row 3 */}
+                  <path d="M 150 290 V 380" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+
+                  {/* Row 3 connections */}
+                  <path d="M 150 440 H 330" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 450 440 H 630" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+
+                  {/* Glowing active path if hovered */}
+                  <path d="M 150 135 H 330 M 450 135 H 630 M 750 135 V 230 M 750 290 H 570 M 450 290 H 270 M 150 290 V 380 M 150 440 H 330 M 450 440 H 630" 
+                        stroke="url(#arch-grad)" strokeWidth="2" className="arch-glow-path" />
+
+                  {/* Nodes */}
+                  {/* Row 1 */}
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "User Interaction", desc: "Employee presents RFID credential to initiate security handshake." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="50" y="80" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="150" y="120" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">User</text>
+                  </g>
+
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "RFID Reader", desc: "NFC controller reads MiFare card serial and verifies keys." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="350" y="80" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="450" y="120" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">RFID Reader</text>
+                  </g>
+
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "Authentication Engine", desc: "Local processor validates baseline state and triggers biometrics." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="650" y="80" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="750" y="120" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Auth Engine</text>
+                  </g>
+
+                  {/* Row 2 */}
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "Facial Recognition AI", desc: "CNN matches camera frame structures to stored vectors." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="650" y="235" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="750" y="275" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Facial Recognition AI</text>
+                  </g>
+
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "Liveness Detection", desc: "Blink mapping ensures photo spoofing blocks execute." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="350" y="235" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="450" y="275" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Liveness Detection</text>
+                  </g>
+
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "Fingerprint Fallback", desc: "Semiconductor scanner captures 508 DPI template if camera fails." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="50" y="235" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="150" y="275" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Fingerprint Fallback</text>
+                  </g>
+
+                  {/* Row 3 */}
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "Attendance Server", desc: "Central Express node validates request tokens and records updates." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="50" y="380" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="150" y="420" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Attendance Server</text>
+                  </g>
+
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "MySQL Database", desc: "Relational database commits logs and audit traces." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="350" y="380" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="450" y="420" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">MySQL Database</text>
+                  </g>
+
+                  <g className="arch-node" 
+                     onMouseEnter={() => setHoveredArchNode({ title: "Admin & Fraud Control", desc: "WebSockets stream events directly to real-time dashboards." })}
+                     onMouseLeave={() => setHoveredArchNode(null)}>
+                    <rect x="650" y="380" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                    <text x="750" y="420" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Admin & Fraud Dashboard</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ================= DASHBOARD PREVIEW ================= */}
         <section id="preview" className="preview-section">
           <div className="section-container">
-            <div className="section-header">
+            <div className="section-header reveal">
               <span className="section-label">Live Control Center</span>
               <h2 className="section-title">High Fidelity Dashboard Preview</h2>
               <p className="section-subtitle">
-                Experience the exact interface administrators use to monitor terminals, track metrics, and manage user disputes.
+                Inspect the actual dashboard administrators use to review logs, manage alerts, and control terminals.
               </p>
             </div>
 
@@ -370,14 +766,15 @@ function LandingPage() {
               {/* Mock Sidebar */}
               <div className="mock-sidebar">
                 <div className="mock-brand">
-                  <Shield size={18} className="mock-logo-icon" />
+                  <Shield size={16} className="mock-logo-icon" />
                   <span>Bio-Sync</span>
                 </div>
                 <div className="mock-nav">
-                  <div className="mock-nav-item active"><LayoutDashboard size={14} /> Dashboard</div>
-                  <div className="mock-nav-item"><Clock size={14} /> Attendance</div>
-                  <div className="mock-nav-item"><ShieldAlert size={14} /> Fraud Logs <span className="alert-dot"></span></div>
-                  <div className="mock-nav-item"><Users size={14} /> Users</div>
+                  <div className="mock-nav-item active"><LayoutDashboard size={13} /> Dashboard</div>
+                  <div className="mock-nav-item"><Clock size={13} /> Attendance</div>
+                  <div className="mock-nav-item"><ShieldAlert size={13} /> Fraud Logs <span className="alert-dot"></span></div>
+                  <div className="mock-nav-item"><Users size={13} /> Users</div>
+                  <div className="mock-nav-item"><Settings size={13} /> Settings</div>
                 </div>
               </div>
 
@@ -394,78 +791,100 @@ function LandingPage() {
 
                 {/* Content */}
                 <div className="mock-content">
-                  {/* Stats Grid */}
+                  
+                  {/* Grid of 4 Stats Widgets + 4 small indicators = 8 widgets total */}
                   <div className="mock-stats-grid">
-                    {previewStats.map((stat, i) => (
-                      <div key={i} className="mock-stat-card">
-                        <div className="mock-stat-header">
-                          <span className="mock-stat-label">{stat.label}</span>
-                          <stat.icon size={16} className="mock-stat-icon-color" />
-                        </div>
-                        <div className="mock-stat-value">{stat.value}</div>
-                        <div className="mock-stat-change">{stat.change}</div>
+                    
+                    <div className="mock-stat-card">
+                      <div className="mock-stat-header">
+                        <span className="mock-stat-label">Today's Attendance</span>
+                        <Users size={14} className="mock-stat-icon-color" />
                       </div>
-                    ))}
+                      <div className="mock-stat-value">212 / 248</div>
+                      <div className="mock-stat-change green-text">85.5% present</div>
+                    </div>
+
+                    <div className="mock-stat-card">
+                      <div className="mock-stat-header">
+                        <span className="mock-stat-label">Verified Users</span>
+                        <CheckCircle2 size={14} className="mock-stat-icon-color" />
+                      </div>
+                      <div className="mock-stat-value">208</div>
+                      <div className="mock-stat-change">No bypass used</div>
+                    </div>
+
+                    <div className="mock-stat-card">
+                      <div className="mock-stat-header">
+                        <span className="mock-stat-label">Failed Attempts</span>
+                        <AlertCircle size={14} className="mock-stat-icon-color" />
+                      </div>
+                      <div className="mock-stat-value">4</div>
+                      <div className="mock-stat-change red-text">Liveness mismatches</div>
+                    </div>
+
+                    <div className="mock-stat-card">
+                      <div className="mock-stat-header">
+                        <span className="mock-stat-label">Fraud Alerts</span>
+                        <ShieldAlert size={14} className="mock-stat-icon-color" />
+                      </div>
+                      <div className="mock-stat-value">0 Active</div>
+                      <div className="mock-stat-change green-text">1 blocked today</div>
+                    </div>
+
                   </div>
 
-                  {/* Charts and Lists row */}
+                  {/* Second Row of widgets */}
                   <div className="mock-details-grid">
-                    {/* Left: Recharts Trend area */}
+                    
+                    {/* Attendance Trend Graph */}
                     <div className="mock-card mock-chart-card">
-                      <h4 className="mock-card-title">Weekly Attendance Rate (%)</h4>
+                      <h4 className="mock-card-title">Attendance Trend Graph</h4>
                       <div className="mock-chart-container">
-                        <ResponsiveContainer width="100%" height={160}>
-                          <AreaChart data={attendanceHistory}>
+                        <ResponsiveContainer width="100%" height={150}>
+                          <AreaChart data={attendanceTrend}>
                             <defs>
-                              <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2}/>
-                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                              <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#00D4FF" stopOpacity={0.25}/>
+                                <stop offset="95%" stopColor="#00D4FF" stopOpacity={0}/>
                               </linearGradient>
                             </defs>
-                            <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <YAxis domain={[50, 100]} hide={true} />
-                            <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6 }} />
-                            <Area type="monotone" dataKey="rate" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
+                            <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#8F9CAE" }} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{ background: "#0B2545", border: "1px solid #3A6EA5", borderRadius: 8, fontSize: 10, color: "#fff" }} />
+                            <Area type="monotone" dataKey="rate" stroke="#00D4FF" strokeWidth={2} fillOpacity={1} fill="url(#trend-fill)" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
 
-                    {/* Right: Pie Distribution */}
-                    <div className="mock-card mock-pie-card">
-                      <h4 className="mock-card-title">Today's Ratio</h4>
-                      <div className="mock-pie-container">
-                        <ResponsiveContainer width="100%" height={130}>
-                          <PieChart>
-                            <Pie
-                              data={distributionData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={30}
-                              outerRadius={45}
-                              paddingAngle={3}
-                              dataKey="value"
-                            >
-                              {distributionData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip contentStyle={{ fontSize: 10, borderRadius: 6 }} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <div className="pie-legend">
-                          <span className="legend-item"><span className="legend-color color-present"></span> Present (212)</span>
-                          <span className="legend-item"><span className="legend-color color-absent"></span> Absent (36)</span>
+                    {/* Live Activity Feed */}
+                    <div className="mock-card">
+                      <h4 className="mock-card-title">Live Activity Feed</h4>
+                      <div className="mock-feed-list">
+                        <div className="feed-item">
+                          <div className="feed-indicator online"></div>
+                          <span>Terminal 01 connected</span>
+                          <span className="feed-time">Just now</span>
+                        </div>
+                        <div className="feed-item">
+                          <div className="feed-indicator block"></div>
+                          <span>M. Firdaus verification fail</span>
+                          <span className="feed-time">3m ago</span>
+                        </div>
+                        <div className="feed-item">
+                          <div className="feed-indicator sync"></div>
+                          <span>MySQL logs backup synced</span>
+                          <span className="feed-time">15m ago</span>
                         </div>
                       </div>
                     </div>
+
                   </div>
 
-                  {/* Logs and alerts */}
+                  {/* Third Row: Table and Health */}
                   <div className="mock-log-grid">
-                    {/* Live Logs */}
+                    {/* Recent Authentication Logs */}
                     <div className="mock-card">
-                      <h4 className="mock-card-title">Live Verification Logs</h4>
+                      <h4 className="mock-card-title">Recent Authentication Logs</h4>
                       <div className="mock-logs-list">
                         {recentLogs.map((log) => (
                           <div key={log.id} className="mock-log-item">
@@ -475,118 +894,171 @@ function LandingPage() {
                             </div>
                             <div className="mock-log-time-status">
                               <span className="log-time">{log.time}</span>
-                              <span className={`log-status ${log.status.includes("Late") ? "status-late" : "status-ontime"}`}>{log.status}</span>
+                              <span className={`log-status ${log.status === "Fallback" ? "fallback" : "verified"}`}>{log.status}</span>
                             </div>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Security alerts panel */}
-                    <div className="mock-card alert-card">
-                      <div className="mock-card-header-icon">
-                        <h4 className="mock-card-title text-alert">Security & Fraud Alerts</h4>
-                        <ShieldAlert className="text-alert-icon" size={16} />
-                      </div>
-                      <div className="alert-box">
-                        <div className="alert-box-header">
-                          <AlertTriangle size={14} className="alert-triangle" />
-                          <span>Spoofing Attempt Blocked</span>
+                    {/* System Health */}
+                    <div className="mock-card health-card">
+                      <h4 className="mock-card-title">System Health</h4>
+                      <div className="health-grid">
+                        <div className="health-item">
+                          <span className="h-lbl">RFID Readers</span>
+                          <span className="h-val green-text">Online</span>
                         </div>
-                        <p className="alert-box-body">
-                          Terminal 02 blocked access to <strong>ID: 10924 (M. Firdaus)</strong> due to photo verification mismatch (Liveness score 14%).
-                        </p>
-                        <span className="alert-box-time">Today, 08:31 AM</span>
+                        <div className="health-item">
+                          <span className="h-lbl">CV Camera Stream</span>
+                          <span className="h-val green-text">1080p 30fps</span>
+                        </div>
+                        <div className="health-item">
+                          <span className="h-lbl">MySQL Sync Latency</span>
+                          <span className="h-val">12ms</span>
+                        </div>
+                        <div className="health-item">
+                          <span className="h-lbl">Active Terminals</span>
+                          <span className="h-val">4 Terminals</span>
+                        </div>
                       </div>
-                      <button className="btn-resolve">Review In Dispute Center</button>
+                      <div className="alert-box-mock">
+                        <AlertTriangle size={12} className="alert-box-icon" />
+                        <span>Security protocols updated to v4.2.1</span>
+                      </div>
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* System Overview Section */}
-        <section id="overview" className="overview-section">
+        {/* ================= SECURITY SECTION ================= */}
+        <section id="security" className="security-section">
           <div className="section-container">
-            <div className="overview-card glass-panel">
-              <div className="overview-grid-layout">
-                <div className="overview-text">
-                  <span className="section-label text-left">Detailed Architecture</span>
-                  <h2 className="section-title text-left">Multi-layered Fallback Topology</h2>
-                  <p className="overview-paragraph">
-                    Users begin verification by tapping a <strong>MIFARE RFID card</strong> on the terminal reader, instantly fetching their encrypted profile. Once verified, the terminal's built-in optical sensor performs active <strong>facial recognition</strong> coupled with liveness detection algorithms. This processes facial topography, blinking indicators, and pixel depth to confirm physical presence, preventing spoofing attempts using high-definition photos or digital displays.
-                  </p>
-                  <p className="overview-paragraph">
-                    In cases where facial verification fails (due to severe low-light environments, lens obstruction, or camera maintenance), the system automatically triggers a <strong>capacitive fingerprint scanner</strong> fallback. This ensures high-security fail-safe operations under all conditions. Upon verification, attendance data is pushed to a centralized, transaction-safe <strong>MySQL Database</strong>, reflecting instantaneously on the administrative monitor.
-                  </p>
+            <div className="section-header reveal">
+              <span className="section-label">Trust Policy</span>
+              <h2 className="section-title">Built with Multiple Layers of Trust</h2>
+              <p className="section-subtitle">
+                Our cryptographic security and edge biometrics protect employee credentials at every stage.
+              </p>
+            </div>
+
+            <div className="security-cards-grid">
+              {[
+                { title: "Multi-Factor Authentication", desc: "Forces multiple nodes of identification checking before logging an event.", icon: Lock },
+                { title: "RFID Cryptography", desc: "AES-128 sector keys authenticate cards and stop badge cloning.", icon: CreditCard },
+                { title: "AI Liveness Detection", desc: "Combines temporal mapping and textures to reject static photo spoofing.", icon: Eye },
+                { title: "Fingerprint Fallback", desc: "Capacitive semiconductor hardware scanning activates during visual blockage.", icon: Fingerprint },
+                { title: "Role-Based Access Control", desc: "Enforces strict scope separation for admins, teachers, and student rosters.", icon: Shield },
+                { title: "Encrypted Attendance Records", desc: "Logs are digitally hashed and salted before database commits.", icon: Database },
+                { title: "Fraud Monitoring", desc: "Instantly audits telemetry anomalies and flags concurrent check-ins.", icon: ShieldAlert },
+                { title: "Audit Logging", desc: "Chronicles every login attempt and configuration change in an immutable database history.", icon: FileText }
+              ].map((sec, idx) => (
+                <div key={idx} className="security-card glass-panel reveal">
+                  <div className="sec-icon-bg">
+                    <sec.icon size={20} className="sec-icon" />
+                  </div>
+                  <h3>{sec.title}</h3>
+                  <p>{sec.desc}</p>
                 </div>
-                <div className="overview-diagram">
-                  <div className="diagram-item active">
-                    <span className="diagram-step">01</span>
-                    <div>
-                      <h5>RFID Initial Handshake</h5>
-                      <p>Card ID matching retrieves encrypted bio-templates from terminal memory.</p>
-                    </div>
-                  </div>
-                  <div className="diagram-item">
-                    <span className="diagram-step">02</span>
-                    <div>
-                      <h5>Computer Vision Verification</h5>
-                      <p>Active liveness detection verifies landmarks and eye movement vectors.</p>
-                    </div>
-                  </div>
-                  <div className="diagram-item">
-                    <span className="diagram-step">03</span>
-                    <div>
-                      <h5>Fail-safe Authentication</h5>
-                      <p>Fingerprint reading triggers as fallback to prevent false rejections.</p>
-                    </div>
-                  </div>
-                  <div className="diagram-item">
-                    <span className="diagram-step">04</span>
-                    <div>
-                      <h5>Transaction Log Commit</h5>
-                      <p>AES-encrypted packages write synchronously to the administrative dashboard database.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
+
+        {/* ================= TECHNOLOGY STACK ================= */}
+        <section id="techstack" className="techstack-section">
+          <div className="section-container">
+            <div className="section-header reveal">
+              <span className="section-label">Enterprise Specs</span>
+              <h2 className="section-title">Technology Stack</h2>
+              <p className="section-subtitle">
+                Engineered with high-performance frameworks and enterprise-grade hardware integrations.
+              </p>
+            </div>
+
+            <div className="tech-stack-groups">
+              
+              <div className="tech-group-card glass-panel reveal">
+                <h4>Frontend Specs</h4>
+                <div className="badge-container">
+                  <span className="tech-badge">React 19</span>
+                  <span className="tech-badge">Vite</span>
+                  <span className="tech-badge">Tailwind CSS</span>
+                  <span className="tech-badge">Recharts</span>
+                </div>
+              </div>
+
+              <div className="tech-group-card glass-panel reveal">
+                <h4>Backend & Core</h4>
+                <div className="badge-container">
+                  <span className="tech-badge">Node.js</span>
+                  <span className="tech-badge">Express.js</span>
+                  <span className="tech-badge">WebSockets</span>
+                  <span className="tech-badge">MySQL</span>
+                </div>
+              </div>
+
+              <div className="tech-group-card glass-panel reveal">
+                <h4>Biometrics & AI</h4>
+                <div className="badge-container">
+                  <span className="tech-badge">MiFare RFID</span>
+                  <span className="tech-badge">Facial Recognition AI</span>
+                  <span className="tech-badge">Liveness Verification</span>
+                  <span className="tech-badge">Fingerprint Scanner</span>
+                </div>
+              </div>
+
+              <div className="tech-group-card glass-panel reveal">
+                <h4>Terminal Hardware</h4>
+                <div className="badge-container">
+                  <span className="tech-badge">RFID Reader</span>
+                  <span className="tech-badge">HD Camera Sensor</span>
+                  <span className="tech-badge">Capacitive Scanner</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
       </main>
 
-      {/* Footer Section */}
-      <footer className="landing-footer">
+      {/* ================= FOOTER SECTION ================= */}
+      <footer className="landing-footer glass-panel">
         <div className="footer-container">
           <div className="footer-brand">
             <div className="brand-logo">
-              <Shield className="logo-icon" size={20} />
+              <Shield className="logo-icon" size={18} />
               <span>Bio-Sync <span className="text-accent">Sentinel</span></span>
             </div>
-            <p className="footer-tagline">Secure Biometric Attendance Systems</p>
+            <p className="footer-tagline">Secure Multi-Layered Attendance Gateways</p>
+            <p className="footer-desc-text">
+              Zero buddy-punching. Ultimate accountability.
+            </p>
           </div>
 
           <div className="footer-links-grid">
             <div className="footer-col">
-              <h4>System</h4>
-              <a href="#workflow">Workflow</a>
-              <a href="#features">Features</a>
-              <a href="#preview">Mockup</a>
+              <h4>System Links</h4>
+              <a href="#overview">Roster Overview</a>
+              <a href="#workflow">Verification Flow</a>
+              <a href="#features">Feature Bento</a>
             </div>
             <div className="footer-col">
               <h4>Resources</h4>
-              <a href="#overview">Architecture</a>
-              <a href="#hero">Accuracy Reports</a>
-              <a href="#preview">Developer API</a>
+              <a href="#architecture">Architecture Topology</a>
+              <a href="#preview">Admin Panel</a>
+              <a href="#security">Security Compliance</a>
             </div>
             <div className="footer-col">
-              <h4>Organization</h4>
-              <a href="#hero">About Us</a>
-              <a href="#preview">Contact</a>
-              <a href="#preview">Support</a>
+              <h4>Legal & R&D</h4>
+              <span>v4.2.1-stable</span>
+              <a href="#hero">Privacy Policy</a>
+              <a href="#hero">Terms of Service</a>
             </div>
           </div>
         </div>
@@ -595,9 +1067,7 @@ function LandingPage() {
           <div className="footer-bottom-container">
             <span>© {new Date().getFullYear()} Bio-Sync Sentinel. All rights reserved.</span>
             <div className="footer-legal">
-              <a href="#hero">Privacy Policy</a>
-              <span>•</span>
-              <a href="#hero">Terms of Service</a>
+              <span>Secure Attendance Beyond Identity.</span>
             </div>
           </div>
         </div>
