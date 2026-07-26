@@ -63,7 +63,7 @@ function Dashboard() {
       <div className="db-page">
 
         <div className="db-page-header">
-          <h1 className="db-page-title">Welcome to BioSync Dashboard Fyp</h1>
+          <h1 className="db-page-title" style={{ fontSize: "32px", fontFamily: "'Sora', 'Poppins', sans-serif", fontWeight: 700 }}>Welcome to BioSync Dashboard</h1>
           <p className="db-page-subtitle">
             Real-time attendance and biometric access overview.
           </p>

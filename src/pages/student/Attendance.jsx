@@ -3,16 +3,25 @@ import { db } from "../../firebase/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import {
+  Search,
+  Users,
   CheckCircle,
   Clock,
   XCircle,
   BarChart3,
-  Users,
 } from "lucide-react";
 import SummaryCard from "../../components/SummaryCard";
-import StatusBadge from "../../components/attendance/StatusBadge";
+import StatusBadge from "../../components/StatusBadge";
 import AttendanceDetailsModal from "../../components/AttendanceDetailsModal";
 import "./Attendance.css";
+
+// Safely convert Firestore Timestamp / string / number / null into a JS Date
+function toSafeDate(timestamp) {
+  if (!timestamp) return null;
+  if (typeof timestamp.toDate === "function") return timestamp.toDate();
+  const d = new Date(timestamp);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 function StudentAttendance() {
   const { user } = useAuth();
@@ -20,26 +29,46 @@ function StudentAttendance() {
   const [attendanceData, setAttendanceData] = useState([]);
   const [selectedModal, setSelectedModal] = useState(null);
 
-  // Fetch student's own attendance data
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedAuthMethod, setSelectedAuthMethod] = useState("all");
+
+  // Get unique auth methods from this student's own attendance
+  const authMethods = useMemo(() => {
+    const unique = new Set(attendanceData.map((a) => a.authMethod).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [attendanceData]);
+
+  // Fetch only this student's attendance records
   useEffect(() => {
+    if (!user?.uid) return;
+
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        if (!user?.uid) return;
+        const q = query(
+          collection(db, "attendance"),
+          where("userId", "==", user.uid)
+        );
+        const attendanceSnap = await getDocs(q);
+        const attendanceRecords = attendanceSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-        // Fetch only this student's attendance records
-        const attendanceSnap = await getDocs(collection(db, "attendance"));
-        const studentRecords = attendanceSnap.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-          .filter((record) => record.userId === user.uid);
+        // Sort newest first
+        attendanceRecords.sort((a, b) => {
+          const da = toSafeDate(a.timestamp)?.getTime() || 0;
+          const dbb = toSafeDate(b.timestamp)?.getTime() || 0;
+          return dbb - da;
+        });
 
-        setAttendanceData(studentRecords);
+        setAttendanceData(attendanceRecords);
       } catch (error) {
-        console.error("Error fetching attendance data:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -48,23 +77,45 @@ function StudentAttendance() {
     fetchData();
   }, [user?.uid]);
 
-  // Sort records by date (newest first)
-  const sortedRecords = useMemo(() => {
-    return [...attendanceData].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
-  }, [attendanceData]);
+  // Filter attendance data
+  const filteredRecords = useMemo(() => {
+    return attendanceData.filter((record) => {
+      // Search filter (auth method only, since it's just this student's own records)
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        !searchTerm ||
+        record.authMethod?.toLowerCase().includes(searchLower) ||
+        record.status?.toLowerCase().includes(searchLower);
+
+      // Date filter
+      const recordDateObj = toSafeDate(record.timestamp);
+      const recordDate = recordDateObj
+        ? recordDateObj.toISOString().split("T")[0]
+        : null;
+      const matchesDate = !selectedDate || recordDate === selectedDate;
+
+      // Status filter
+      const matchesStatus =
+        selectedStatus === "all" || record.status === selectedStatus;
+
+      // Auth method filter
+      const matchesAuthMethod =
+        selectedAuthMethod === "all" || record.authMethod === selectedAuthMethod;
+
+      return matchesSearch && matchesDate && matchesStatus && matchesAuthMethod;
+    });
+  }, [attendanceData, searchTerm, selectedDate, selectedStatus, selectedAuthMethod]);
 
   // Calculate summary stats
   const summary = useMemo(() => {
-    const total = sortedRecords.length;
-    const present = sortedRecords.filter((r) => r.status === "present").length;
-    const late = sortedRecords.filter((r) => r.status === "late").length;
-    const absent = sortedRecords.filter((r) => r.status === "absent").length;
+    const total = filteredRecords.length;
+    const present = filteredRecords.filter((r) => r.status === "present").length;
+    const late = filteredRecords.filter((r) => r.status === "late").length;
+    const absent = filteredRecords.filter((r) => r.status === "absent").length;
     const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
 
     return { total, present, late, absent, percentage };
-  }, [sortedRecords]);
+  }, [filteredRecords]);
 
   if (loading) {
     return (
@@ -85,7 +136,7 @@ function StudentAttendance() {
         <div>
           <h1 className="bs-page-title">My Attendance</h1>
           <p className="bs-page-subtitle">
-            View your personal attendance history
+            View your personal attendance records
           </p>
         </div>
       </div>
@@ -124,6 +175,69 @@ function StudentAttendance() {
         />
       </div>
 
+      {/* Filters Section */}
+      <div className="bs-card bs-filters-card">
+        <div className="bs-filters-container">
+          {/* Search Bar */}
+          <div className="bs-search-box bs-search-lg">
+            <Search size={18} className="bs-search-icon" />
+            <input
+              type="text"
+              placeholder="Search by status or auth method..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bs-search-input"
+            />
+          </div>
+
+          {/* Filters Grid */}
+          <div className="bs-filters-grid">
+            {/* Date Filter */}
+            <div className="bs-filter-group">
+              <label className="bs-filter-label">Date</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bs-filter-select"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="bs-filter-group">
+              <label className="bs-filter-label">Status</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="bs-filter-select"
+              >
+                <option value="all">All Status</option>
+                <option value="present">Present</option>
+                <option value="late">Late</option>
+                <option value="absent">Absent</option>
+              </select>
+            </div>
+
+            {/* Auth Method Filter */}
+            <div className="bs-filter-group">
+              <label className="bs-filter-label">Auth Method</label>
+              <select
+                value={selectedAuthMethod}
+                onChange={(e) => setSelectedAuthMethod(e.target.value)}
+                className="bs-filter-select"
+              >
+                <option value="all">All Methods</option>
+                {authMethods.map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Attendance Table */}
       <div className="bs-card bs-table-card">
         <div className="bs-table-scroll">
@@ -138,7 +252,7 @@ function StudentAttendance() {
               </tr>
             </thead>
             <tbody>
-              {sortedRecords.length === 0 ? (
+              {filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="bs-table-empty">
                     <div className="bs-empty-state">
@@ -148,15 +262,10 @@ function StudentAttendance() {
                   </td>
                 </tr>
               ) : (
-                sortedRecords.map((record) => {
-                  const date = new Date(record.timestamp);
-                  const dateStr = date.toLocaleDateString("en-MY", {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  });
-                  const timeStr = date.toLocaleTimeString("en-MY");
+                filteredRecords.map((record) => {
+                  const date = toSafeDate(record.timestamp);
+                  const dateStr = date ? date.toLocaleDateString("en-MY") : "N/A";
+                  const timeStr = date ? date.toLocaleTimeString("en-MY") : "N/A";
 
                   return (
                     <tr key={record.id} className="bs-table-row">
@@ -187,24 +296,6 @@ function StudentAttendance() {
           </table>
         </div>
       </div>
-
-      {/* Info Card */}
-      {sortedRecords.length > 0 && (
-        <div className="bs-card bs-info-card">
-          <div className="bs-info-content">
-            <div className="bs-info-icon">ℹ️</div>
-            <div className="bs-info-text">
-              <p className="bs-info-title">About Your Attendance</p>
-              <p className="bs-info-description">
-                Your attendance is automatically tracked through biometric
-                authentication. Each check-in is recorded with a timestamp and
-                authentication method. If you believe there's an error, please
-                submit a dispute.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Details Modal */}
       {selectedModal && (
