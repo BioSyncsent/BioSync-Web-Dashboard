@@ -3,6 +3,7 @@ import {
     getDocs,
     doc,
     getDoc,
+    onSnapshot,
   } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
@@ -86,6 +87,52 @@ export async function fetchAttendanceRecords() {
   records.sort((a, b) => (b.date || 0) - (a.date || 0));
 
   return records;
+}
+
+/**
+ * Live version of fetchAttendanceRecords — same enrichment logic, updates in real time.
+ */
+export function subscribeToAttendanceRecords(onData, onError) {
+  const ref = collection(db, "attendance");
+  return onSnapshot(
+    ref,
+    async (snapshot) => {
+      try {
+        const records = await Promise.all(
+          snapshot.docs.map(async (attendanceDoc) => {
+            const record = normalizeRecord(attendanceDoc);
+
+            if (record.userId && record.userId !== "—") {
+              try {
+                const userSnapshot = await getDoc(doc(db, "users", record.userId));
+                if (userSnapshot.exists()) {
+                  const user = userSnapshot.data();
+                  record.name = [user.firstName, user.lastName].filter(Boolean).join(" ") || record.name;
+                  record.role = user.role;
+                  record.email = user.email;
+                  record.active = user.active;
+                  record.studentId = user.studentId;
+                }
+              } catch (err) {
+                console.error("Error loading user for record:", err);
+              }
+            }
+            return record;
+          })
+        );
+
+        records.sort((a, b) => (b.date || 0) - (a.date || 0));
+        onData(records);
+      } catch (err) {
+        console.error("subscribeToAttendanceRecords:", err);
+        onError?.(err);
+      }
+    },
+    (err) => {
+      console.error("subscribeToAttendanceRecords:", err);
+      onError?.(err);
+    }
+  );
 }
 
 export function getSummary(records) {
