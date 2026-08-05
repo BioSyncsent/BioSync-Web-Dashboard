@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Shield, CreditCard, ScanFace, Eye, Fingerprint, Clock,
   ShieldAlert, Database, LayoutDashboard, TrendingUp, Sparkles,
@@ -11,6 +11,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   Tooltip, PieChart, Pie, Cell
 } from "recharts";
+import logoMark from "../assets/biosync-mark.png";
 import "./LandingPage.css";
 
 // Recharts mockup data
@@ -29,7 +30,7 @@ const distributionData = [
   { name: "Absent", value: 36 }
 ];
 
-const COLORS = ["#00D4FF", "#0B2545"];
+const COLORS = ["#38BDF8", "#10263F"];
 
 const recentLogs = [
   { id: 1, name: "Aiman Rasyid", time: "08:02 AM", method: "RFID + Liveness", status: "Verified" },
@@ -46,6 +47,7 @@ function LandingPage() {
   const autoCycleTimer = useRef(null);
   const layoutRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Auto-cycle timeline steps
   useEffect(() => {
@@ -117,6 +119,16 @@ function LandingPage() {
     navigate("/login");
   };
 
+  const handleLogoClick = () => {
+    if (location.pathname === "/") {
+      // Already on the landing page — reload so entrance animations replay
+      window.location.reload();
+    } else {
+      // Elsewhere in the app — navigate back to the landing page
+      navigate("/");
+    }
+  };
+
   return (
     <div className="landing-layout" ref={layoutRef}>
       {/* Mouse-follow spotlight */}
@@ -135,19 +147,21 @@ function LandingPage() {
       {/* Navigation Header */}
       <header className="landing-header glass-panel">
         <div className="header-container">
-          <div className="header-logo">
-            <div className="logo-icon-bg">
-              <Shield className="logo-icon" size={20} />
-            </div>
+          <button
+            type="button"
+            className="header-logo"
+            onClick={handleLogoClick}
+            aria-label="Bio-Sync Sentinel — return to homepage"
+          >
+            <img src={logoMark} alt="" className="logo-mark" />
             <span className="logo-text">Bio-Sync <span className="text-accent">Sentinel</span></span>
-          </div>
+          </button>
 
           {/* Desktop Nav */}
           <nav className="desktop-nav">
             <a href="#overview" className="nav-item">Overview</a>
             <a href="#problems" className="nav-item">Problems</a>
             <a href="#workflow" className="nav-item">Timeline</a>
-            <a href="#features" className="nav-item">Bento Features</a>
             <a href="#architecture" className="nav-item">Architecture</a>
             <a href="#preview" className="nav-item">Dashboard</a>
             <a href="#security" className="nav-item">Trust Layers</a>
@@ -178,7 +192,6 @@ function LandingPage() {
             <a href="#overview" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Overview</a>
             <a href="#problems" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Problems</a>
             <a href="#workflow" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Timeline</a>
-            <a href="#features" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Bento Features</a>
             <a href="#architecture" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Architecture</a>
             <a href="#preview" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Dashboard</a>
             <a href="#security" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>Trust Layers</a>
@@ -243,9 +256,9 @@ function LandingPage() {
                         <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(58, 110, 165, 0.15)" strokeWidth="1" />
                       </pattern>
                       <linearGradient id="line-glow" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#00D4FF" />
-                        <stop offset="50%" stopColor="#2EE59D" />
-                        <stop offset="100%" stopColor="#00D4FF" />
+                        <stop offset="0%" stopColor="#38BDF8" />
+                        <stop offset="50%" stopColor="#22C55E" />
+                        <stop offset="100%" stopColor="#38BDF8" />
                       </linearGradient>
                       <filter id="hero-blur" x="-20%" y="-20%" width="140%" height="140%">
                         <feGaussianBlur stdDeviation="10" result="blur" />
@@ -256,7 +269,7 @@ function LandingPage() {
                     <rect width="100%" height="100%" fill="url(#hero-grid-pattern)" />
 
                     {/* Laser scanning beam */}
-                    <line className="scan-line-horizontal" x1="50" y1="100" x2="450" y2="100" stroke="#00D4FF" strokeWidth="2" filter="url(#hero-blur)" />
+                    <line className="scan-line-horizontal" x1="50" y1="100" x2="450" y2="100" stroke="#38BDF8" strokeWidth="2" filter="url(#hero-blur)" />
 
                     {/* Animated Connection Paths */}
                     <g className="connection-paths">
@@ -268,52 +281,52 @@ function LandingPage() {
 
                     {/* RFID Card Node */}
                     <g className="visual-node node-rfid" transform="translate(50, 210)">
-                      <circle cx="40" cy="40" r="36" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                      <rect x="22" y="28" width="36" height="24" rx="3" fill="none" stroke="#00D4FF" strokeWidth="2" />
-                      <line x1="28" y1="34" x2="34" y2="34" stroke="#2EE59D" strokeWidth="2" />
-                      <path d="M 48 34 A 4 4 0 0 1 48 42" stroke="#00D4FF" strokeWidth="1.5" fill="none" />
-                      <circle cx="40" cy="40" r="36" className="node-pulse-ring" stroke="#00D4FF" />
+                      <circle cx="40" cy="40" r="36" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                      <rect x="22" y="28" width="36" height="24" rx="3" fill="none" stroke="#38BDF8" strokeWidth="2" />
+                      <line x1="28" y1="34" x2="34" y2="34" stroke="#22C55E" strokeWidth="2" />
+                      <path d="M 48 34 A 4 4 0 0 1 48 42" stroke="#38BDF8" strokeWidth="1.5" fill="none" />
+                      <circle cx="40" cy="40" r="36" className="node-pulse-ring" stroke="#38BDF8" />
                     </g>
 
                     {/* Face Recognition Node */}
                     <g className="visual-node node-face" transform="translate(210, 60)">
-                      <circle cx="40" cy="40" r="40" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                      <path d="M 40 22 C 45 22 49 26 49 31 C 49 35 47 37 48 39 C 49 41 47 43 40 43 C 33 43 31 41 32 39 C 33 37 31 35 31 31 C 31 26 35 22 40 22 Z" fill="none" stroke="#00D4FF" strokeWidth="2" />
-                      <path d="M 22 22 H 28 V 28" fill="none" stroke="#2EE59D" strokeWidth="2" />
-                      <path d="M 58 22 H 52 V 28" fill="none" stroke="#2EE59D" strokeWidth="2" />
-                      <path d="M 22 58 H 28 V 52" fill="none" stroke="#2EE59D" strokeWidth="2" />
-                      <path d="M 58 58 H 52 V 52" fill="none" stroke="#2EE59D" strokeWidth="2" />
-                      <circle cx="40" cy="40" r="40" className="node-pulse-ring" stroke="#00D4FF" />
+                      <circle cx="40" cy="40" r="40" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                      <path d="M 40 22 C 45 22 49 26 49 31 C 49 35 47 37 48 39 C 49 41 47 43 40 43 C 33 43 31 41 32 39 C 33 37 31 35 31 31 C 31 26 35 22 40 22 Z" fill="none" stroke="#38BDF8" strokeWidth="2" />
+                      <path d="M 22 22 H 28 V 28" fill="none" stroke="#22C55E" strokeWidth="2" />
+                      <path d="M 58 22 H 52 V 28" fill="none" stroke="#22C55E" strokeWidth="2" />
+                      <path d="M 22 58 H 28 V 52" fill="none" stroke="#22C55E" strokeWidth="2" />
+                      <path d="M 58 58 H 52 V 52" fill="none" stroke="#22C55E" strokeWidth="2" />
+                      <circle cx="40" cy="40" r="40" className="node-pulse-ring" stroke="#38BDF8" />
                     </g>
 
                     {/* Fingerprint Node */}
                     <g className="visual-node node-print" transform="translate(370, 210)">
-                      <circle cx="40" cy="40" r="36" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                      <path d="M 28 45 C 28 35, 34 28, 40 28 C 46 28, 52 35, 52 45 M 32 45 C 32 38, 36 32, 40 32 C 44 32, 48 38, 48 45 M 36 45 C 36 41, 38 37, 40 37 C 42 37, 44 41, 44 45" stroke="#00D4FF" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-                      <circle cx="40" cy="40" r="36" className="node-pulse-ring" stroke="#00D4FF" />
+                      <circle cx="40" cy="40" r="36" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                      <path d="M 28 45 C 28 35, 34 28, 40 28 C 46 28, 52 35, 52 45 M 32 45 C 32 38, 36 32, 40 32 C 44 32, 48 38, 48 45 M 36 45 C 36 41, 38 37, 40 37 C 42 37, 44 41, 44 45" stroke="#38BDF8" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                      <circle cx="40" cy="40" r="36" className="node-pulse-ring" stroke="#38BDF8" />
                     </g>
 
                     {/* Central Core Gateway (Engine) */}
                     <g className="visual-node node-gateway" transform="translate(200, 210)">
-                      <rect x="0" y="0" width="100" height="90" rx="12" fill="#071426" stroke="#00D4FF" strokeWidth="2.5" />
+                      <rect x="0" y="0" width="100" height="90" rx="12" fill="#071426" stroke="#38BDF8" strokeWidth="2.5" />
                       {/* Shield element inside gateway */}
-                      <path d="M 50 25 L 72 33 V 50 C 72 63 62 72 50 77 C 38 72 28 63 28 50 V 33 Z" fill="none" stroke="#2EE59D" strokeWidth="2" />
-                      <path d="M 43 48 L 48 53 L 57 43" fill="none" stroke="#00D4FF" strokeWidth="2" />
+                      <path d="M 50 25 L 72 33 V 50 C 72 63 62 72 50 77 C 38 72 28 63 28 50 V 33 Z" fill="none" stroke="#22C55E" strokeWidth="2" />
+                      <path d="M 43 48 L 48 53 L 57 43" fill="none" stroke="#38BDF8" strokeWidth="2" />
                     </g>
 
                     {/* Secure Database Server Node */}
                     <g className="visual-node node-server" transform="translate(205, 360)">
-                      <circle cx="45" cy="45" r="40" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
+                      <circle cx="45" cy="45" r="40" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
                       {/* Database icon */}
-                      <g transform="translate(28, 25)" fill="none" stroke="#00D4FF" strokeWidth="2">
+                      <g transform="translate(28, 25)" fill="none" stroke="#38BDF8" strokeWidth="2">
                         <rect x="0" y="0" width="34" height="11" rx="3" fill="rgba(0, 212, 255, 0.1)" />
                         <rect x="0" y="14" width="34" height="11" rx="3" fill="rgba(0, 212, 255, 0.1)" />
-                        <rect x="0" y="28" width="34" height="11" rx="3" fill="rgba(46, 229, 157, 0.1)" stroke="#2EE59D" />
-                        <circle cx="6" cy="5.5" r="2.5" fill="#00D4FF" />
-                        <circle cx="6" cy="19.5" r="2.5" fill="#00D4FF" />
-                        <circle cx="6" cy="33.5" r="2.5" fill="#2EE59D" />
+                        <rect x="0" y="28" width="34" height="11" rx="3" fill="rgba(46, 229, 157, 0.1)" stroke="#22C55E" />
+                        <circle cx="6" cy="5.5" r="2.5" fill="#38BDF8" />
+                        <circle cx="6" cy="19.5" r="2.5" fill="#38BDF8" />
+                        <circle cx="6" cy="33.5" r="2.5" fill="#22C55E" />
                       </g>
-                      <circle cx="45" cy="45" r="40" className="node-pulse-ring" stroke="#2EE59D" />
+                      <circle cx="45" cy="45" r="40" className="node-pulse-ring" stroke="#22C55E" />
                     </g>
                   </svg>
                   
@@ -504,117 +517,6 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* ================= FEATURES BENTO GRID ================= */}
-        <section id="features" className="features-section">
-          <div className="section-container">
-            <div className="section-header reveal">
-              <span className="section-label">Capabilities</span>
-              <h2 className="section-title">System Features Bento Grid</h2>
-              <p className="section-subtitle">
-                Explore the components that make Bio-Sync Sentinel the premier biosecurity attendance suite.
-              </p>
-            </div>
-
-            <div className="bento-grid">
-              
-              {/* Feature 1 (Large Card) */}
-              <div className="bento-card card-lg glass-panel float-bento reveal">
-                <div className="bento-glow-blob c-cyan"></div>
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><CreditCard size={22} /></div>
-                  <h3>RFID Authentication</h3>
-                  <p>MIFARE contactless RFID card integration handles card-handshake lookups in under 200 milliseconds. Built-in AES key verification blocks cloned cards and unauthorized credential injections.</p>
-                </div>
-              </div>
-
-              {/* Feature 2 (Medium Card) */}
-              <div className="bento-card card-md glass-panel float-bento reveal">
-                <div className="bento-glow-blob c-green"></div>
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><ScanFace size={22} /></div>
-                  <h3>Facial Recognition</h3>
-                  <p>Using edge neural processing, faces are scanned and mapped to secure mathematical vector hashes. Local databases store facial landmarks, making lookups immediate even during offline states.</p>
-                </div>
-              </div>
-
-              {/* Feature 3 (Small Card) */}
-              <div className="bento-card card-sm glass-panel float-bento reveal">
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><Eye size={20} /></div>
-                  <h3>AI Liveness Detection</h3>
-                  <p>Advanced passive blinking analysis and 3D depth-sensing logic reject photoprint, mobile video playback, and rubber mask spoof attempts.</p>
-                </div>
-              </div>
-
-              {/* Feature 4 (Small Card) */}
-              <div className="bento-card card-sm glass-panel float-bento reveal">
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><Fingerprint size={20} /></div>
-                  <h3>Fingerprint Backup</h3>
-                  <p>508 DPI semiconductor capacitive fingerprint reader provides seamless verification if camera occlusion or facial injuries occur.</p>
-                </div>
-              </div>
-
-              {/* Feature 5 (Medium Card) */}
-              <div className="bento-card card-md glass-panel float-bento reveal">
-                <div className="bento-glow-blob c-cyan"></div>
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><LayoutDashboard size={22} /></div>
-                  <h3>Real-Time Dashboard</h3>
-                  <p>Enterprise layout displaying terminals, dispute queues, active rosters, and telemetry maps. Build layouts dynamically and control settings remotely with WebSockets updates.</p>
-                </div>
-              </div>
-
-              {/* Feature 6 (Large Card) */}
-              <div className="bento-card card-lg glass-panel float-bento reveal">
-                <div className="bento-glow-blob c-red"></div>
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><ShieldAlert size={22} /></div>
-                  <h3>Fraud Detection Engine</h3>
-                  <p>Anomalies like multi-location concurrent scanning, database value drifts, facial matches failing, and liveness mismatch scores are flagged instantly to administrators via websocket notifications.</p>
-                </div>
-              </div>
-
-              {/* Feature 7 (Small Card) */}
-              <div className="bento-card card-sm glass-panel float-bento reveal">
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><Lock size={20} /></div>
-                  <h3>Role-Based Access</h3>
-                  <p>Granular dashboard permissions separate Students, Teachers, and System Administrators securely.</p>
-                </div>
-              </div>
-
-              {/* Feature 8 (Small Card) */}
-              <div className="bento-card card-sm glass-panel float-bento reveal">
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><Database size={20} /></div>
-                  <h3>MySQL Database</h3>
-                  <p>Relational databases manage users, logs, audit reports, and device settings with synchronous security.</p>
-                </div>
-              </div>
-
-              {/* Feature 9 (Small Card) */}
-              <div className="bento-card card-sm glass-panel float-bento reveal">
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><Clock size={20} /></div>
-                  <h3>Live Attendance Logs</h3>
-                  <p>Observe employee arrival schedules instantly. Sort by department, verification type, or delay states.</p>
-                </div>
-              </div>
-
-              {/* Feature 10 (Small Card) */}
-              <div className="bento-card card-sm glass-panel float-bento reveal">
-                <div className="bento-card-inner">
-                  <div className="bento-icon-bg"><FileText size={20} /></div>
-                  <h3>Audit Trails</h3>
-                  <p>Chronological system activity logs store setting changes and database audits for security analysis.</p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
         {/* ================= SYSTEM ARCHITECTURE ================= */}
         <section id="architecture" className="architecture-section">
           <div className="section-container">
@@ -647,32 +549,32 @@ function LandingPage() {
                   {/* Definition for gradients and marker arrows */}
                   <defs>
                     <linearGradient id="arch-grad" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#00D4FF" />
-                      <stop offset="100%" stopColor="#2EE59D" />
+                      <stop offset="0%" stopColor="#38BDF8" />
+                      <stop offset="100%" stopColor="#22C55E" />
                     </linearGradient>
                     <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                      <path d="M 0 2 L 8 5 L 0 8 z" fill="#3A6EA5" />
+                      <path d="M 0 2 L 8 5 L 0 8 z" fill="#2C4A6E" />
                     </marker>
                   </defs>
 
                   {/* Connecting lines */}
                   {/* Row 1 to Row 2 connections */}
-                  <path d="M 150 135 H 330" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
-                  <path d="M 450 135 H 630" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 150 135 H 330" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 450 135 H 630" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
                   
                   {/* Right node of Row 1 down to Row 2 */}
-                  <path d="M 750 135 V 230" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 750 135 V 230" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
 
                   {/* Row 2 connections */}
-                  <path d="M 750 290 H 570" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
-                  <path d="M 450 290 H 270" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 750 290 H 570" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 450 290 H 270" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
                   
                   {/* Left node of Row 2 down to Row 3 */}
-                  <path d="M 150 290 V 380" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 150 290 V 380" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
 
                   {/* Row 3 connections */}
-                  <path d="M 150 440 H 330" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
-                  <path d="M 450 440 H 630" stroke="#3A6EA5" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 150 440 H 330" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d="M 450 440 H 630" stroke="#2C4A6E" strokeWidth="2" markerEnd="url(#arrow)" />
 
                   {/* Glowing active path if hovered */}
                   <path d="M 150 135 H 330 M 450 135 H 630 M 750 135 V 230 M 750 290 H 570 M 450 290 H 270 M 150 290 V 380 M 150 440 H 330 M 450 440 H 630" 
@@ -683,66 +585,66 @@ function LandingPage() {
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "User Interaction", desc: "Employee presents RFID credential to initiate security handshake." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="50" y="80" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="150" y="120" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">User</text>
+                    <rect x="50" y="80" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="150" y="120" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">User</text>
                   </g>
 
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "RFID Reader", desc: "NFC controller reads MiFare card serial and verifies keys." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="350" y="80" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="450" y="120" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">RFID Reader</text>
+                    <rect x="350" y="80" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="450" y="120" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">RFID Reader</text>
                   </g>
 
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "Authentication Engine", desc: "Local processor validates baseline state and triggers biometrics." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="650" y="80" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="750" y="120" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Auth Engine</text>
+                    <rect x="650" y="80" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="750" y="120" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">Auth Engine</text>
                   </g>
 
                   {/* Row 2 */}
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "Facial Recognition AI", desc: "CNN matches camera frame structures to stored vectors." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="650" y="235" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="750" y="275" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Facial Recognition AI</text>
+                    <rect x="650" y="235" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="750" y="275" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">Facial Recognition AI</text>
                   </g>
 
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "Liveness Detection", desc: "Blink mapping ensures photo spoofing blocks execute." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="350" y="235" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="450" y="275" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Liveness Detection</text>
+                    <rect x="350" y="235" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="450" y="275" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">Liveness Detection</text>
                   </g>
 
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "Fingerprint Fallback", desc: "Semiconductor scanner captures 508 DPI template if camera fails." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="50" y="235" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="150" y="275" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Fingerprint Fallback</text>
+                    <rect x="50" y="235" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="150" y="275" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">Fingerprint Fallback</text>
                   </g>
 
                   {/* Row 3 */}
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "Attendance Server", desc: "Central Express node validates request tokens and records updates." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="50" y="380" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="150" y="420" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Attendance Server</text>
+                    <rect x="50" y="380" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="150" y="420" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">Attendance Server</text>
                   </g>
 
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "MySQL Database", desc: "Relational database commits logs and audit traces." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="350" y="380" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="450" y="420" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">MySQL Database</text>
+                    <rect x="350" y="380" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="450" y="420" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">MySQL Database</text>
                   </g>
 
                   <g className="arch-node" 
                      onMouseEnter={() => setHoveredArchNode({ title: "Admin & Fraud Control", desc: "WebSockets stream events directly to real-time dashboards." })}
                      onMouseLeave={() => setHoveredArchNode(null)}>
-                    <rect x="650" y="380" width="200" height="70" rx="8" fill="#0B2545" stroke="#3A6EA5" strokeWidth="2" />
-                    <text x="750" y="420" fill="#FFFFFF" fontSize="13" fontWeight="bold" textAnchor="middle">Admin & Fraud Dashboard</text>
+                    <rect x="650" y="380" width="200" height="70" rx="8" fill="#10263F" stroke="#2C4A6E" strokeWidth="2" />
+                    <text x="750" y="420" fill="#F8FAFC" fontSize="13" fontWeight="bold" textAnchor="middle">Admin & Fraud Dashboard</text>
                   </g>
                 </svg>
               </div>
@@ -844,13 +746,13 @@ function LandingPage() {
                           <AreaChart data={attendanceTrend}>
                             <defs>
                               <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#00D4FF" stopOpacity={0.25}/>
-                                <stop offset="95%" stopColor="#00D4FF" stopOpacity={0}/>
+                                <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.25}/>
+                                <stop offset="95%" stopColor="#38BDF8" stopOpacity={0}/>
                               </linearGradient>
                             </defs>
-                            <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#8F9CAE" }} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ background: "#0B2545", border: "1px solid #3A6EA5", borderRadius: 8, fontSize: 10, color: "#fff" }} />
-                            <Area type="monotone" dataKey="rate" stroke="#00D4FF" strokeWidth={2} fillOpacity={1} fill="url(#trend-fill)" />
+                            <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{ background: "#10263F", border: "1px solid #2C4A6E", borderRadius: 8, fontSize: 10, color: "#fff" }} />
+                            <Area type="monotone" dataKey="rate" stroke="#38BDF8" strokeWidth={2} fillOpacity={1} fill="url(#trend-fill)" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -1046,7 +948,6 @@ function LandingPage() {
               <h4>System Links</h4>
               <a href="#overview">Roster Overview</a>
               <a href="#workflow">Verification Flow</a>
-              <a href="#features">Feature Bento</a>
             </div>
             <div className="footer-col">
               <h4>Resources</h4>

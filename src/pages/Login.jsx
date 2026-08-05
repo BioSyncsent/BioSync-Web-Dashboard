@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Shield } from "lucide-react";
 
 import { auth, db } from "../firebase/firebase";
 
-import { useNavigate } from "react-router-dom";
-
+import logoMark from "../assets/biosync-mark.png";
 import "./Login.css";
 
 
@@ -16,6 +17,34 @@ function Login(){
     const [error,setError] = useState("");
 
     const navigate = useNavigate();
+    const location = useLocation();
+
+
+    // Header logo/nav behavior — kept identical to LandingPage.jsx's
+    // handleLogoClick / handleGetStarted so the header behaves exactly
+    // the same on every page.
+    function handleLogoClick(){
+
+        if(location.pathname === "/"){
+
+            // Already on the landing page — reload so entrance animations replay
+            window.location.reload();
+
+        }
+        else{
+
+            // Elsewhere in the app — return to the landing page
+            navigate("/");
+
+        }
+
+    }
+
+    function handleGetStarted(){
+
+        navigate("/login");
+
+    }
 
 
     async function handleLogin(e){
@@ -103,61 +132,69 @@ function Login(){
 
 return (
 
-<div className="biosync-page">
+<div className="landing-layout">
 
-  <div className="biosync-grid" />
-  <div className="biosync-scanline" />
+  {/* Background decoration — same visual family as the Landing Page */}
+  <div className="landing-bg-glows">
+    <div className="bg-glow bg-glow-1"></div>
+    <div className="bg-glow bg-glow-2"></div>
+  </div>
+  <div className="landing-cyber-grid"></div>
 
-  <div className="biosync-content">
+  {/* ================= Header =================
+      Same markup, classes, and styling as LandingPage.jsx's header.
+      Only difference: no nav links and no hamburger menu, since this
+      page has nothing else to link to. Keep this block in sync with
+      LandingPage.jsx if the header ever changes. */}
+  <header className="landing-header glass-panel">
+    <div className="header-container">
 
-    <div className="biosync-header">
+      <button
+        type="button"
+        className="header-logo"
+        onClick={handleLogoClick}
+        aria-label="Bio-Sync Sentinel — return to homepage"
+      >
+        <img src={logoMark} alt="" className="logo-mark" />
+        <span className="logo-text">Bio-Sync <span className="text-accent">Sentinel</span></span>
+      </button>
 
-      <div className="biosync-logo-wrap">
-        <div className="biosync-logo-glow" />
-        <svg
-          className="biosync-logo"
-          viewBox="0 0 100 100"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="50" cy="50" r="42" className="biosync-logo-ring-outer" />
-          <circle cx="50" cy="50" r="32" className="biosync-logo-ring-inner" />
-          <path
-            className="biosync-logo-shield"
-            d="M50 16 L78 28 V50 C78 68 66 80 50 86 C34 80 22 68 22 50 V28 Z"
-          />
-          <path
-            className="biosync-logo-print"
-            d="M50 38 a12 12 0 1 0 0.1 0 M50 44 a6 6 0 1 0 0.1 0 M50 32 v-6 M50 68 v6 M38 50 h-6 M68 50 h6"
-          />
-        </svg>
+      <div className="header-actions">
+        <button onClick={handleGetStarted} className="btn-signin">
+          Sign In
+        </button>
+        <button onClick={handleGetStarted} className="btn-getstarted btn-glow">
+          Get Started
+        </button>
       </div>
-
-      <h1 className="biosync-title">BioSync Sentinel</h1>
-      <p className="biosync-tagline">Secure Access</p>
 
     </div>
+  </header>
 
-    <div className="biosync-hairline" />
+  {/* ================= Auth card ================= */}
+  <div className="login-content">
 
-    <div className="biosync-panel">
+    <div className="login-panel glass-panel">
 
-      <div className="biosync-panel-watermark" aria-hidden="true">
-        <svg viewBox="0 0 200 200">
-          <path d="M100 30 C130 30 155 55 155 90 C155 140 125 165 100 175 C75 165 45 140 45 90 C45 55 70 30 100 30 Z M100 45 v130 M75 60 C75 60 65 75 65 95 C65 130 85 155 100 160 M125 60 C125 60 135 75 135 95 C135 130 115 155 100 160 M80 80 h40 M78 100 h44 M82 120 h36" />
-        </svg>
+      <div className="login-panel-glow" aria-hidden="true" />
+
+      <div className="login-panel-header">
+        <div className="login-panel-logo">
+          <Shield size={22} className="login-panel-logo-icon" />
+        </div>
+        <h1 className="login-panel-title">Welcome back</h1>
+        <p className="login-panel-subtitle">Sign in to Bio-Sync Sentinel</p>
       </div>
 
-      <h2 className="biosync-panel-title">Login</h2>
+      <form onSubmit={handleLogin} className="login-form">
 
-      <form onSubmit={handleLogin} className="biosync-form">
-
-        <div className="biosync-field">
-          <label className="biosync-label" htmlFor="biosync-email">
+        <div className="login-field">
+          <label className="login-label" htmlFor="login-email">
             Email
           </label>
           <input
-            id="biosync-email"
-            className="biosync-input"
+            id="login-email"
+            className="login-input"
             type="email"
             placeholder="user@institution.edu"
             value={email}
@@ -167,13 +204,13 @@ return (
           />
         </div>
 
-        <div className="biosync-field">
-          <label className="biosync-label" htmlFor="biosync-password">
+        <div className="login-field">
+          <label className="login-label" htmlFor="login-password">
             Password
           </label>
           <input
-            id="biosync-password"
-            className="biosync-input"
+            id="login-password"
+            className="login-input"
             type="password"
             placeholder="••••••••••"
             value={password}
@@ -183,17 +220,17 @@ return (
           />
         </div>
 
-        <button type="submit" className="biosync-button">
-          [ Login ]
+        <button type="submit" className="login-button">
+          Login
         </button>
 
       </form>
 
       {error && (
-        <p className="biosync-error">{error}</p>
+        <p className="login-error">{error}</p>
       )}
 
-      <div className="biosync-panel-footer">
+      <div className="login-panel-footer">
         Unauthorized Access Is Prohibited &bull; v4.2.1
       </div>
 
