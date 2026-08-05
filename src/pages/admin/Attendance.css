@@ -642,3 +642,413 @@
     opacity: 1;
   }
 }
+/* ============================================
+   ADVANCED ATTENDANCE MANAGEMENT
+   ============================================ */
+
+.bs-advanced-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.bs-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.bs-btn-danger {
+  color: #ffffff;
+  background: #ef4444;
+}
+
+.bs-btn-danger:hover {
+  background: #dc2626;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.2);
+}
+
+.bs-attendance-error {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 28px;
+  color: var(--db-text);
+}
+
+.bs-attendance-error > svg {
+  flex-shrink: 0;
+  color: #ef4444;
+}
+
+.bs-attendance-error div {
+  flex: 1;
+}
+
+.bs-attendance-error h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.bs-attendance-error p {
+  margin: 0;
+  color: var(--db-text-soft);
+  font-size: 13px;
+}
+
+.bs-bulk-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 18px;
+  border-color: rgba(86, 182, 255, 0.35);
+  background: rgba(86, 182, 255, 0.07);
+  color: var(--db-text);
+  font-size: 13px;
+}
+
+.bs-table-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--db-border);
+}
+
+.bs-table-heading h2 {
+  margin: 0 0 4px;
+  color: var(--db-text);
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+}
+
+.bs-table-heading p {
+  margin: 0;
+  color: var(--db-text-soft);
+  font-size: 12px;
+}
+
+.bs-page-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--db-text-soft);
+  font-size: 12px;
+}
+
+.bs-page-size select {
+  padding: 7px 9px;
+  border: 1px solid var(--db-border);
+  border-radius: 7px;
+  background: var(--db-white);
+  color: var(--db-text);
+  outline: none;
+}
+
+.bs-attendance-table {
+  min-width: 1320px;
+}
+
+.bs-checkbox-column {
+  width: 44px;
+  text-align: center !important;
+}
+
+.bs-checkbox-column input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--db-primary);
+  cursor: pointer;
+}
+
+.bs-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.bs-sort-button:hover {
+  color: var(--db-primary);
+}
+
+.bs-student-cell,
+.bs-datetime-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bs-student-cell strong,
+.bs-datetime-cell strong {
+  color: var(--db-text);
+  font-size: 12.5px;
+}
+
+.bs-student-cell small,
+.bs-datetime-cell small,
+.bs-department-cell {
+  color: var(--db-text-soft);
+  font-size: 10.5px;
+}
+
+.bs-course-cell {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--db-text);
+  font-weight: 600;
+  white-space: normal;
+}
+
+.bs-department-cell {
+  display: block;
+  white-space: normal;
+}
+
+.bs-device-cell {
+  display: inline-block;
+  max-width: 130px;
+  overflow: hidden;
+  color: var(--db-text);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bs-verification {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.bs-verification-success {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.bs-verification-warning {
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.bs-verification-danger {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.bs-verification-manual {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.bs-verification-neutral {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.bs-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bs-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid var(--db-border);
+  border-radius: 7px;
+  background: var(--db-white);
+  color: var(--db-text-soft);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.bs-action-view:hover {
+  border-color: var(--db-primary);
+  background: rgba(86, 182, 255, 0.1);
+  color: var(--db-primary);
+}
+
+.bs-action-edit:hover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  color: #b45309;
+}
+
+.bs-action-delete:hover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.bs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--db-border);
+  color: var(--db-text-soft);
+  font-size: 12px;
+}
+
+.bs-pagination-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.bs-pagination-controls button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border: 1px solid var(--db-border);
+  border-radius: 8px;
+  background: var(--db-white);
+  color: var(--db-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bs-pagination-controls button:hover:not(:disabled) {
+  border-color: var(--db-primary);
+  color: var(--db-primary);
+}
+
+.bs-pagination-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Attendance create/edit form */
+
+.bs-modal-subtitle {
+  margin: 5px 0 0;
+  color: var(--db-text-soft);
+  font-size: 12px;
+}
+
+.bs-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.bs-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.bs-form-span-2 {
+  grid-column: span 2;
+}
+
+.bs-form-group label {
+  color: var(--db-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bs-form-group input,
+.bs-form-group select,
+.bs-form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--db-border);
+  border-radius: var(--radius-md);
+  background: var(--db-white);
+  color: var(--db-text);
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  outline: none;
+  resize: vertical;
+}
+
+.bs-form-group input:focus,
+.bs-form-group select:focus,
+.bs-form-group textarea:focus {
+  border-color: var(--db-primary);
+  box-shadow: 0 0 0 3px var(--db-glow);
+}
+
+.bs-form-group input:disabled,
+.bs-form-group select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* Responsive */
+
+@media (max-width: 1250px) {
+  .bs-advanced-filter-grid {
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .bs-advanced-filter-grid {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+
+  .bs-page-header,
+  .bs-filter-actions,
+  .bs-bulk-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bs-page-header .bs-btn {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .bs-advanced-filter-grid,
+  .bs-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bs-form-span-2 {
+    grid-column: span 1;
+  }
+
+  .bs-table-heading,
+  .bs-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bs-pagination-controls {
+    width: 100%;
+  }
+
+  .bs-pagination-controls button {
+    flex: 1;
+    justify-content: center;
+  }
+}

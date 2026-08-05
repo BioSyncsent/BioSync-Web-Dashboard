@@ -1,251 +1,438 @@
-import { X, Calendar, Clock, User, Mail, IdCard, CheckCircle } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  Cpu,
+  Fingerprint,
+  IdCard,
+  Mail,
+  MapPin,
+  ScanFace,
+  ShieldCheck,
+  User,
+  X,
+} from "lucide-react";
+
 import StatusBadge from "./StatusBadge";
 import "./AttendanceDetailsModal.css";
 
-// Safely convert Firestore Timestamp / string / number / null into a JS Date
-function toSafeDate(timestamp) {
-  if (!timestamp) return null;
-  if (typeof timestamp.toDate === "function") return timestamp.toDate(); // Firestore Timestamp
-  const d = new Date(timestamp);
-  return isNaN(d.getTime()) ? null : d;
+function formatDate(date) {
+  if (!date) return "N/A";
+
+  return date.toLocaleDateString("en-MY", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
-function AttendanceDetailsModal({ record, user, onClose }) {
-  const date = toSafeDate(record.timestamp);
-  const dateStr = date
-    ? date.toLocaleDateString("en-MY", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "N/A";
-  const timeStr = date ? date.toLocaleTimeString("en-MY") : "N/A";
-  const recordedAtStr = date ? date.toLocaleString("en-MY") : "N/A";
+function formatTime(date) {
+  if (!date) return "N/A";
+
+  return date.toLocaleTimeString("en-MY");
+}
+
+function displayValue(value) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return "N/A";
+  }
+
+  return String(value);
+}
+
+function verificationBadge(result) {
+  const normalized = String(
+    result || "unknown"
+  ).toLowerCase();
+
+  let className =
+    "bs-badge bs-badge-warning";
+
+  if (
+    normalized === "verified" ||
+    normalized === "success"
+  ) {
+    className =
+      "bs-badge bs-badge-success";
+  } else if (
+    normalized === "failed" ||
+    normalized === "rejected"
+  ) {
+    className =
+      "bs-badge bs-badge-danger";
+  } else if (normalized === "manual") {
+    className =
+      "bs-badge bs-badge-info";
+  }
 
   return (
-    <div className="bs-modal-overlay" onClick={onClose}>
-      <div className="bs-modal bs-modal-lg" onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
+    <span className={className}>
+      {normalized}
+    </span>
+  );
+}
+
+function DetailItem({
+  icon: Icon,
+  label,
+  children,
+  mono = false,
+}) {
+  return (
+    <div className="bs-detail-item">
+      <div className="bs-detail-label">
+        {Icon && <Icon size={16} />}
+        {label}
+      </div>
+
+      <div
+        className={`bs-detail-value ${
+          mono ? "bs-mono" : ""
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function AttendanceDetailsModal({
+  record,
+  onClose,
+}) {
+  return (
+    <div
+      className="bs-modal-overlay"
+      onMouseDown={onClose}
+    >
+      <div
+        className="bs-modal bs-modal-xl"
+        onMouseDown={(event) =>
+          event.stopPropagation()
+        }
+      >
         <div className="bs-modal-header">
-          <h2 className="bs-modal-title">Attendance Details</h2>
+          <div>
+            <h2 className="bs-modal-title">
+              Attendance Details
+            </h2>
+
+            <p className="bs-modal-subtitle">
+              Complete attendance,
+              authentication and security
+              information.
+            </p>
+          </div>
+
           <button
+            type="button"
             onClick={onClose}
             className="bs-modal-close"
             aria-label="Close"
           >
-            <X size={24} />
+            <X size={23} />
           </button>
         </div>
 
-        {/* Modal Content */}
         <div className="bs-modal-content">
-          {/* Student Info Section */}
-          <div className="bs-modal-section">
-            <h3 className="bs-modal-section-title">Student Information</h3>
-            <div className="bs-detail-grid">
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <User size={16} />
-                  Name
-                </div>
-                <div className="bs-detail-value">
-                  {user
-                    ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-                    : "Unknown"}
-                </div>
-              </div>
+          <div className="bs-modal-profile">
+            <span className="bs-modal-profile-avatar">
+              {record.studentName
+                ?.charAt(0)
+                .toUpperCase() || "U"}
+            </span>
 
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <IdCard size={16} />
-                  Student ID
-                </div>
-                <div className="bs-detail-value">
-                  {user?.studentId || "N/A"}
-                </div>
-              </div>
+            <div>
+              <strong>
+                {record.studentName}
+              </strong>
 
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <Mail size={16} />
-                  Email
-                </div>
-                <div className="bs-detail-value">
-                  {user?.email || "N/A"}
-                </div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>📚</span>
-                  Course
-                </div>
-                <div className="bs-detail-value">
-                  {user?.course || "N/A"}
-                </div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>🏢</span>
-                  Department
-                </div>
-                <div className="bs-detail-value">
-                  {user?.department || "N/A"}
-                </div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>📞</span>
-                  Phone
-                </div>
-                <div className="bs-detail-value">
-                  {user?.phoneNum || "N/A"}
-                </div>
-              </div>
+              <span>
+                {record.studentId} ·{" "}
+                {record.course}
+              </span>
             </div>
+
+            <StatusBadge
+              status={record.status}
+            />
           </div>
 
-          {/* Attendance Info Section */}
-          <div className="bs-modal-section">
-            <h3 className="bs-modal-section-title">Attendance Information</h3>
+          <section className="bs-modal-section">
+            <h3 className="bs-modal-section-title">
+              Student Information
+            </h3>
+
             <div className="bs-detail-grid">
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <Calendar size={16} />
-                  Date
-                </div>
-                <div className="bs-detail-value">{dateStr}</div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <Clock size={16} />
-                  Time
-                </div>
-                <div className="bs-detail-value">{timeStr}</div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <CheckCircle size={16} />
-                  Status
-                </div>
-                <div className="bs-detail-value">
-                  <StatusBadge status={record.status} />
-                </div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>🔐</span>
-                  Auth Method
-                </div>
-                <div className="bs-detail-value bs-capitalize">
-                  {record.authMethod || "N/A"}
-                </div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>📱</span>
-                  Device ID
-                </div>
-                <div className="bs-detail-value bs-mono">
-                  {record.deviceId || "N/A"}
-                </div>
-              </div>
-
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>✓</span>
-                  Verification
-                </div>
-                <div className="bs-detail-value">
-                  <span
-                    className={`bs-badge ${
-                      record.status === "present"
-                        ? "bs-badge-success"
-                        : "bs-badge-warning"
-                    }`}
-                  >
-                    {record.status === "present" ? "Verified" : "Flagged"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Biometric Info Section */}
-          {(record.fingerprint || record.face) && (
-            <div className="bs-modal-section">
-              <h3 className="bs-modal-section-title">
-                Biometric Verification
-              </h3>
-              <div className="bs-detail-grid">
-                {record.fingerprint && (
-                  <div className="bs-detail-item">
-                    <div className="bs-detail-label">
-                      <span>👆</span>
-                      Fingerprint
-                    </div>
-                    <div className="bs-detail-value">
-                      <span className="bs-badge bs-badge-success">
-                        Verified
-                      </span>
-                    </div>
-                  </div>
+              <DetailItem
+                icon={User}
+                label="Student Name"
+              >
+                {displayValue(
+                  record.studentName
                 )}
+              </DetailItem>
 
-                {record.face && (
-                  <div className="bs-detail-item">
-                    <div className="bs-detail-label">
-                      <span>👤</span>
-                      Face Recognition
-                    </div>
-                    <div className="bs-detail-value">
-                      <span className="bs-badge bs-badge-success">
-                        Verified
-                      </span>
-                    </div>
-                  </div>
+              <DetailItem
+                icon={IdCard}
+                label="Student ID"
+              >
+                {displayValue(
+                  record.studentId
                 )}
-              </div>
-            </div>
-          )}
+              </DetailItem>
 
-          {/* Additional Details */}
-          <div className="bs-modal-section bs-modal-section-last">
-            <h3 className="bs-modal-section-title">Record Information</h3>
+              <DetailItem
+                icon={Mail}
+                label="Email"
+              >
+                {displayValue(record.email)}
+              </DetailItem>
+
+              <DetailItem label="Course">
+                {displayValue(record.course)}
+              </DetailItem>
+
+              <DetailItem label="Department">
+                {displayValue(
+                  record.department
+                )}
+              </DetailItem>
+
+              <DetailItem label="Intake">
+                {displayValue(record.intake)}
+              </DetailItem>
+            </div>
+          </section>
+
+          <section className="bs-modal-section">
+            <h3 className="bs-modal-section-title">
+              Attendance Information
+            </h3>
+
             <div className="bs-detail-grid">
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>🆔</span>
-                  Record ID
-                </div>
-                <div className="bs-detail-value bs-mono bs-text-sm">
-                  {record.id || "N/A"}
-                </div>
-              </div>
+              <DetailItem
+                icon={Calendar}
+                label="Date"
+              >
+                {formatDate(
+                  record.timestamp
+                )}
+              </DetailItem>
 
-              <div className="bs-detail-item">
-                <div className="bs-detail-label">
-                  <span>⏰</span>
-                  Recorded At
-                </div>
-                <div className="bs-detail-value bs-text-sm">
-                  {recordedAtStr}
-                </div>
-              </div>
+              <DetailItem
+                icon={Clock}
+                label="Time"
+              >
+                {formatTime(
+                  record.timestamp
+                )}
+              </DetailItem>
+
+              <DetailItem
+                icon={CheckCircle}
+                label="Status"
+              >
+                <StatusBadge
+                  status={record.status}
+                />
+              </DetailItem>
+
+              <DetailItem
+                icon={ShieldCheck}
+                label="Authentication Method"
+              >
+                {displayValue(
+                  record.authMethod
+                )}
+              </DetailItem>
+
+              <DetailItem label="Source">
+                {displayValue(record.source)}
+              </DetailItem>
+
+              <DetailItem label="Notes">
+                {displayValue(record.notes)}
+              </DetailItem>
             </div>
-          </div>
+          </section>
+
+          <section className="bs-modal-section">
+            <h3 className="bs-modal-section-title">
+              Device and Location
+            </h3>
+
+            <div className="bs-detail-grid">
+              <DetailItem
+                icon={Cpu}
+                label="Device ID"
+                mono
+              >
+                {displayValue(
+                  record.deviceId
+                )}
+              </DetailItem>
+
+              <DetailItem
+                icon={Cpu}
+                label="Device Name"
+              >
+                {displayValue(
+                  record.deviceName
+                )}
+              </DetailItem>
+
+              <DetailItem
+                icon={MapPin}
+                label="Location / Terminal"
+              >
+                {displayValue(
+                  record.location
+                )}
+              </DetailItem>
+
+              <DetailItem
+                icon={IdCard}
+                label="RFID Card ID"
+                mono
+              >
+                {displayValue(
+                  record.rfidCardId
+                )}
+              </DetailItem>
+            </div>
+          </section>
+
+          <section className="bs-modal-section">
+            <h3 className="bs-modal-section-title">
+              Biometric Verification
+            </h3>
+
+            <div className="bs-detail-grid">
+              <DetailItem
+                icon={ScanFace}
+                label="Face Confidence"
+              >
+                {record.faceConfidence !=
+                null
+                  ? `${record.faceConfidence}%`
+                  : "N/A"}
+              </DetailItem>
+
+              <DetailItem
+                icon={ScanFace}
+                label="Liveness Result"
+              >
+                {displayValue(
+                  record.livenessResult
+                )}
+              </DetailItem>
+
+              <DetailItem
+                icon={Fingerprint}
+                label="Fingerprint Result"
+              >
+                {displayValue(
+                  record.fingerprintResult
+                )}
+              </DetailItem>
+
+              <DetailItem
+                icon={ShieldCheck}
+                label="Verification Result"
+              >
+                {verificationBadge(
+                  record.verificationResult
+                )}
+              </DetailItem>
+
+              <DetailItem label="Verification Attempts">
+                {displayValue(
+                  record.verificationAttempts
+                )}
+              </DetailItem>
+            </div>
+          </section>
+
+          <section className="bs-modal-section bs-modal-section-last">
+            <h3 className="bs-modal-section-title">
+              Audit Information
+            </h3>
+
+            <div className="bs-detail-grid">
+              <DetailItem
+                label="Attendance Record ID"
+                mono
+              >
+                {displayValue(record.id)}
+              </DetailItem>
+
+              <DetailItem
+                label="User Document ID"
+                mono
+              >
+                {displayValue(
+                  record.userId
+                )}
+              </DetailItem>
+
+              <DetailItem label="Created At">
+                {record.createdAt
+                  ? record.createdAt.toLocaleString(
+                      "en-MY"
+                    )
+                  : "N/A"}
+              </DetailItem>
+
+              <DetailItem label="Updated At">
+                {record.updatedAt
+                  ? record.updatedAt.toLocaleString(
+                      "en-MY"
+                    )
+                  : "N/A"}
+              </DetailItem>
+
+              <DetailItem
+                label="Created By"
+                mono
+              >
+                {displayValue(
+                  record.createdBy
+                )}
+              </DetailItem>
+
+              <DetailItem
+                label="Updated By"
+                mono
+              >
+                {displayValue(
+                  record.updatedBy
+                )}
+              </DetailItem>
+
+              <DetailItem
+                label="Related Dispute"
+                mono
+              >
+                {displayValue(
+                  record.relatedDisputeId
+                )}
+              </DetailItem>
+            </div>
+          </section>
         </div>
 
-        {/* Modal Footer */}
         <div className="bs-modal-footer">
-          <button onClick={onClose} className="bs-btn bs-btn-primary bs-btn-lg">
+          <button
+            type="button"
+            onClick={onClose}
+            className="bs-btn bs-btn-primary bs-btn-lg"
+          >
             Close
           </button>
         </div>

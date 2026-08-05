@@ -286,3 +286,57 @@
     margin-bottom: 24px;
   }
 }
+.bs-modal-xl {
+  max-width: 900px;
+}
+
+.bs-modal-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding: 16px;
+  border: 1px solid rgba(86, 182, 255, 0.2);
+  border-radius: var(--radius-lg);
+  background: rgba(86, 182, 255, 0.06);
+}
+
+.bs-modal-profile-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--db-primary),
+    #2468d8
+  );
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.bs-modal-profile > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bs-modal-profile strong {
+  color: var(--db-text);
+  font-size: 15px;
+}
+
+.bs-modal-profile > div span {
+  color: var(--db-text-soft);
+  font-size: 12px;
+}
+
+.bs-badge-info {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
