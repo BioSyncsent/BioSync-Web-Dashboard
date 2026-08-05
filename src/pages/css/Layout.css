@@ -80,3 +80,72 @@
   color: var(--text-muted);
   
 }
+/* ==========================================
+   DISPUTE SIDEBAR NOTIFICATION
+========================================== */
+
+.nav-link {
+  position: relative;
+}
+
+.dispute-new-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 7px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow:
+    0 3px 8px rgba(239, 68, 68, 0.28);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  animation:
+    disputeBadgeAppear 0.25s ease,
+    disputeBadgePulse 2.2s infinite;
+}
+
+.dispute-new-badge-dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 9px;
+  min-width: 9px;
+  height: 9px;
+  margin: 0;
+  padding: 0;
+  border-width: 2px;
+  font-size: 0;
+}
+
+@keyframes disputeBadgeAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes disputeBadgePulse {
+  0%,
+  100% {
+    box-shadow:
+      0 3px 8px rgba(239, 68, 68, 0.28);
+  }
+
+  50% {
+    box-shadow:
+      0 3px 8px rgba(239, 68, 68, 0.28),
+      0 0 0 5px rgba(239, 68, 68, 0.1);
+  }
+}
