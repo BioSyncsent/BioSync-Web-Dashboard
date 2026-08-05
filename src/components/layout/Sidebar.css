@@ -1,15 +1,15 @@
 .db-sidebar {
   position: relative;
   z-index: 1;
+  display: flex;
   width: 240px;
-  flex-shrink: 0;
   height: 100vh;
+  flex-shrink: 0;
+  flex-direction: column;
+  padding: 24px 16px;
+  border-right: 1px solid var(--db-border);
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(16px);
-  border-right: 1px solid var(--db-border);
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
 }
 
 .db-sidebar-brand {
@@ -20,21 +20,22 @@
 }
 
 .db-sidebar-logo {
+  flex-shrink: 0;
   color: var(--db-primary);
 }
 
 .db-sidebar-brand-text {
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: 1px;
   color: var(--db-text);
+  font-family: "Orbitron", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
 .db-sidebar-separator {
   height: 1px;
-  background: var(--db-border);
   margin: 18px 4px 20px;
+  background: var(--db-border);
 }
 
 .db-sidebar-nav {
@@ -46,26 +47,41 @@
 .db-sidebar-link {
   position: relative;
   display: flex;
+  width: 100%;
+  min-width: 0;
   align-items: center;
   gap: 12px;
   padding: 11px 14px;
   border-radius: 12px;
   color: var(--db-text-soft);
-  text-decoration: none;
   font-size: 14px;
   font-weight: 500;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .db-sidebar-icon {
+  flex-shrink: 0;
   color: var(--db-text-soft);
   transition: color 0.2s ease;
 }
 
+.db-sidebar-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .db-sidebar-link:hover {
-  background: rgba(86, 182, 255, 0.08);
   color: var(--db-text);
+  background: rgba(86, 182, 255, 0.08);
   box-shadow: 0 0 0 1px var(--db-border);
+  transform: translateX(1px);
 }
 
 .db-sidebar-link:hover .db-sidebar-icon {
@@ -73,11 +89,96 @@
 }
 
 .db-sidebar-link-active {
-  background: rgba(86, 182, 255, 0.12);
   color: var(--db-text);
+  background: rgba(86, 182, 255, 0.12);
   box-shadow: inset 3px 0 0 var(--db-primary);
 }
 
 .db-sidebar-link-active .db-sidebar-icon {
   color: var(--db-primary);
+}
+
+/* =========================================================
+   DISPUTE NOTIFICATION BADGE
+========================================================= */
+
+.db-dispute-notification {
+  display: inline-flex;
+  min-width: 52px;
+  height: 21px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 0 7px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow:
+    0 4px 9px rgba(239, 68, 68, 0.28),
+    0 0 0 0 rgba(239, 68, 68, 0);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  animation:
+    dbNotificationAppear 0.28s ease,
+    dbNotificationPulse 2.3s ease-in-out infinite;
+}
+
+.db-dispute-notification-dot {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+@keyframes dbNotificationAppear {
+  from {
+    opacity: 0;
+    transform: translateX(5px) scale(0.75);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes dbNotificationPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 9px rgba(239, 68, 68, 0.28),
+      0 0 0 0 rgba(239, 68, 68, 0);
+  }
+
+  50% {
+    box-shadow:
+      0 4px 9px rgba(239, 68, 68, 0.28),
+      0 0 0 5px rgba(239, 68, 68, 0.11);
+  }
+}
+
+@media (max-width: 900px) {
+  .db-sidebar {
+    width: 210px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .db-sidebar-link {
+    gap: 9px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .db-dispute-notification {
+    min-width: 45px;
+    padding: 0 5px;
+    font-size: 8px;
+  }
 }
