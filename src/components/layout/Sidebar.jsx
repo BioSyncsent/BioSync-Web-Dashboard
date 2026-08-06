@@ -7,6 +7,8 @@ import {
 
 import { NavLink } from "react-router-dom";
 
+import bioSyncLogo from "../../assets/BioSync_Logo_Horizontal_White.png";
+
 import {
   AlertTriangle,
   BarChart3,
@@ -14,7 +16,6 @@ import {
   LayoutDashboard,
   MonitorSmartphone,
   Settings,
-  ShieldCheck,
   User,
 } from "lucide-react";
 
@@ -136,7 +137,7 @@ const studentNavItems = [
 ];
 
 /* =========================================================
-   STORAGE HELPERS
+   NOTIFICATION HELPERS
 ========================================================= */
 
 function createStorageKey(role, userId) {
@@ -199,12 +200,8 @@ function Sidebar() {
     return [];
   }, [role]);
 
-  /*
-    Load the last time this user opened Disputes.
+  /* Load the saved notification time. */
 
-    Using 0 on first use intentionally displays existing
-    unread disputes/responses. Clicking Disputes clears it.
-  */
   useEffect(() => {
     if (!storageKey) {
       setLastSeenAt(0);
@@ -219,13 +216,8 @@ function Sidebar() {
     setNotificationCount(0);
   }, [storageKey]);
 
-  /*
-    Admin:
-    Listen for disputes submitted after lastSeenAt.
+  /* Listen for new disputes or admin responses. */
 
-    Student:
-    Listen for admin responses after lastSeenAt.
-  */
   useEffect(() => {
     if (!user?.uid || !role) {
       setNotificationCount(0);
@@ -273,10 +265,8 @@ function Sidebar() {
     lastSeenAt,
   ]);
 
-  /*
-    Clear notifications only when the user clicks
-    the Disputes sidebar menu item.
-  */
+  /* Clear the notification when Disputes is clicked. */
+
   const markDisputesAsSeen =
     useCallback(() => {
       if (!storageKey) {
@@ -301,18 +291,21 @@ function Sidebar() {
 
   return (
     <aside className="db-sidebar">
-      <div className="db-sidebar-brand">
-        <ShieldCheck
-          className="db-sidebar-logo"
-          size={22}
-        />
+      {/* Complete white horizontal logo */}
 
-        <span className="db-sidebar-brand-text">
-          BioSync
-        </span>
+      <div className="db-sidebar-brand">
+        <div className="db-sidebar-logo-card">
+          <img
+            src={bioSyncLogo}
+            alt="BioSync Sentinel"
+            className="db-sidebar-logo-image"
+          />
+        </div>
       </div>
 
       <div className="db-sidebar-separator" />
+
+      {/* Navigation */}
 
       <nav className="db-sidebar-nav">
         {navItems.map(
@@ -364,11 +357,16 @@ function Sidebar() {
                               ? ""
                               : "s"
                           }`
-                        : `${notificationCount} new admin response${
+                        : `${notificationCount} new administrator response${
                             notificationCount === 1
                               ? ""
                               : "s"
                           }`
+                    }
+                    aria-label={
+                      role === "admin"
+                        ? `${notificationCount} new student disputes`
+                        : `${notificationCount} new administrator responses`
                     }
                   >
                     <span className="db-dispute-notification-dot" />
@@ -383,6 +381,22 @@ function Sidebar() {
           }
         )}
       </nav>
+
+      {/* Footer */}
+
+      <div className="db-sidebar-footer">
+        <span className="db-sidebar-footer-dot" />
+
+        <div className="db-sidebar-footer-copy">
+          <strong>
+            BioSecure Enterprise
+          </strong>
+
+          <span>
+            Version 2.0.0
+          </span>
+        </div>
+      </div>
     </aside>
   );
 }
