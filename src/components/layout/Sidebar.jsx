@@ -7,7 +7,8 @@ import {
 
 import { NavLink } from "react-router-dom";
 
-import bioSyncLogo from "../../assets/BioSync_Logo_Horizontal_White.png";
+import bioSyncLogo from "../../assets/BioSync_Logo_Navbar.png";
+import bioSyncShield from "../../assets/BioSync_Shield_Sidebar.png";
 
 import {
   AlertTriangle,
@@ -27,6 +28,7 @@ import {
 } from "../../services/disputeNotificationService";
 
 import "./Sidebar.css";
+
 
 /* =========================================================
    NAVIGATION ITEMS
@@ -70,6 +72,7 @@ const adminNavItems = [
   },
 ];
 
+
 const teacherNavItems = [
   {
     to: "/teacher/dashboard",
@@ -102,6 +105,7 @@ const teacherNavItems = [
     icon: Settings,
   },
 ];
+
 
 const studentNavItems = [
   {
@@ -136,6 +140,7 @@ const studentNavItems = [
   },
 ];
 
+
 /* =========================================================
    NOTIFICATION HELPERS
 ========================================================= */
@@ -147,6 +152,7 @@ function createStorageKey(role, userId) {
 
   return `biosync:dispute-notifications:${role}:${userId}`;
 }
+
 
 function readLastSeenTime(storageKey) {
   if (!storageKey) {
@@ -162,6 +168,7 @@ function readLastSeenTime(storageKey) {
     : 0;
 }
 
+
 /* =========================================================
    SIDEBAR
 ========================================================= */
@@ -175,14 +182,17 @@ function Sidebar() {
   const [lastSeenAt, setLastSeenAt] =
     useState(0);
 
+
   const role = String(user?.role || "")
     .trim()
     .toLowerCase();
+
 
   const storageKey = useMemo(
     () => createStorageKey(role, user?.uid),
     [role, user?.uid]
   );
+
 
   const navItems = useMemo(() => {
     if (role === "admin") {
@@ -200,7 +210,10 @@ function Sidebar() {
     return [];
   }, [role]);
 
-  /* Load the saved notification time. */
+
+  /* =========================================================
+     LOAD SAVED NOTIFICATION TIME
+  ========================================================= */
 
   useEffect(() => {
     if (!storageKey) {
@@ -216,7 +229,10 @@ function Sidebar() {
     setNotificationCount(0);
   }, [storageKey]);
 
-  /* Listen for new disputes or admin responses. */
+
+  /* =========================================================
+     LISTEN FOR NEW DISPUTES / RESPONSES
+  ========================================================= */
 
   useEffect(() => {
     if (!user?.uid || !role) {
@@ -224,11 +240,13 @@ function Sidebar() {
       return undefined;
     }
 
+
     function handleCount(count) {
       setNotificationCount(
         Number(count) || 0
       );
     }
+
 
     function handleError(error) {
       console.error(
@@ -239,6 +257,7 @@ function Sidebar() {
       setNotificationCount(0);
     }
 
+
     if (role === "admin") {
       return subscribeToAdminDisputeNotificationCount(
         lastSeenAt,
@@ -246,6 +265,7 @@ function Sidebar() {
         handleError
       );
     }
+
 
     if (role === "student") {
       return subscribeToStudentResponseNotificationCount(
@@ -256,6 +276,7 @@ function Sidebar() {
       );
     }
 
+
     setNotificationCount(0);
 
     return undefined;
@@ -265,7 +286,10 @@ function Sidebar() {
     lastSeenAt,
   ]);
 
-  /* Clear the notification when Disputes is clicked. */
+
+  /* =========================================================
+     MARK DISPUTES AS SEEN
+  ========================================================= */
 
   const markDisputesAsSeen =
     useCallback(() => {
@@ -281,55 +305,85 @@ function Sidebar() {
       );
 
       setLastSeenAt(currentTime);
+
       setNotificationCount(0);
     }, [storageKey]);
+
 
   const displayedCount =
     notificationCount > 99
       ? "99+"
       : notificationCount;
 
+
+  /* =========================================================
+     SIDEBAR UI
+  ========================================================= */
+
   return (
     <aside className="db-sidebar">
-      {/* Complete white horizontal logo */}
+
+      {/* =====================================================
+          BIOSYNC LOGO
+      ====================================================== */}
 
       <div className="db-sidebar-brand">
-        <div className="db-sidebar-logo-card">
-          <img
-            src={bioSyncLogo}
-            alt="BioSync Sentinel"
-            className="db-sidebar-logo-image"
-          />
-        </div>
+
+        {/* Full logo for desktop */}
+        <img
+          src={bioSyncLogo}
+          alt="BioSync Sentinel"
+          className="db-sidebar-logo db-sidebar-logo-full"
+        />
+
+
+        {/* Shield for collapsed sidebar */}
+        <img
+          src={bioSyncShield}
+          alt="BioSync Sentinel"
+          className="db-sidebar-logo db-sidebar-logo-shield"
+        />
+
       </div>
+
 
       <div className="db-sidebar-separator" />
 
-      {/* Navigation */}
+
+      {/* =====================================================
+          NAVIGATION
+      ====================================================== */}
 
       <nav className="db-sidebar-nav">
+
         {navItems.map(
           ({
             to,
             label,
             icon: Icon,
           }) => {
+
             const isDisputeItem =
               label === "Disputes";
+
 
             const showNotification =
               isDisputeItem &&
               notificationCount > 0;
 
+
             return (
               <NavLink
                 key={to}
+
                 to={to}
+
                 onClick={
                   isDisputeItem
                     ? markDisputesAsSeen
                     : undefined
                 }
+
                 className={({ isActive }) =>
                   `db-sidebar-link${
                     isActive
@@ -338,18 +392,22 @@ function Sidebar() {
                   }`
                 }
               >
+
                 <Icon
                   size={18}
                   className="db-sidebar-icon"
                 />
 
+
                 <span className="db-sidebar-label">
                   {label}
                 </span>
 
+
                 {showNotification && (
                   <span
                     className="db-dispute-notification"
+
                     title={
                       role === "admin"
                         ? `${notificationCount} new student dispute${
@@ -363,31 +421,46 @@ function Sidebar() {
                               : "s"
                           }`
                     }
+
                     aria-label={
                       role === "admin"
                         ? `${notificationCount} new student disputes`
                         : `${notificationCount} new administrator responses`
                     }
                   >
-                    <span className="db-dispute-notification-dot" />
+
+                    <span
+                      className="db-dispute-notification-dot"
+                    />
 
                     <span>
                       {displayedCount} new
                     </span>
+
                   </span>
                 )}
+
               </NavLink>
             );
           }
         )}
+
       </nav>
 
-      {/* Footer */}
+
+      {/* =====================================================
+          FOOTER
+      ====================================================== */}
 
       <div className="db-sidebar-footer">
-        <span className="db-sidebar-footer-dot" />
+
+        <span
+          className="db-sidebar-footer-dot"
+        />
+
 
         <div className="db-sidebar-footer-copy">
+
           <strong>
             BioSecure Enterprise
           </strong>
@@ -395,10 +468,14 @@ function Sidebar() {
           <span>
             Version 2.0.0
           </span>
+
         </div>
+
       </div>
+
     </aside>
   );
 }
+
 
 export default Sidebar;
