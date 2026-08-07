@@ -1,116 +1,167 @@
 import {
-    createContext,
-    useContext,
-    useEffect,
-    useState
+  createContext,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 
 import {
-    onAuthStateChanged
+  onAuthStateChanged,
 } from "firebase/auth";
 
 import {
-    doc,
-    getDoc
+  doc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import {
-    auth,
-    db
+  auth,
+  db,
 } from "../firebase/firebase";
+
+/* =========================================================
+   AUTH CONTEXT
+========================================================= */
 
 const AuthContext = createContext();
 
+/* =========================================================
+   AUTH PROVIDER
+========================================================= */
+
 export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
 
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+  useEffect(() => {
+    let unsubscribeUserDocument = null;
 
-        const unsubscribe = onAuthStateChanged(
-            auth,
-            async (firebaseUser) => {
+    /* =====================================================
+       LISTEN TO FIREBASE AUTH
+    ===================================================== */
 
-                if (firebaseUser) {
+    const unsubscribeAuth = onAuthStateChanged(
+      auth,
 
-                    try {
+      (firebaseUser) => {
+        /* Remove previous Firestore listener */
 
-                        const userRef = doc(
-                            db,
-                            "users",
-                            firebaseUser.uid
-                        );
+        if (unsubscribeUserDocument) {
+          unsubscribeUserDocument();
+          unsubscribeUserDocument = null;
+        }
 
-                        const userDoc = await getDoc(userRef);
+        /* =================================================
+           NOT LOGGED IN
+        ================================================= */
 
-                        if (userDoc.exists()) {
+        if (!firebaseUser) {
+          setUser(null);
+          setLoading(false);
 
-                            const data = userDoc.data();
+          return;
+        }
 
-                            setUser({
+        setLoading(true);
 
-                                // Firebase Auth
-                                uid: firebaseUser.uid,
-                                email: firebaseUser.email,
+        /* =================================================
+           LOAD USER PROFILE
+        ================================================= */
 
-                                // Firestore Data
-                                ...data,
-
-                                // Computed Values
-                                fullName: `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim()
-
-                            });
-
-                        } else {
-
-                            console.warn("User document not found.");
-
-                            setUser({
-                                uid: firebaseUser.uid,
-                                email: firebaseUser.email,
-                            });
-
-                        }
-
-                    } catch (error) {
-
-                        console.error("Error loading user:", error);
-
-                        setUser({
-                            uid: firebaseUser.uid,
-                            email: firebaseUser.email,
-                        });
-
-                    }
-
-                } else {
-
-                    setUser(null);
-
-                }
-
-                setLoading(false);
-
-            }
+        const userRef = doc(
+          db,
+          "users",
+          firebaseUser.uid
         );
 
-        return () => unsubscribe();
+        unsubscribeUserDocument = onSnapshot(
+          userRef,
 
-    }, []);
+          (userSnapshot) => {
+            if (userSnapshot.exists()) {
+              const data = userSnapshot.data();
 
-    return (
-        <AuthContext.Provider
-            value={{
-                user,
-                loading
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
+              setUser({
+                /* Firebase Authentication information */
+
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+
+                /* Firestore user information */
+
+                ...data,
+
+                /* Computed full name */
+
+                fullName: `${data.firstName ?? ""} ${
+                  data.lastName ?? ""
+                }`.trim(),
+              });
+            } else {
+              console.warn(
+                "User document not found."
+              );
+
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+              });
+            }
+
+            setLoading(false);
+          },
+
+          (error) => {
+            console.error(
+              "Error listening to user profile:",
+              error
+            );
+
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+            });
+
+            setLoading(false);
+          }
+        );
+      }
     );
+
+    /* =====================================================
+       CLEANUP
+    ===================================================== */
+
+    return () => {
+      unsubscribeAuth();
+
+      if (unsubscribeUserDocument) {
+        unsubscribeUserDocument();
+      }
+    };
+  }, []);
+
+  /* =======================================================
+     PROVIDER
+  ======================================================= */
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
+/* =========================================================
+   USE AUTH HOOK
+========================================================= */
+
 export function useAuth() {
-    return useContext(AuthContext);
+  return useContext(AuthContext);
 }
