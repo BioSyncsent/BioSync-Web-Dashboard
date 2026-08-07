@@ -30,7 +30,7 @@ const distributionData = [
   { name: "Absent", value: 36 }
 ];
 
-const COLORS = ["#38BDF8", "#10263F"];
+const COLORS = ["#4F8CFF", "#27272A"];
 
 const recentLogs = [
   { id: 1, name: "Aiman Rasyid", time: "08:02 AM", method: "RFID + Liveness", status: "Verified" },
@@ -141,9 +141,6 @@ function LandingPage() {
         <div className="bg-glow bg-glow-3"></div>
       </div>
 
-      {/* Cyber Grid Overlay */}
-      <div className="landing-cyber-grid"></div>
-
       {/* Navigation Header */}
       <header className="landing-header glass-panel">
         <div className="header-container">
@@ -154,7 +151,10 @@ function LandingPage() {
             aria-label="Bio-Sync Sentinel — return to homepage"
           >
             <img src={logoMark} alt="" className="logo-mark" />
-            <span className="logo-text">Bio-Sync <span className="text-accent">Sentinel</span></span>
+            <span className="header-logo-copy" aria-hidden="true">
+              <span className="header-logo-name">BioSync</span>
+              <span className="header-logo-tagline">Sentinel</span>
+            </span>
           </button>
 
           {/* Desktop Nav */}
@@ -978,3 +978,4 @@ function LandingPage() {
 }
 
 export default LandingPage;
+ 
