@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   signInWithEmailAndPassword,
@@ -58,18 +58,53 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [
+    isEntering,
+    setIsEntering,
+  ] = useState(
+    () =>
+      location.state?.fromLanding === true
+  );
+
+  const [
+    isLeavingToHome,
+    setIsLeavingToHome,
+  ] = useState(false);
+
+useEffect(() => {
+  if (!isEntering) {
+    return undefined;
+  }
+
+  const timer =
+    window.setTimeout(() => {
+      setIsEntering(false);
+    }, 280);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, [isEntering]);
+
   /* =======================================================
      NAVIGATION
   ======================================================= */
 
-  function handleLogoClick() {
-    if (location.pathname === "/") {
-      window.location.reload();
-      return;
-    }
-
-    navigate("/");
+function handleLogoClick() {
+  if (isLeavingToHome) {
+    return;
   }
+
+  setIsLeavingToHome(true);
+
+  window.setTimeout(() => {
+    navigate("/", {
+      state: {
+        fromLogin: true,
+      },
+    });
+  }, 160);
+}
 
   /* =======================================================
      LOGIN
@@ -221,7 +256,26 @@ function Login() {
   ======================================================= */
 
   return (
-    <div className="bs-login-page">
+    <div
+      className={[
+        "bs-login-page",
+        isEntering
+          ? "bs-login-entering"
+          : "",
+        isLeavingToHome
+          ? "bs-login-leaving"
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {/* ROUTE TRANSITION */}
+
+      <div
+        className="bs-route-transition"
+        aria-hidden="true"
+      />
+
       {/* ===================================================
           BACKGROUND
       =================================================== */}

@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import {
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 
@@ -164,6 +165,7 @@ const securityFeatures = [
 
 function LandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const layoutRef = useRef(null);
 
@@ -171,6 +173,34 @@ function LandingPage() {
     mobileMenuOpen,
     setMobileMenuOpen,
   ] = useState(false);
+
+  const [
+    isTransitioningToLogin,
+    setIsTransitioningToLogin,
+  ] = useState(false);
+
+  const [
+    isEnteringFromLogin,
+    setIsEnteringFromLogin,
+  ] = useState(
+    () =>
+      location.state?.fromLogin === true
+  );
+
+useEffect(() => {
+  if (!isEnteringFromLogin) {
+    return undefined;
+  }
+
+  const timer =
+    window.setTimeout(() => {
+      setIsEnteringFromLogin(false);
+    }, 280);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, [isEnteringFromLogin]);
 
   /* =======================================================
      SCROLL REVEAL
@@ -278,9 +308,22 @@ function LandingPage() {
      ACTIONS
   ======================================================= */
 
-  function handleGetStarted() {
-    navigate("/login");
+function handleGetStarted() {
+  if (isTransitioningToLogin) {
+    return;
   }
+
+  setMobileMenuOpen(false);
+  setIsTransitioningToLogin(true);
+
+  window.setTimeout(() => {
+    navigate("/login", {
+      state: {
+        fromLanding: true,
+      },
+    });
+  }, 160);
+}
 
   function handleLogoClick() {
     window.scrollTo({
@@ -302,8 +345,23 @@ function LandingPage() {
   return (
     <div
       ref={layoutRef}
-      className="biosync-landing"
+      className={[
+        "biosync-landing",
+        isTransitioningToLogin
+          ? "lp-transitioning-to-login"
+          : "",
+        isEnteringFromLogin
+          ? "lp-entering-from-login"
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
+      <div
+        className="lp-route-transition"
+        aria-hidden="true"
+      />
+
       {/* ===================================================
           BACKGROUND
       =================================================== */}
