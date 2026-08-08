@@ -1,452 +1,1353 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url(
+  "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+);
 
-/* ==========================================================================
-   NOTE ON CONSISTENCY
-   The tokens and header rules below are copied verbatim (same values,
-   same class names) from LandingPage.css so this page's header renders
-   pixel-identically to the Landing Page's header. If the Landing Page's
-   header or palette ever changes, mirror the change here too.
-   ========================================================================== */
+/* =========================================================
+   BIOSYNC SENTINEL - PREMIUM LOGIN PAGE
+========================================================= */
 
-.landing-layout {
+.bs-login-page {
+  --login-bg: #050b14;
+  --login-bg-secondary: #071426;
+  --login-blue: #2563eb;
+  --login-blue-light: #3b82f6;
+  --login-cyan: #38bdf8;
+  --login-text: #f8fafc;
+  --login-muted: #94a3b8;
+  --login-border: rgba(148, 163, 184, 0.16);
+
   position: relative;
-  width: 100%;
-  min-height: 100vh;
-  overflow-x: hidden;
   isolation: isolate;
 
-  /* ---- Premium enterprise security palette (scoped override) ---- */
-  --bg-primary: #071426;
-  --bg-secondary: #0B1E34;
-  --color-surface: #10263F;
-  --color-primary: #10263F;
-  --color-accent: #38BDF8;
-  --color-accent-deep: #2563EB;
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-text: #F8FAFC;
-  --color-muted: #94A3B8;
-  --color-border: rgba(255, 255, 255, 0.08);
-
-  --font-title: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
-
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
-
-  --shadow-sm: 0 4px 16px rgba(2, 8, 20, 0.35);
-  --shadow-md: 0 12px 32px rgba(2, 8, 20, 0.45);
-  --shadow-lg: 0 24px 64px rgba(2, 8, 20, 0.55);
-  --shadow-glow: 0 0 0 1px rgba(56, 189, 248, 0.15), 0 8px 30px rgba(37, 99, 235, 0.35);
-
-  --transition-fast: cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: cubic-bezier(0.16, 1, 0.3, 1);
-
-  background-color: var(--bg-primary);
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
   display: flex;
-  flex-direction: column;
-}
-
-.landing-layout .glass-panel {
-  background: linear-gradient(180deg, rgba(16, 38, 63, 0.62) 0%, rgba(11, 30, 52, 0.5) 100%);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-/* Background gradient glows */
-.landing-bg-glows {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.bg-glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(160px);
-  opacity: 0.22;
-  mix-blend-mode: screen;
-}
-
-.bg-glow-1 {
-  top: -180px;
-  right: -120px;
-  width: 680px;
-  height: 680px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.42) 0%, rgba(11, 30, 52, 0) 70%);
-  animation: glowPulse 14s ease-in-out infinite;
-}
-
-.bg-glow-2 {
-  bottom: -220px;
-  left: -160px;
-  width: 680px;
-  height: 680px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.16) 0%, rgba(11, 30, 52, 0) 70%);
-  animation: glowPulse 16s ease-in-out infinite 4s;
-}
-
-@keyframes glowPulse {
-  0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.16; }
-  50% { transform: scale(1.1) translate(16px, -16px); opacity: 0.26; }
-}
-
-/* Cyber grid overlay */
-.landing-cyber-grid {
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
-  background-size: 56px 56px;
-  -webkit-mask-image: radial-gradient(120% 80% at 50% 0%, #000 0%, transparent 75%);
-  mask-image: radial-gradient(120% 80% at 50% 0%, #000 0%, transparent 75%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ==========================================================================
-   Header — identical to LandingPage.css (.landing-header and children).
-   No .desktop-nav / .mobile-nav / .mobile-menu-btn here since this page
-   has no nav links to show or hide; .header-actions simply stays visible
-   at every breakpoint instead of collapsing into a hamburger.
-   ========================================================================== */
-.landing-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 76px;
   width: 100%;
-  border-bottom: 1px solid var(--color-border);
-  transition: background-color 0.4s var(--transition-fast), box-shadow 0.4s var(--transition-fast), border-color 0.4s var(--transition-fast);
-  background: rgba(7, 20, 38, 0.55);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 40px rgba(2, 8, 20, 0.25);
+  min-height: 100vh;
+  min-height: 100dvh;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 28%,
+      #0c2139 0%,
+      #071426 30%,
+      #050b14 72%
+    );
+
+  color: var(--login-text);
+
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
 }
 
-.header-container {
-  max-width: 1280px;
-  height: 100%;
-  margin: 0 auto;
-  padding: 0 32px;
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+.bs-login-background {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+.bs-login-grid {
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(
+      rgba(96, 165, 250, 0.035) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(96, 165, 250, 0.035) 1px,
+      transparent 1px
+    );
+
+  background-size: 54px 54px;
+
+  -webkit-mask-image:
+    radial-gradient(
+      ellipse at center,
+      black 15%,
+      transparent 80%
+    );
+
+  mask-image:
+    radial-gradient(
+      ellipse at center,
+      black 15%,
+      transparent 80%
+    );
+}
+
+.bs-login-glow {
+  position: absolute;
+
+  border-radius: 50%;
+
+  filter: blur(120px);
+
+  opacity: 0.3;
+}
+
+.bs-login-glow-one {
+  top: -260px;
+  right: -160px;
+
+  width: 600px;
+  height: 600px;
+
+  background:
+    rgba(37, 99, 235, 0.42);
+
+  animation:
+    bsLoginFloatOne 12s ease-in-out infinite;
+}
+
+.bs-login-glow-two {
+  bottom: -300px;
+  left: -190px;
+
+  width: 650px;
+  height: 650px;
+
+  background:
+    rgba(6, 182, 212, 0.18);
+
+  animation:
+    bsLoginFloatTwo 14s ease-in-out infinite;
+}
+
+.bs-login-glow-three {
+  top: 34%;
+  left: 50%;
+
+  width: 430px;
+  height: 430px;
+
+  background:
+    rgba(37, 99, 235, 0.18);
+
+  transform:
+    translate(-50%, -50%);
+
+  filter: blur(100px);
+}
+
+.bs-login-scanline {
+  position: absolute;
+
+  top: -15%;
+  left: 0;
+
+  width: 100%;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(56, 189, 248, 0.1),
+      rgba(96, 165, 250, 0.28),
+      rgba(56, 189, 248, 0.1),
+      transparent
+    );
+
+  box-shadow:
+    0 0 20px rgba(56, 189, 248, 0.1);
+
+  animation:
+    bsLoginScan 12s linear infinite;
+}
+
+.bs-login-orbit {
+  position: absolute;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.035);
+
+  border-radius: 50%;
+}
+
+.bs-login-orbit-one {
+  top: 48%;
+  left: 50%;
+
+  width: 620px;
+  height: 620px;
+
+  transform:
+    translate(-50%, -50%);
+}
+
+.bs-login-orbit-two {
+  top: 48%;
+  left: 50%;
+
+  width: 820px;
+  height: 820px;
+
+  transform:
+    translate(-50%, -50%);
+}
+
+/* =========================================================
+   TOP NAVBAR
+========================================================= */
+
+.bs-login-navbar {
+  position: relative;
+  z-index: 20;
+
+  width: 100%;
+  height: 86px;
+
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.1);
+
+  background:
+    rgba(5, 15, 27, 0.76);
+
+  backdrop-filter:
+    blur(22px) saturate(140%);
+
+  -webkit-backdrop-filter:
+    blur(22px) saturate(140%);
+
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.18);
+}
+
+.bs-login-navbar-inner {
   display: flex;
+
+  width: min(
+    1320px,
+    calc(100% - 48px)
+  );
+
+  height: 100%;
+
   align-items: center;
   justify-content: space-between;
+
+  margin: 0 auto;
 }
 
-.header-logo {
+/* =========================================================
+   TOP BIOSYNC LOGO
+========================================================= */
+
+.bs-login-brand {
+  position: relative;
+
   display: flex;
+
+  width: 270px;
+  height: 74px;
+
   align-items: center;
-  gap: 12px;
-  background: none;
+  justify-content: flex-start;
+
+  padding: 0;
+
+  overflow: hidden;
+
   border: none;
-  padding: 4px 4px 4px 0;
-  margin: 0;
+
+  background: transparent;
+
   cursor: pointer;
-  font: inherit;
-  border-radius: var(--radius-sm);
-  transition: opacity 0.3s var(--transition-fast), transform 0.3s var(--transition-fast);
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
-.header-logo:hover {
-  opacity: 0.88;
+.bs-login-brand:hover {
+  opacity: 0.94;
+
+  transform:
+    translateY(-1px);
 }
 
-.header-logo:active {
-  transform: scale(0.98);
-}
-
-.header-logo:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 4px;
-}
-
-.logo-mark {
-  height: 38px;
-  width: auto;
+.bs-login-brand img {
   display: block;
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.25));
-  transition: filter 0.35s var(--transition-fast), transform 0.35s var(--transition-fast);
+
+  width: 250px;
+  height: 72px;
+
+  max-width: none;
+
+  object-fit: contain;
+  object-position: left center;
+
+  /*
+     Your PNG contains transparent spacing,
+     so this enlarges the actual visible logo.
+  */
+  transform:
+    scale(1.9);
+
+  transform-origin:
+    left center;
+
+  filter:
+    drop-shadow(
+      0 3px 8px rgba(0, 0, 0, 0.2)
+    )
+    drop-shadow(
+      0 0 8px rgba(56, 189, 248, 0.12)
+    );
+
+  pointer-events: none;
 }
 
-.header-logo:hover .logo-mark {
-  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
-  transform: translateY(-1px);
-}
+/* =========================================================
+   BACK TO HOME
+========================================================= */
 
-.logo-text {
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: 20px;
-  color: var(--color-text);
-  letter-spacing: -0.5px;
-  white-space: nowrap;
-}
+.bs-login-home-button {
+  display: inline-flex;
 
-.text-accent {
-  color: var(--color-accent);
-}
+  min-height: 39px;
 
-.header-actions {
-  display: flex;
   align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  padding:
+    8px 13px;
+
+  border:
+    1px solid rgba(148, 163, 184, 0.16);
+
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  color: #cbd5e1;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.bs-login-home-button:hover {
+  border-color:
+    rgba(56, 189, 248, 0.34);
+
+  background:
+    rgba(37, 99, 235, 0.09);
+
+  color: #ffffff;
+
+  transform:
+    translateX(-2px);
+}
+
+/* =========================================================
+   MAIN AREA
+========================================================= */
+
+.bs-login-main {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  min-height:
+    calc(100vh - 86px);
+
+  min-height:
+    calc(100dvh - 86px);
+
+  flex: 1;
+
+  align-items: center;
+  justify-content: center;
+
+  padding:
+    32px 24px 28px;
+}
+
+.bs-login-container {
+  display: flex;
+
+  width: 100%;
+  max-width: 455px;
+
+  flex-direction: column;
+
+  align-items: center;
+}
+
+/* =========================================================
+   AUTHENTICATION ONLINE STATUS
+========================================================= */
+
+.bs-login-status {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-bottom: 12px;
+
+  padding:
+    6px 11px;
+
+  border:
+    1px solid rgba(34, 197, 94, 0.13);
+
+  border-radius: 999px;
+
+  background:
+    rgba(15, 23, 42, 0.58);
+
+  color: #94a3b8;
+
+  backdrop-filter: blur(12px);
+
+  font-size: 8.5px;
+  font-weight: 650;
+
+  letter-spacing: 0.04em;
+
+  text-transform: uppercase;
+}
+
+.bs-login-status-dot {
+  position: relative;
+
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+
+  box-shadow:
+    0 0 0 4px rgba(34, 197, 94, 0.09);
+}
+
+.bs-login-status-dot::after {
+  content: "";
+
+  position: absolute;
+  inset: -4px;
+
+  border:
+    1px solid rgba(34, 197, 94, 0.4);
+
+  border-radius: 50%;
+
+  animation:
+    bsLoginStatusPulse 2s ease-out infinite;
+}
+
+/* =========================================================
+   LOGIN CARD
+========================================================= */
+
+.bs-login-card {
+  position: relative;
+
+  width: 100%;
+
+  padding:
+    29px 34px 25px;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(96, 165, 250, 0.18);
+
+  border-radius: 22px;
+
+  background:
+    linear-gradient(
+      150deg,
+      rgba(12, 35, 60, 0.92),
+      rgba(7, 20, 38, 0.94)
+    );
+
+  backdrop-filter:
+    blur(28px) saturate(145%);
+
+  -webkit-backdrop-filter:
+    blur(28px) saturate(145%);
+
+  box-shadow:
+    0 35px 85px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.bs-login-card-glow {
+  position: absolute;
+
+  top: -180px;
+  left: 50%;
+
+  width: 390px;
+  height: 390px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(56, 189, 248, 0.17),
+      rgba(37, 99, 235, 0.06) 42%,
+      transparent 70%
+    );
+
+  transform:
+    translateX(-50%);
+
+  pointer-events: none;
+}
+
+.bs-login-card-line {
+  position: absolute;
+
+  top: 0;
+  left: 12%;
+
+  width: 76%;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(56, 189, 248, 0.7),
+      transparent
+    );
+
+  box-shadow:
+    0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+/* =========================================================
+   LOGIN SHIELD - STATIC
+========================================================= */
+
+.bs-login-shield-wrapper {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  width: 92px;
+  height: 92px;
+
+  align-items: center;
+  justify-content: center;
+
+  margin:
+    0 auto 12px;
+}
+
+/*
+   Static background glow.
+   NO animation.
+*/
+.bs-login-shield-glow {
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  width: 78px;
+  height: 78px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(56, 189, 248, 0.2);
+
+  transform:
+    translate(-50%, -50%);
+
+  filter: blur(25px);
+
+  opacity: 0.65;
+
+  animation: none;
+}
+
+/*
+   THE ACTUAL BIOSYNC SHIELD
+   COMPLETELY STATIC
+*/
+.bs-login-shield {
+  position: relative;
+  z-index: 2;
+
+  display: block;
+
+  width: 88px;
+  height: 88px;
+
+  object-fit: contain;
+
+  transform: none;
+
+  animation: none;
+
+  filter:
+    drop-shadow(
+      0 8px 13px rgba(0, 0, 0, 0.22)
+    )
+    drop-shadow(
+      0 0 9px rgba(56, 189, 248, 0.15)
+    );
+
+  pointer-events: none;
+  user-select: none;
+}
+
+/* =========================================================
+   LOGIN HEADING
+========================================================= */
+
+.bs-login-heading {
+  position: relative;
+  z-index: 2;
+
+  margin-bottom: 23px;
+
+  text-align: center;
+}
+
+.bs-login-secure-label {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  margin-bottom: 8px;
+
+  color: #38bdf8;
+
+  font-size: 8.5px;
+  font-weight: 750;
+
+  letter-spacing: 0.1em;
+
+  text-transform: uppercase;
+}
+
+.bs-login-heading h1 {
+  margin: 0;
+
+  color: #f8fafc;
+
+  font-family:
+    "Space Grotesk",
+    "Inter",
+    sans-serif;
+
+  font-size: 27px;
+  font-weight: 700;
+
+  letter-spacing: -0.035em;
+}
+
+.bs-login-heading p {
+  margin:
+    6px 0 0;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.bs-login-form {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  flex-direction: column;
+
   gap: 16px;
 }
 
-.btn-signin {
-  font-family: var(--font-sans);
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--color-text);
-  background: none;
-  border: none;
-  padding: 10px 18px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background-color 0.3s var(--transition-fast);
-}
-
-.btn-signin:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.btn-getstarted {
-  font-family: var(--font-sans);
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #071426;
-  background: linear-gradient(135deg, var(--color-accent-deep) 0%, var(--color-accent) 100%);
-  border: none;
-  padding: 10px 20px;
-  border-radius: var(--radius-sm);
+.bs-login-field {
   display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.bs-login-label {
+  color: #a9b8cb;
+
+  font-size: 10px;
+  font-weight: 650;
+
+  letter-spacing: 0.02em;
+}
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.bs-login-input-wrapper {
+  position: relative;
+
+  display: flex;
+
+  width: 100%;
+  min-height: 47px;
+
   align-items: center;
-  gap: 8px;
+
+  border:
+    1px solid rgba(148, 163, 184, 0.16);
+
+  border-radius: 11px;
+
+  background:
+    rgba(3, 12, 24, 0.52);
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.bs-login-input-wrapper:hover {
+  border-color:
+    rgba(148, 163, 184, 0.25);
+}
+
+.bs-login-input-wrapper:focus-within {
+  border-color:
+    rgba(56, 189, 248, 0.66);
+
+  background:
+    rgba(4, 15, 29, 0.72);
+
+  box-shadow:
+    0 0 0 3px rgba(56, 189, 248, 0.08),
+    0 5px 20px rgba(37, 99, 235, 0.06);
+}
+
+.bs-login-input-icon {
+  position: absolute;
+
+  left: 13px;
+
+  color: #60738c;
+
+  pointer-events: none;
+
+  transition:
+    color 0.2s ease;
+}
+
+.bs-login-input-wrapper:focus-within
+.bs-login-input-icon {
+  color: #38bdf8;
+}
+
+.bs-login-input-wrapper input {
+  width: 100%;
+  min-width: 0;
+  height: 45px;
+
+  padding:
+    0 44px 0 42px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #f8fafc;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bs-login-input-wrapper input::placeholder {
+  color: #52657d;
+}
+
+.bs-login-input-wrapper input:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.7;
+}
+
+/* =========================================================
+   SHOW PASSWORD
+========================================================= */
+
+.bs-login-password-toggle {
+  position: absolute;
+
+  right: 7px;
+
+  display: flex;
+
+  width: 32px;
+  height: 32px;
+
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #64748b;
+
   cursor: pointer;
-  box-shadow: var(--shadow-glow);
-  transition: transform 0.3s var(--transition-normal), box-shadow 0.3s var(--transition-normal);
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 }
 
-.btn-getstarted:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.4);
+.bs-login-password-toggle:hover {
+  background:
+    rgba(255, 255, 255, 0.045);
+
+  color: #cbd5e1;
 }
 
-.btn-glow:hover {
-  box-shadow: var(--shadow-glow);
+/* =========================================================
+   ERROR
+========================================================= */
+
+.bs-login-error {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 8px;
+
+  padding:
+    9px 10px;
+
+  border:
+    1px solid rgba(239, 68, 68, 0.18);
+
+  border-radius: 9px;
+
+  background:
+    rgba(127, 29, 29, 0.12);
+
+  color: #fca5a5;
+
+  font-size: 9.5px;
+  line-height: 1.45;
 }
 
-@media (max-width: 480px) {
-  .logo-text {
+.bs-login-error-icon {
+  display: flex;
+
+  width: 16px;
+  height: 16px;
+
+  flex-shrink: 0;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background:
+    rgba(239, 68, 68, 0.15);
+
+  color: #f87171;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   SIGN IN BUTTON
+========================================================= */
+
+.bs-login-submit {
+  position: relative;
+
+  display: flex;
+
+  width: 100%;
+  min-height: 48px;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-top: 2px;
+
+  overflow: hidden;
+
+  border: none;
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      105deg,
+      #2563eb 0%,
+      #2589ef 52%,
+      #38bdf8 100%
+    );
+
+  color: #04101f;
+
+  box-shadow:
+    0 9px 24px rgba(37, 99, 235, 0.28),
+    0 0 20px rgba(56, 189, 248, 0.07);
+
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.bs-login-submit::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: -110%;
+
+  width: 60%;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.21),
+      transparent
+    );
+
+  transform:
+    skewX(-20deg);
+
+  transition:
+    left 0.55s ease;
+}
+
+.bs-login-submit:hover:not(:disabled) {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 14px 30px rgba(37, 99, 235, 0.36),
+    0 0 26px rgba(56, 189, 248, 0.12);
+
+  filter: brightness(1.05);
+}
+
+.bs-login-submit:hover:not(:disabled)::after {
+  left: 145%;
+}
+
+.bs-login-submit:active:not(:disabled) {
+  transform:
+    translateY(0);
+}
+
+.bs-login-submit:disabled {
+  cursor: wait;
+
+  opacity: 0.72;
+}
+
+/* =========================================================
+   LOADING SPINNER
+========================================================= */
+
+.bs-login-spinner {
+  width: 15px;
+  height: 15px;
+
+  border:
+    2px solid rgba(4, 16, 31, 0.25);
+
+  border-top-color:
+    #04101f;
+
+  border-radius: 50%;
+
+  animation:
+    bsLoginSpinner 0.7s linear infinite;
+}
+
+/* =========================================================
+   SECURITY INFORMATION
+========================================================= */
+
+.bs-login-security {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 11px;
+
+  margin-top: 19px;
+
+  color: #73869e;
+
+  font-size: 8.5px;
+  font-weight: 600;
+}
+
+.bs-login-security-item {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+}
+
+.bs-login-security-item svg {
+  color: #38bdf8;
+}
+
+.bs-login-security-divider {
+  width: 1px;
+  height: 12px;
+
+  background:
+    rgba(148, 163, 184, 0.16);
+}
+
+/* =========================================================
+   AUTHORIZED USERS
+========================================================= */
+
+.bs-login-card-footer {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  margin-top: 19px;
+  padding-top: 14px;
+
+  border-top:
+    1px solid rgba(148, 163, 184, 0.1);
+
+  color: #60738c;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 0.11em;
+
+  text-transform: uppercase;
+}
+
+.bs-login-card-footer svg {
+  color: #38bdf8;
+}
+
+/* =========================================================
+   BOTTOM FOOTER
+========================================================= */
+
+.bs-login-footer {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  margin:
+    14px 0 0;
+
+  color: #42536a;
+
+  font-size: 8px;
+  font-weight: 650;
+
+  letter-spacing: 0.04em;
+}
+
+.bs-login-footer span {
+  color: #2563eb;
+}
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes bsLoginStatusPulse {
+  0% {
+    opacity: 0.65;
+
+    transform:
+      scale(0.7);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      scale(1.5);
+  }
+}
+
+@keyframes bsLoginSpinner {
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+@keyframes bsLoginScan {
+  from {
+    top: -8%;
+  }
+
+  to {
+    top: 108%;
+  }
+}
+
+@keyframes bsLoginFloatOne {
+  0%,
+  100% {
+    transform:
+      translate(0, 0)
+      scale(1);
+  }
+
+  50% {
+    transform:
+      translate(-35px, 30px)
+      scale(1.08);
+  }
+}
+
+@keyframes bsLoginFloatTwo {
+  0%,
+  100% {
+    transform:
+      translate(0, 0)
+      scale(1);
+  }
+
+  50% {
+    transform:
+      translate(40px, -25px)
+      scale(1.08);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE - TABLET
+========================================================= */
+
+@media (max-width: 750px) {
+  .bs-login-navbar {
+    height: 76px;
+  }
+
+  .bs-login-navbar-inner {
+    width:
+      calc(100% - 30px);
+  }
+
+  .bs-login-brand {
+    width: 220px;
+    height: 66px;
+  }
+
+  .bs-login-brand img {
+    width: 205px;
+    height: 64px;
+
+    transform:
+      scale(1.55);
+  }
+
+  .bs-login-main {
+    min-height:
+      calc(100vh - 76px);
+
+    min-height:
+      calc(100dvh - 76px);
+
+    padding:
+      28px 16px 24px;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+  .bs-login-navbar {
+    height: 70px;
+  }
+
+  .bs-login-navbar-inner {
+    width:
+      calc(100% - 24px);
+  }
+
+  .bs-login-brand {
+    width: 185px;
+    height: 60px;
+  }
+
+  .bs-login-brand img {
+    width: 170px;
+    height: 58px;
+
+    transform:
+      scale(1.45);
+  }
+
+  .bs-login-home-button span {
     display: none;
   }
 
-  .btn-signin {
-    padding: 9px 12px;
-    font-size: 12.5px;
+  .bs-login-home-button {
+    width: 38px;
+    height: 38px;
+
+    padding: 0;
   }
 
-  .btn-getstarted {
-    padding: 9px 14px;
-    font-size: 12.5px;
+  .bs-login-main {
+    min-height:
+      calc(100vh - 70px);
+
+    min-height:
+      calc(100dvh - 70px);
+
+    padding:
+      23px 14px;
+  }
+
+  .bs-login-card {
+    padding:
+      25px 20px 22px;
+
+    border-radius: 19px;
+  }
+
+  .bs-login-shield-wrapper {
+    width: 82px;
+    height: 82px;
+  }
+
+  .bs-login-shield {
+    width: 78px;
+    height: 78px;
+  }
+
+  .bs-login-heading h1 {
+    font-size: 24px;
+  }
+
+  .bs-login-security {
+    gap: 7px;
+
+    font-size: 7.5px;
   }
 }
 
-/* ==========================================================================
-   Auth card layout
-   The header above is a normal sticky element (not fixed), so this area
-   simply fills the rest of the viewport and centers the card within it —
-   no manual top-padding offset needed.
-   ========================================================================== */
-.login-content {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: clamp(48px, 8vh, 72px) 24px;
-}
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
 
-.login-panel {
-  position: relative;
-  width: 440px;
-  max-width: 100%;
-  box-shadow: var(--shadow-lg);
-  padding: clamp(32px, 4vh, 44px) clamp(28px, 4vw, 40px);
-  overflow: hidden;
-}
-
-.login-panel-glow {
-  position: absolute;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 320px;
-  height: 320px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.16) 0%, rgba(56, 189, 248, 0) 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.login-panel-header {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin-bottom: clamp(24px, 3.5vh, 32px);
-}
-
-.login-panel-logo {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, rgba(56, 189, 248, 0.2) 100%);
-  color: var(--color-accent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
-  margin-bottom: 18px;
-}
-
-.login-panel-title {
-  margin: 0;
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: 24px;
-  letter-spacing: -0.3px;
-  color: var(--color-text);
-}
-
-.login-panel-subtitle {
-  margin: 6px 0 0 0;
-  font-size: 14px;
-  color: var(--color-muted);
-}
-
-.login-form {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.login-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.login-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  color: var(--color-muted);
-}
-
-.login-input {
-  width: 100%;
-  padding: 13px 16px;
-  font-size: 14.5px;
-  font-family: var(--font-sans);
-  background: rgba(7, 20, 38, 0.65);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  outline: none;
-  border-radius: var(--radius-sm);
-  transition: border-color 0.25s var(--transition-fast), box-shadow 0.25s var(--transition-fast);
-}
-
-.login-input::placeholder {
-  color: var(--color-muted);
-}
-
-.login-input:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
-}
-
-.login-button {
-  margin-top: 4px;
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, var(--color-accent-deep) 0%, var(--color-accent) 100%);
-  border: none;
-  color: #071426;
-  font-family: var(--font-sans);
-  font-size: 14.5px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-glow);
-  transition: transform 0.25s var(--transition-normal), box-shadow 0.25s var(--transition-normal);
-}
-
-.login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.4);
-}
-
-.login-button:active {
-  transform: translateY(0);
-}
-
-.login-error {
-  position: relative;
-  z-index: 1;
-  margin: 16px 0 0 0;
-  font-size: 13px;
-  text-align: center;
-  color: var(--color-error);
-}
-
-.login-panel-footer {
-  position: relative;
-  z-index: 1;
-  margin-top: 28px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border);
-  font-size: 10.5px;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--color-muted);
-}
-
-@media (max-width: 520px) {
-  .login-content {
-    padding: clamp(40px, 7vh, 56px) 16px;
+@media (max-width: 380px) {
+  .bs-login-brand {
+    width: 155px;
   }
 
-  .login-panel {
-    padding: 28px 22px;
+  .bs-login-brand img {
+    width: 150px;
+
+    transform:
+      scale(1.35);
   }
 
-  .login-panel-title {
-    font-size: 21px;
+  .bs-login-card {
+    padding:
+      22px 17px 20px;
   }
 }
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  .bg-glow {
-    animation: none;
+  .bs-login-glow,
+  .bs-login-status-dot::after,
+  .bs-login-scanline,
+  .bs-login-spinner {
+    animation: none !important;
   }
 }

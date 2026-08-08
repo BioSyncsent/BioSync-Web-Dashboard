@@ -1,249 +1,540 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Shield } from "lucide-react";
 
-import { auth, db } from "../firebase/firebase";
+import {
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
 
-import logoMark from "../assets/biosync-mark.png";
+import {
+  doc,
+  getDoc,
+} from "firebase/firestore";
+
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
+
+import {
+  auth,
+  db,
+} from "../firebase/firebase";
+
+import bioSyncLogo from "../assets/BioSync_Logo_Navbar.png";
+import loginShield from "../assets/BioSync_Login_Shield.png";
+
 import "./Login.css";
 
+/* =========================================================
+   BIOSYNC LOGIN
+========================================================= */
 
-function Login(){
+function Login() {
+  const [email, setEmail] =
+    useState("");
 
-    const [email,setEmail] = useState("");
-    const [password,setPassword] = useState("");
-    const [error,setError] = useState("");
+  const [password, setPassword] =
+    useState("");
 
-    const navigate = useNavigate();
-    const location = useLocation();
+  const [error, setError] =
+    useState("");
 
+  const [loading, setLoading] =
+    useState(false);
 
-    // Header logo/nav behavior — kept identical to LandingPage.jsx's
-    // handleLogoClick / handleGetStarted so the header behaves exactly
-    // the same on every page.
-    function handleLogoClick(){
+  const [showPassword, setShowPassword] =
+    useState(false);
 
-        if(location.pathname === "/"){
+  const navigate = useNavigate();
+  const location = useLocation();
 
-            // Already on the landing page — reload so entrance animations replay
-            window.location.reload();
+  /* =======================================================
+     NAVIGATION
+  ======================================================= */
 
-        }
-        else{
-
-            // Elsewhere in the app — return to the landing page
-            navigate("/");
-
-        }
-
+  function handleLogoClick() {
+    if (location.pathname === "/") {
+      window.location.reload();
+      return;
     }
 
-    function handleGetStarted(){
+    navigate("/");
+  }
 
-        navigate("/login");
+  /* =======================================================
+     LOGIN
+  ======================================================= */
 
+  async function handleLogin(event) {
+    event.preventDefault();
+
+    if (loading) {
+      return;
     }
 
+    setError("");
 
-    async function handleLogin(e){
+    const cleanEmail =
+      email.trim().toLowerCase();
 
-        e.preventDefault();
+    if (!cleanEmail) {
+      setError(
+        "Please enter your email address."
+      );
 
-        try{
-
-            // Login Firebase Authentication
-            const userCredential =
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-
-
-            const uid = userCredential.user.uid;
-
-
-            // Get user profile from Firestore
-            const userDoc =
-            await getDoc(
-                doc(db,"users",uid)
-            );
-
-
-            if(userDoc.exists()){
-
-                const userData = userDoc.data();
-
-
-                console.log(userData);
-
-
-                // Redirect based on role
-                if(userData.role === "admin"){
-
-                    navigate("/admin/dashboard");
-
-                }
-
-                else if(userData.role === "teacher"){
-
-                    navigate("/teacher/dashboard");
-
-                }
-
-                else if(userData.role === "student"){
-
-                    navigate("/student/dashboard");
-
-                }
-
-                else{
-
-                    setError("Invalid user role");
-
-                }
-
-            }
-            else{
-
-                setError(
-                    "User profile not found"
-                );
-
-            }
-
-
-        }
-        catch(err){
-
-            console.log(err);
-
-            setError(
-                "Invalid email or password"
-            );
-
-        }
-
+      return;
     }
 
+    if (!password) {
+      setError(
+        "Please enter your password."
+      );
 
+      return;
+    }
 
-return (
+    setLoading(true);
 
-<div className="landing-layout">
+    try {
+      /* ---------------------------------------------------
+         FIREBASE AUTHENTICATION
+      --------------------------------------------------- */
 
-  {/* Background decoration — same visual family as the Landing Page */}
-  <div className="landing-bg-glows">
-    <div className="bg-glow bg-glow-1"></div>
-    <div className="bg-glow bg-glow-2"></div>
-  </div>
-  <div className="landing-cyber-grid"></div>
+      const userCredential =
+        await signInWithEmailAndPassword(
+          auth,
+          cleanEmail,
+          password
+        );
 
-  {/* ================= Header =================
-      Same markup, classes, and styling as LandingPage.jsx's header.
-      Only difference: no nav links and no hamburger menu, since this
-      page has nothing else to link to. Keep this block in sync with
-      LandingPage.jsx if the header ever changes. */}
-  <header className="landing-header glass-panel">
-    <div className="header-container">
+      const uid =
+        userCredential.user.uid;
 
-      <button
-        type="button"
-        className="header-logo"
-        onClick={handleLogoClick}
-        aria-label="Bio-Sync Sentinel — return to homepage"
+      /* ---------------------------------------------------
+         LOAD FIRESTORE PROFILE
+      --------------------------------------------------- */
+
+      const userSnapshot =
+        await getDoc(
+          doc(
+            db,
+            "users",
+            uid
+          )
+        );
+
+      if (!userSnapshot.exists()) {
+        await signOut(auth);
+
+        setError(
+          "Your BioSync user profile could not be found."
+        );
+
+        return;
+      }
+
+      const userData =
+        userSnapshot.data();
+
+      /* ---------------------------------------------------
+         ACCOUNT STATUS
+      --------------------------------------------------- */
+
+      if (userData.active === false) {
+        await signOut(auth);
+
+        setError(
+          "This account has been deactivated. Please contact an administrator."
+        );
+
+        return;
+      }
+
+      /* ---------------------------------------------------
+         ROLE REDIRECTION
+      --------------------------------------------------- */
+
+      if (userData.role === "admin") {
+        navigate(
+          "/admin/dashboard",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      if (userData.role === "teacher") {
+        navigate(
+          "/teacher/dashboard",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      if (userData.role === "student") {
+        navigate(
+          "/student/dashboard",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      await signOut(auth);
+
+      setError(
+        "This account does not have a valid BioSync role."
+      );
+    } catch (loginError) {
+      console.error(
+        "BioSync login error:",
+        loginError
+      );
+
+      setError(
+        "Invalid email or password. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* =======================================================
+     UI
+  ======================================================= */
+
+  return (
+    <div className="bs-login-page">
+      {/* ===================================================
+          BACKGROUND
+      =================================================== */}
+
+      <div
+        className="bs-login-background"
+        aria-hidden="true"
       >
-        <img src={logoMark} alt="" className="logo-mark" />
-        <span className="logo-text">Bio-Sync <span className="text-accent">Sentinel</span></span>
-      </button>
+        <div className="bs-login-grid" />
 
-      <div className="header-actions">
-        <button onClick={handleGetStarted} className="btn-signin">
-          Sign In
-        </button>
-        <button onClick={handleGetStarted} className="btn-getstarted btn-glow">
-          Get Started
-        </button>
+        <div className="bs-login-glow bs-login-glow-one" />
+
+        <div className="bs-login-glow bs-login-glow-two" />
+
+        <div className="bs-login-glow bs-login-glow-three" />
+
+        <div className="bs-login-scanline" />
+
+        <div className="bs-login-orbit bs-login-orbit-one" />
+
+        <div className="bs-login-orbit bs-login-orbit-two" />
       </div>
 
+      {/* ===================================================
+          NAVBAR
+      =================================================== */}
+
+      <header className="bs-login-navbar">
+        <div className="bs-login-navbar-inner">
+          <button
+            type="button"
+            className="bs-login-brand"
+            onClick={handleLogoClick}
+            aria-label="Return to BioSync Sentinel home"
+          >
+            <img
+              src={bioSyncLogo}
+              alt="BioSync Sentinel"
+            />
+          </button>
+
+          <button
+            type="button"
+            className="bs-login-home-button"
+            onClick={handleLogoClick}
+          >
+            <ArrowLeft size={15} />
+
+            <span>
+              Back to Home
+            </span>
+          </button>
+        </div>
+      </header>
+
+      {/* ===================================================
+          MAIN CONTENT
+      =================================================== */}
+
+      <main className="bs-login-main">
+        <section className="bs-login-container">
+          {/* -----------------------------------------------
+              SECURITY STATUS
+          ------------------------------------------------ */}
+
+          <div className="bs-login-status">
+            <span className="bs-login-status-dot" />
+
+            <span>
+              BioSync authentication
+              service online
+            </span>
+          </div>
+
+          {/* -----------------------------------------------
+              LOGIN CARD
+          ------------------------------------------------ */}
+
+          <div className="bs-login-card">
+            <div
+              className="bs-login-card-glow"
+              aria-hidden="true"
+            />
+
+            <div
+              className="bs-login-card-line"
+              aria-hidden="true"
+            />
+
+            {/* LOGO */}
+
+            <div className="bs-login-shield-wrapper">
+              <div className="bs-login-shield-glow" />
+
+              <img
+                src={loginShield}
+                alt=""
+                className="bs-login-shield"
+              />
+            </div>
+
+            {/* TITLE */}
+
+            <div className="bs-login-heading">
+              <div className="bs-login-secure-label">
+                <ShieldCheck size={13} />
+
+                Secure Portal
+              </div>
+
+              <h1>
+                Welcome back
+              </h1>
+
+              <p>
+                Secure access to
+                BioSync Sentinel
+              </p>
+            </div>
+
+            {/* FORM */}
+
+            <form
+              className="bs-login-form"
+              onSubmit={handleLogin}
+            >
+              {/* EMAIL */}
+
+              <div className="bs-login-field">
+                <label
+                  htmlFor="login-email"
+                  className="bs-login-label"
+                >
+                  Email Address
+                </label>
+
+                <div className="bs-login-input-wrapper">
+                  <Mail
+                    size={17}
+                    className="bs-login-input-icon"
+                  />
+
+                  <input
+                    id="login-email"
+                    type="email"
+                    value={email}
+                    autoComplete="email"
+                    placeholder="user@biosync.net"
+                    disabled={loading}
+                    onChange={(event) => {
+                      setEmail(
+                        event.target.value
+                      );
+
+                      if (error) {
+                        setError("");
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* PASSWORD */}
+
+              <div className="bs-login-field">
+                <label
+                  htmlFor="login-password"
+                  className="bs-login-label"
+                >
+                  Password
+                </label>
+
+                <div className="bs-login-input-wrapper">
+                  <LockKeyhole
+                    size={17}
+                    className="bs-login-input-icon"
+                  />
+
+                  <input
+                    id="login-password"
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
+                    value={password}
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    disabled={loading}
+                    onChange={(event) => {
+                      setPassword(
+                        event.target.value
+                      );
+
+                      if (error) {
+                        setError("");
+                      }
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    className="bs-login-password-toggle"
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
+                    disabled={loading}
+                    onClick={() =>
+                      setShowPassword(
+                        (current) =>
+                          !current
+                      )
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff size={17} />
+                    ) : (
+                      <Eye size={17} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* ERROR */}
+
+              {error && (
+                <div
+                  className="bs-login-error"
+                  role="alert"
+                >
+                  <span className="bs-login-error-icon">
+                    !
+                  </span>
+
+                  <span>
+                    {error}
+                  </span>
+                </div>
+              )}
+
+              {/* LOGIN */}
+
+              <button
+                type="submit"
+                className="bs-login-submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="bs-login-spinner" />
+
+                    Authenticating...
+                  </>
+                ) : (
+                  <>
+                    <LockKeyhole
+                      size={16}
+                    />
+
+                    Sign In Securely
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* SECURITY FOOTER */}
+
+            <div className="bs-login-security">
+              <div className="bs-login-security-item">
+                <CheckCircle2
+                  size={13}
+                />
+
+                Firebase secured
+              </div>
+
+              <div className="bs-login-security-divider" />
+
+              <div className="bs-login-security-item">
+                <ShieldCheck
+                  size={13}
+                />
+
+                Role protected
+              </div>
+            </div>
+
+            <div className="bs-login-card-footer">
+              <ShieldCheck size={12} />
+
+              <span>
+                Authorized users only
+              </span>
+            </div>
+          </div>
+
+          {/* -----------------------------------------------
+              PAGE FOOTER
+          ------------------------------------------------ */}
+
+          <p className="bs-login-footer">
+            BioSync Sentinel
+            <span>•</span>
+            BioSecure Enterprise
+            <span>•</span>
+            v4.2.1
+          </p>
+        </section>
+      </main>
     </div>
-  </header>
-
-  {/* ================= Auth card ================= */}
-  <div className="login-content">
-
-    <div className="login-panel glass-panel">
-
-      <div className="login-panel-glow" aria-hidden="true" />
-
-      <div className="login-panel-header">
-        <div className="login-panel-logo">
-          <Shield size={22} className="login-panel-logo-icon" />
-        </div>
-        <h1 className="login-panel-title">Welcome back</h1>
-        <p className="login-panel-subtitle">Sign in to Bio-Sync Sentinel</p>
-      </div>
-
-      <form onSubmit={handleLogin} className="login-form">
-
-        <div className="login-field">
-          <label className="login-label" htmlFor="login-email">
-            Email
-          </label>
-          <input
-            id="login-email"
-            className="login-input"
-            type="email"
-            placeholder="user@institution.edu"
-            value={email}
-            onChange={
-              (e)=>setEmail(e.target.value)
-            }
-          />
-        </div>
-
-        <div className="login-field">
-          <label className="login-label" htmlFor="login-password">
-            Password
-          </label>
-          <input
-            id="login-password"
-            className="login-input"
-            type="password"
-            placeholder="••••••••••"
-            value={password}
-            onChange={
-              (e)=>setPassword(e.target.value)
-            }
-          />
-        </div>
-
-        <button type="submit" className="login-button">
-          Login
-        </button>
-
-      </form>
-
-      {error && (
-        <p className="login-error">{error}</p>
-      )}
-
-      <div className="login-panel-footer">
-        Unauthorized Access Is Prohibited &bull; v4.2.1
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-);
-
-
+  );
 }
-
 
 export default Login;
