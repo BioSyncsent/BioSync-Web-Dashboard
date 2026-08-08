@@ -3,18 +3,19 @@
 );
 
 /* =========================================================
-   BIOSYNC SENTINEL
-   LOGIN PAGE
+   PREVENT SCROLLBAR LAYOUT SHIFT
+   Reserves gutter space on the real scroll container (<html>)
+   so navigating from Login (no scrollbar) to Landing (has one)
+   doesn't change the available page width.
+========================================================= */
 
-   BACKGROUND DESIGN:
-   - Light blue-white background
-   - Static technical grid
-   - Static biometric targeting frame
-   - Static faint biometric halo
-   - Slow blue radar pulse
-   - NO rotating orbit
-   - NO moving orbit dots
-   - NO horizontal scan line
+html {
+  scrollbar-gutter: stable;
+}
+
+/* =========================================================
+   BIOSYNC SENTINEL LOGIN
+   CLEAN COMPLETE VERSION
 ========================================================= */
 
 .bs-login-page {
@@ -39,10 +40,10 @@
 
   background:
     radial-gradient(
-      circle at 50% 40%,
+      circle at 50% 38%,
       #dbeafe 0%,
-      #eff6ff 29%,
-      #f8fbff 63%,
+      #eff6ff 30%,
+      #f8fbff 64%,
       #f3f7fc 100%
     );
 
@@ -85,7 +86,6 @@
 
 /* =========================================================
    TECHNICAL GRID
-   COMPLETELY STATIC
 ========================================================= */
 
 .bs-login-grid {
@@ -95,39 +95,39 @@
 
   background-image:
     linear-gradient(
-      rgba(37, 99, 235, 0.105) 1px,
+      rgba(37, 99, 235, 0.13) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(37, 99, 235, 0.105) 1px,
+      rgba(37, 99, 235, 0.13) 1px,
       transparent 1px
     );
 
   background-size:
     52px 52px;
 
-  opacity: 0.92;
+  opacity: 0.9;
 
   -webkit-mask-image:
     radial-gradient(
       ellipse at center,
       black 20%,
-      rgba(0, 0, 0, 0.92) 55%,
-      transparent 95%
+      rgba(0, 0, 0, 0.94) 52%,
+      transparent 96%
     );
 
   mask-image:
     radial-gradient(
       ellipse at center,
       black 20%,
-      rgba(0, 0, 0, 0.92) 55%,
-      transparent 95%
+      rgba(0, 0, 0, 0.94) 52%,
+      transparent 96%
     );
 }
 
 
-/* SECOND LARGE GRID */
+/* SECOND LARGER GRID */
 
 .bs-login-grid::before {
   content: "";
@@ -138,12 +138,12 @@
 
   background-image:
     linear-gradient(
-      rgba(37, 99, 235, 0.045) 1px,
+      rgba(14, 165, 233, 0.07) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(37, 99, 235, 0.045) 1px,
+      rgba(14, 165, 233, 0.07) 1px,
       transparent 1px
     );
 
@@ -155,8 +155,7 @@
 
 
 /* =========================================================
-   RADAR WAVE 3
-   BLUE ONLY
+   RADAR PULSE 3
 ========================================================= */
 
 .bs-login-grid::after {
@@ -171,14 +170,14 @@
   height: 360px;
 
   border:
-    1.5px solid
-    rgba(37, 99, 235, 0.4);
+    2px solid
+    rgba(59, 130, 246, 0.46);
 
   border-radius: 50%;
 
   box-shadow:
-    0 0 22px
-    rgba(37, 99, 235, 0.06);
+    0 0 25px
+    rgba(59, 130, 246, 0.09);
 
   opacity: 0;
 
@@ -187,24 +186,21 @@
     scale(0.72);
 
   animation:
-    bsSlowRadar
-    18s
+    bsFullRadarPulse
+    10s
     cubic-bezier(
-      0.25,
-      0.1,
+      0.18,
+      0.62,
       0.25,
       1
     )
-    12s
+    6.6s
     infinite;
-
-  pointer-events: none;
 }
 
 
 /* =========================================================
-   STATIC AMBIENT LIGHT
-   NO FLOATING / NO MOVEMENT
+   AMBIENT LIGHT
 ========================================================= */
 
 .bs-login-glow {
@@ -212,9 +208,10 @@
 
   border-radius: 50%;
 
-  pointer-events: none;
+  filter:
+    blur(120px);
 
-  animation: none !important;
+  pointer-events: none;
 }
 
 
@@ -226,12 +223,15 @@
   height: 650px;
 
   background:
-    rgba(37, 99, 235, 0.18);
+    rgba(37, 99, 235, 0.27);
 
-  opacity: 0.66;
+  opacity: 0.7;
 
-  filter:
-    blur(125px);
+  animation:
+    bsGlowOne
+    13s
+    ease-in-out
+    infinite;
 }
 
 
@@ -243,12 +243,15 @@
   height: 670px;
 
   background:
-    rgba(37, 99, 235, 0.11);
+    rgba(6, 182, 212, 0.2);
 
-  opacity: 0.6;
+  opacity: 0.7;
 
-  filter:
-    blur(130px);
+  animation:
+    bsGlowTwo
+    15s
+    ease-in-out
+    infinite;
 }
 
 
@@ -260,15 +263,19 @@
   height: 620px;
 
   background:
-    rgba(37, 99, 235, 0.095);
-
-  opacity: 0.72;
+    rgba(59, 130, 246, 0.13);
 
   transform:
     translate(-50%, -50%);
 
   filter:
     blur(110px);
+
+  animation:
+    bsCenterGlow
+    5s
+    ease-in-out
+    infinite;
 }
 
 
@@ -278,14 +285,12 @@
 
 .bs-login-scanline {
   display: none !important;
-
   animation: none !important;
 }
 
 
 /* =========================================================
-   RADAR WAVE 1 + WAVE 2
-   BLUE ONLY
+   FULL SCREEN RADAR PULSE 1 + 2
 ========================================================= */
 
 .bs-login-background::before,
@@ -312,73 +317,54 @@
 }
 
 
-/* WAVE 1 */
-
 .bs-login-background::before {
   border:
-    1.5px solid
-    rgba(37, 99, 235, 0.52);
+    2px solid
+    rgba(37, 99, 235, 0.58);
 
   box-shadow:
-    0 0 24px
-    rgba(37, 99, 235, 0.08);
+    0 0 26px
+    rgba(37, 99, 235, 0.11);
 
   animation:
-    bsSlowRadar
-    18s
+    bsFullRadarPulse
+    10s
     cubic-bezier(
-      0.25,
-      0.1,
+      0.18,
+      0.62,
       0.25,
       1
     )
-    0s
     infinite;
 }
 
 
-/* WAVE 2 */
-
 .bs-login-background::after {
   border:
-    1.5px solid
-    rgba(37, 99, 235, 0.46);
+    2px solid
+    rgba(6, 182, 212, 0.5);
 
   box-shadow:
-    0 0 22px
-    rgba(37, 99, 235, 0.07);
+    0 0 26px
+    rgba(6, 182, 212, 0.1);
 
   animation:
-    bsSlowRadar
-    18s
+    bsFullRadarPulse
+    10s
     cubic-bezier(
-      0.25,
-      0.1,
+      0.18,
+      0.62,
       0.25,
       1
     )
-    6s
+    3.3s
     infinite;
 }
 
 
 /* =========================================================
-   STATIC BIOMETRIC TARGETING SYSTEM
+   ROTATING SECURITY RINGS
 ========================================================= */
-
-/*
-   IMPORTANT:
-
-   Login.jsx still contains:
-
-   .bs-login-orbit-one
-   .bs-login-orbit-two
-
-   We are REUSING those elements.
-
-   They are no longer rotating orbits.
-*/
-
 
 .bs-login-orbit {
   position: absolute;
@@ -386,244 +372,122 @@
   top: 50%;
   left: 50%;
 
-  pointer-events: none;
+  border-radius: 50%;
 
-  animation: none !important;
+  pointer-events: none;
 }
 
-
-/* =========================================================
-   STATIC TARGETING FRAME
-
-   ┌                         ┐
-
-          LOGIN CARD
-
-   └                         ┘
-========================================================= */
 
 .bs-login-orbit-one {
-  width: 790px;
-  height: 600px;
-
-  border: none;
-
-  border-radius: 0;
-
-  background:
-
-    /* TOP LEFT HORIZONTAL */
-    linear-gradient(
-      90deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    left top
-    / 85px 1px
-    no-repeat,
-
-    /* TOP LEFT VERTICAL */
-    linear-gradient(
-      180deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    left top
-    / 1px 85px
-    no-repeat,
-
-
-    /* TOP RIGHT HORIZONTAL */
-    linear-gradient(
-      270deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    right top
-    / 85px 1px
-    no-repeat,
-
-    /* TOP RIGHT VERTICAL */
-    linear-gradient(
-      180deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    right top
-    / 1px 85px
-    no-repeat,
-
-
-    /* BOTTOM LEFT HORIZONTAL */
-    linear-gradient(
-      90deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    left bottom
-    / 85px 1px
-    no-repeat,
-
-    /* BOTTOM LEFT VERTICAL */
-    linear-gradient(
-      0deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    left bottom
-    / 1px 85px
-    no-repeat,
-
-
-    /* BOTTOM RIGHT HORIZONTAL */
-    linear-gradient(
-      270deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    right bottom
-    / 85px 1px
-    no-repeat,
-
-    /* BOTTOM RIGHT VERTICAL */
-    linear-gradient(
-      0deg,
-      rgba(37, 99, 235, 0.4),
-      rgba(37, 99, 235, 0.08)
-    )
-    right bottom
-    / 1px 85px
-    no-repeat;
-
-  transform:
-    translate(-50%, -50%);
-
-  opacity: 0.86;
-
-  filter:
-    drop-shadow(
-      0 0 8px
-      rgba(37, 99, 235, 0.05)
-    );
-
-  animation: none !important;
-}
-
-
-/* STATIC SMALL NODES */
-
-.bs-login-orbit-one::before,
-.bs-login-orbit-one::after {
-  content: "";
-
-  position: absolute;
-
-  width: 6px;
-  height: 6px;
+  width: 650px;
+  height: 650px;
 
   border:
-    1px solid
-    rgba(37, 99, 235, 0.45);
-
-  border-radius: 50%;
-
-  background:
-    rgba(239, 246, 255, 0.95);
+    2px dashed
+    rgba(37, 99, 235, 0.37);
 
   box-shadow:
-    0 0 8px
-    rgba(37, 99, 235, 0.14);
+    0 0 30px
+    rgba(37, 99, 235, 0.06),
+    inset
+    0 0 50px
+    rgba(37, 99, 235, 0.025);
 
-  animation: none !important;
+  animation:
+    bsOrbitClockwise
+    36s
+    linear
+    infinite;
 }
 
 
-.bs-login-orbit-one::before {
-  top: -3px;
-  left: 92px;
-}
+.bs-login-orbit-two {
+  width: 840px;
+  height: 840px;
 
+  border:
+    2px dashed
+    rgba(6, 182, 212, 0.28);
 
-.bs-login-orbit-one::after {
-  right: 92px;
-  bottom: -3px;
+  box-shadow:
+    0 0 32px
+    rgba(6, 182, 212, 0.05),
+    inset
+    0 0 60px
+    rgba(6, 182, 212, 0.02);
+
+  animation:
+    bsOrbitCounterClockwise
+    50s
+    linear
+    infinite;
 }
 
 
 /* =========================================================
-   STATIC FAINT BIOMETRIC HALO
+   SMALL DOTS ON RINGS
 ========================================================= */
 
-.bs-login-orbit-two {
-  width: 610px;
-  height: 610px;
-
-  border:
-    1px solid
-    rgba(37, 99, 235, 0.11);
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(
-      circle,
-      transparent 62%,
-      rgba(37, 99, 235, 0.018) 76%,
-      transparent 77%
-    );
-
-  box-shadow:
-    inset
-    0 0 55px
-    rgba(37, 99, 235, 0.015);
-
-  transform:
-    translate(-50%, -50%);
-
-  opacity: 0.9;
-
-  animation: none !important;
-}
-
-
-/* SMALL STATIC SIDE MARKERS */
-
+.bs-login-orbit-one::before,
+.bs-login-orbit-one::after,
 .bs-login-orbit-two::before,
 .bs-login-orbit-two::after {
   content: "";
 
   position: absolute;
 
-  top: 50%;
-
-  width: 30px;
-  height: 1px;
+  border-radius: 50%;
 
   background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(37, 99, 235, 0.32)
-    );
+    #2563eb;
 
-  animation: none !important;
+  box-shadow:
+    0 0 0 4px
+    rgba(37, 99, 235, 0.09),
+    0 0 17px
+    rgba(37, 99, 235, 0.4);
+}
+
+
+.bs-login-orbit-one::before {
+  top: -5px;
+  left: 50%;
+
+  width: 9px;
+  height: 9px;
+}
+
+
+.bs-login-orbit-one::after {
+  right: -4px;
+  bottom: 34%;
+
+  width: 7px;
+  height: 7px;
+
+  background:
+    #38bdf8;
 }
 
 
 .bs-login-orbit-two::before {
-  left: -15px;
+  top: 25%;
+  left: -4px;
 
-  transform:
-    translateY(-50%);
+  width: 8px;
+  height: 8px;
+
+  background:
+    #38bdf8;
 }
 
 
 .bs-login-orbit-two::after {
-  right: -15px;
+  right: 18%;
+  bottom: 5%;
 
-  transform:
-    translateY(-50%)
-    rotate(180deg);
+  width: 7px;
+  height: 7px;
 }
 
 
@@ -683,12 +547,10 @@
 
 
 /* =========================================================
-   BIOSYNC NAVBAR LOGO
+   TOP LOGO
 ========================================================= */
 
 .bs-login-brand {
-  position: relative;
-
   display: flex;
 
   width: 270px;
@@ -753,7 +615,7 @@
 
 
 /* =========================================================
-   BACK TO HOME BUTTON
+   CREATIVE BACK HOME BUTTON
 ========================================================= */
 
 .bs-login-home-button {
@@ -787,7 +649,8 @@
       rgba(7, 24, 43, 0.98)
     );
 
-  color: #dbeafe;
+  color:
+    #dbeafe;
 
   box-shadow:
     0 7px 20px
@@ -797,7 +660,6 @@
     rgba(255, 255, 255, 0.05);
 
   font: inherit;
-
   font-size: 10.5px;
   font-weight: 700;
 
@@ -807,8 +669,7 @@
     transform 0.24s ease,
     border-color 0.24s ease,
     background 0.24s ease,
-    box-shadow 0.24s ease,
-    color 0.24s ease;
+    box-shadow 0.24s ease;
 }
 
 
@@ -833,14 +694,15 @@
     linear-gradient(
       135deg,
       rgba(37, 99, 235, 0.36),
-      rgba(37, 99, 235, 0.15)
+      rgba(6, 182, 212, 0.2)
     );
 
-  color: #7dd3fc;
+  color:
+    #7dd3fc;
 
   box-shadow:
     0 0 15px
-    rgba(37, 99, 235, 0.1);
+    rgba(56, 189, 248, 0.1);
 
   transition:
     transform 0.25s ease,
@@ -855,8 +717,6 @@
   z-index: 2;
 }
 
-
-/* SMALL HOVER SHINE */
 
 .bs-login-home-button::before {
   content: "";
@@ -889,7 +749,7 @@
 
 .bs-login-home-button:hover {
   border-color:
-    rgba(56, 189, 248, 0.62);
+    rgba(56, 189, 248, 0.65);
 
   background:
     linear-gradient(
@@ -898,7 +758,8 @@
       rgba(6, 31, 57, 1)
     );
 
-  color: #ffffff;
+  color:
+    #ffffff;
 
   transform:
     translateY(-2px);
@@ -907,7 +768,7 @@
     0 12px 28px
     rgba(0, 0, 0, 0.22),
     0 0 25px
-    rgba(37, 99, 235, 0.13);
+    rgba(56, 189, 248, 0.14);
 }
 
 
@@ -917,13 +778,14 @@
 
 
 .bs-login-home-button:hover svg {
-  color: #ffffff;
+  color:
+    #ffffff;
 
   background:
     linear-gradient(
       135deg,
       #2563eb,
-      #1d4ed8
+      #0891b2
     );
 
   transform:
@@ -931,7 +793,7 @@
 
   box-shadow:
     0 0 20px
-    rgba(37, 99, 235, 0.25);
+    rgba(56, 189, 248, 0.27);
 }
 
 
@@ -943,7 +805,7 @@
 
 
 /* =========================================================
-   MAIN CONTENT
+   MAIN
 ========================================================= */
 
 .bs-login-main {
@@ -981,13 +843,10 @@
 
 
 /* =========================================================
-   AUTHENTICATION STATUS
+   AUTH STATUS
 ========================================================= */
 
 .bs-login-status {
-  position: relative;
-  z-index: 2;
-
   display: inline-flex;
 
   align-items: center;
@@ -1008,7 +867,8 @@
   background:
     rgba(255, 255, 255, 0.9);
 
-  color: #475569;
+  color:
+    #475569;
 
   box-shadow:
     0 5px 18px
@@ -1034,15 +894,14 @@
 
   border-radius: 50%;
 
-  background: #22c55e;
+  background:
+    #22c55e;
 
   box-shadow:
     0 0 0 4px
     rgba(34, 197, 94, 0.1);
 }
 
-
-/* TINY STATUS ANIMATION ONLY */
 
 .bs-login-status-dot::after {
   content: "";
@@ -1053,13 +912,13 @@
 
   border:
     1px solid
-    rgba(34, 197, 94, 0.4);
+    rgba(34, 197, 94, 0.45);
 
   border-radius: 50%;
 
   animation:
     bsStatusPulse
-    2.4s
+    2s
     ease-out
     infinite;
 }
@@ -1112,8 +971,7 @@
 
 
 /* =========================================================
-   CARD INTERNAL GLOW
-   STATIC
+   CARD GLOW
 ========================================================= */
 
 .bs-login-card-glow {
@@ -1130,7 +988,7 @@
   background:
     radial-gradient(
       circle,
-      rgba(56, 189, 248, 0.18),
+      rgba(56, 189, 248, 0.19),
       rgba(37, 99, 235, 0.07) 42%,
       transparent 70%
     );
@@ -1155,19 +1013,18 @@
     linear-gradient(
       90deg,
       transparent,
-      rgba(56, 189, 248, 0.7),
+      rgba(56, 189, 248, 0.72),
       transparent
     );
 
   box-shadow:
     0 0 17px
-    rgba(56, 189, 248, 0.4);
+    rgba(56, 189, 248, 0.45);
 }
 
 
 /* =========================================================
-   BIOSYNC LOGIN SHIELD
-   COMPLETELY STATIC
+   LOGIN SHIELD
 ========================================================= */
 
 .bs-login-shield-wrapper {
@@ -1199,7 +1056,7 @@
   border-radius: 50%;
 
   background:
-    rgba(56, 189, 248, 0.2);
+    rgba(56, 189, 248, 0.21);
 
   transform:
     translate(-50%, -50%);
@@ -1209,7 +1066,7 @@
 
   opacity: 0.65;
 
-  animation: none !important;
+  animation: none;
 }
 
 
@@ -1226,7 +1083,7 @@
 
   transform: none;
 
-  animation: none !important;
+  animation: none;
 
   filter:
     drop-shadow(
@@ -1235,7 +1092,7 @@
     )
     drop-shadow(
       0 0 10px
-      rgba(56, 189, 248, 0.16)
+      rgba(56, 189, 248, 0.17)
     );
 
   pointer-events: none;
@@ -1267,7 +1124,8 @@
 
   margin-bottom: 8px;
 
-  color: #38bdf8;
+  color:
+    #38bdf8;
 
   font-size: 8.5px;
   font-weight: 750;
@@ -1281,7 +1139,8 @@
 .bs-login-heading h1 {
   margin: 0;
 
-  color: #f8fafc;
+  color:
+    #f8fafc;
 
   font-family:
     "Space Grotesk",
@@ -1299,7 +1158,8 @@
   margin:
     6px 0 0;
 
-  color: #94a3b8;
+  color:
+    #94a3b8;
 
   font-size: 12px;
   line-height: 1.5;
@@ -1332,17 +1192,16 @@
 
 
 .bs-login-label {
-  color: #b6c4d7;
+  color:
+    #b6c4d7;
 
   font-size: 10px;
   font-weight: 650;
-
-  letter-spacing: 0.02em;
 }
 
 
 /* =========================================================
-   INPUT WRAPPER
+   INPUT
 ========================================================= */
 
 .bs-login-input-wrapper {
@@ -1392,33 +1251,24 @@
 }
 
 
-/* =========================================================
-   INPUT ICON
-========================================================= */
-
 .bs-login-input-icon {
   position: absolute;
 
   left: 13px;
 
-  color: #60738c;
+  color:
+    #60738c;
 
   pointer-events: none;
-
-  transition:
-    color 0.2s ease;
 }
 
 
 .bs-login-input-wrapper:focus-within
 .bs-login-input-icon {
-  color: #38bdf8;
+  color:
+    #38bdf8;
 }
 
-
-/* =========================================================
-   INPUT TEXT
-========================================================= */
 
 .bs-login-input-wrapper input {
   width: 100%;
@@ -1434,7 +1284,8 @@
 
   background: transparent;
 
-  color: #f8fafc;
+  color:
+    #f8fafc;
 
   font: inherit;
 
@@ -1444,7 +1295,8 @@
 
 
 .bs-login-input-wrapper input::placeholder {
-  color: #52657d;
+  color:
+    #52657d;
 }
 
 
@@ -1456,7 +1308,7 @@
 
 
 /* =========================================================
-   PASSWORD EYE BUTTON
+   PASSWORD BUTTON
 ========================================================= */
 
 .bs-login-password-toggle {
@@ -1478,13 +1330,14 @@
 
   background: transparent;
 
-  color: #64748b;
+  color:
+    #64748b;
 
   cursor: pointer;
 
   transition:
-    color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 
@@ -1492,12 +1345,13 @@
   background:
     rgba(255, 255, 255, 0.05);
 
-  color: #38bdf8;
+  color:
+    #38bdf8;
 }
 
 
 /* =========================================================
-   ERROR MESSAGE
+   ERROR
 ========================================================= */
 
 .bs-login-error {
@@ -1519,7 +1373,8 @@
   background:
     rgba(127, 29, 29, 0.14);
 
-  color: #fca5a5;
+  color:
+    #fca5a5;
 
   font-size: 9.5px;
   line-height: 1.45;
@@ -1542,7 +1397,8 @@
   background:
     rgba(239, 68, 68, 0.18);
 
-  color: #f87171;
+  color:
+    #f87171;
 
   font-size: 10px;
   font-weight: 800;
@@ -1550,7 +1406,7 @@
 
 
 /* =========================================================
-   SIGN IN BUTTON
+   SIGN IN
 ========================================================= */
 
 .bs-login-submit {
@@ -1582,7 +1438,8 @@
       #38bdf8 100%
     );
 
-  color: #04101f;
+  color:
+    #04101f;
 
   box-shadow:
     0 10px 25px
@@ -1603,8 +1460,6 @@
     filter 0.2s ease;
 }
 
-
-/* SIGN IN SHINE */
 
 .bs-login-submit::after {
   content: "";
@@ -1639,9 +1494,9 @@
 
   box-shadow:
     0 15px 32px
-    rgba(37, 99, 235, 0.39),
+    rgba(37, 99, 235, 0.4),
     0 0 28px
-    rgba(56, 189, 248, 0.15);
+    rgba(56, 189, 248, 0.16);
 
   filter:
     brightness(1.06);
@@ -1653,12 +1508,6 @@
 }
 
 
-.bs-login-submit:active:not(:disabled) {
-  transform:
-    translateY(0);
-}
-
-
 .bs-login-submit:disabled {
   cursor: wait;
 
@@ -1667,7 +1516,7 @@
 
 
 /* =========================================================
-   LOADING SPINNER
+   SPINNER
 ========================================================= */
 
 .bs-login-spinner {
@@ -1678,7 +1527,8 @@
     2px solid
     rgba(4, 16, 31, 0.25);
 
-  border-top-color: #04101f;
+  border-top-color:
+    #04101f;
 
   border-radius: 50%;
 
@@ -1691,7 +1541,7 @@
 
 
 /* =========================================================
-   FIREBASE / ROLE PROTECTION
+   SECURITY INFO
 ========================================================= */
 
 .bs-login-security {
@@ -1707,7 +1557,8 @@
 
   margin-top: 19px;
 
-  color: #7d90a9;
+  color:
+    #7d90a9;
 
   font-size: 8.5px;
   font-weight: 600;
@@ -1724,7 +1575,8 @@
 
 
 .bs-login-security-item svg {
-  color: #38bdf8;
+  color:
+    #38bdf8;
 }
 
 
@@ -1738,7 +1590,7 @@
 
 
 /* =========================================================
-   AUTHORIZED USERS FOOTER
+   CARD FOOTER
 ========================================================= */
 
 .bs-login-card-footer {
@@ -1760,7 +1612,8 @@
     1px solid
     rgba(148, 163, 184, 0.11);
 
-  color: #60738c;
+  color:
+    #60738c;
 
   font-size: 8px;
   font-weight: 700;
@@ -1772,7 +1625,8 @@
 
 
 .bs-login-card-footer svg {
-  color: #38bdf8;
+  color:
+    #38bdf8;
 }
 
 
@@ -1794,125 +1648,171 @@
   margin:
     14px 0 0;
 
-  color: #64748b;
+  color:
+    #64748b;
 
   font-size: 8px;
   font-weight: 650;
-
-  letter-spacing: 0.04em;
 }
 
 
 .bs-login-footer span {
-  color: #2563eb;
+  color:
+    #2563eb;
 }
 
 
 /* =========================================================
-   SLOW BLUE RADAR
-
-   3 WAVES
-   18 SECONDS EACH
-   6 SECOND GAP
+   FULL SCREEN RADAR
 ========================================================= */
 
-@keyframes bsSlowRadar {
-
+@keyframes bsFullRadarPulse {
   0% {
     opacity: 0;
 
     transform:
       translate(-50%, -50%)
-      scale(0.72);
+      scale(0.7);
   }
 
-
-  /* gently appears */
-
-  8% {
-    opacity: 0.58;
+  7% {
+    opacity: 0.88;
   }
 
-
-  /* near card */
-
-  22% {
-    opacity: 0.52;
+  24% {
+    opacity: 0.7;
   }
 
-
-  /* moving outward */
-
-  40% {
-    opacity: 0.38;
+  45% {
+    opacity: 0.47;
   }
 
-
-  /* further outward */
-
-  58% {
+  65% {
     opacity: 0.25;
   }
 
-
-  /* fading */
-
-  72% {
-    opacity: 0.14;
+  82% {
+    opacity: 0.09;
   }
-
-
-  84% {
-    opacity: 0.065;
-  }
-
-
-  93% {
-    opacity: 0.02;
-  }
-
-
-  /* completely gone */
 
   100% {
     opacity: 0;
 
     transform:
       translate(-50%, -50%)
-      scale(6.4);
+      scale(6.2);
   }
 }
 
 
 /* =========================================================
-   STATUS DOT
+   ORBIT ANIMATIONS
 ========================================================= */
 
-@keyframes bsStatusPulse {
-
-  0% {
-    opacity: 0.55;
-
+@keyframes bsOrbitClockwise {
+  from {
     transform:
-      scale(0.75);
+      translate(-50%, -50%)
+      rotate(0deg);
   }
 
+  to {
+    transform:
+      translate(-50%, -50%)
+      rotate(360deg);
+  }
+}
+
+
+@keyframes bsOrbitCounterClockwise {
+  from {
+    transform:
+      translate(-50%, -50%)
+      rotate(360deg);
+  }
+
+  to {
+    transform:
+      translate(-50%, -50%)
+      rotate(0deg);
+  }
+}
+
+
+/* =========================================================
+   GLOW ANIMATIONS
+========================================================= */
+
+@keyframes bsGlowOne {
+  0%,
+  100% {
+    transform:
+      translate(0, 0)
+      scale(1);
+  }
+
+  50% {
+    transform:
+      translate(-35px, 30px)
+      scale(1.08);
+  }
+}
+
+
+@keyframes bsGlowTwo {
+  0%,
+  100% {
+    transform:
+      translate(0, 0)
+      scale(1);
+  }
+
+  50% {
+    transform:
+      translate(40px, -25px)
+      scale(1.08);
+  }
+}
+
+
+@keyframes bsCenterGlow {
+  0%,
+  100% {
+    opacity: 0.58;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.95);
+  }
+
+  50% {
+    opacity: 0.92;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.08);
+  }
+}
+
+
+@keyframes bsStatusPulse {
+  0% {
+    opacity: 0.65;
+
+    transform:
+      scale(0.7);
+  }
 
   100% {
     opacity: 0;
 
     transform:
-      scale(1.5);
+      scale(1.55);
   }
 }
 
 
-/* =========================================================
-   LOADING SPINNER
-========================================================= */
-
 @keyframes bsSpinner {
-
   to {
     transform:
       rotate(360deg);
@@ -1921,143 +1821,8 @@
 
 
 /* =========================================================
-   REMOVE OLD HEAVY PAGE TRANSITION
-========================================================= */
-
-.bs-route-transition {
-  display: none !important;
-}
-
-
-/* =========================================================
-   MICRO LOGIN PAGE TRANSITION
-
-   Very short:
-   Navbar = 180ms
-   Login card = 240ms
-========================================================= */
-
-.bs-login-entering
-.bs-login-navbar {
-  animation:
-    bsMicroNavbarEnter
-    180ms
-    ease-out
-    both !important;
-}
-
-
-.bs-login-entering
-.bs-login-container {
-  animation:
-    bsMicroLoginEnter
-    240ms
-    cubic-bezier(
-      0.22,
-      1,
-      0.36,
-      1
-    )
-    both !important;
-}
-
-
-/* LOGIN -> HOME */
-
-.bs-login-leaving
-.bs-login-navbar,
-
-.bs-login-leaving
-.bs-login-main {
-  animation:
-    bsMicroLoginExit
-    160ms
-    ease-out
-    forwards !important;
-}
-
-
-/* =========================================================
-   MICRO TRANSITION KEYFRAMES
-========================================================= */
-
-@keyframes bsMicroNavbarEnter {
-
-  from {
-    opacity: 0;
-
-    transform:
-      translateY(-5px);
-  }
-
-
-  to {
-    opacity: 1;
-
-    transform:
-      translateY(0);
-  }
-}
-
-
-@keyframes bsMicroLoginEnter {
-
-  from {
-    opacity: 0;
-
-    transform:
-      translateY(8px)
-      scale(0.995);
-  }
-
-
-  to {
-    opacity: 1;
-
-    transform:
-      translateY(0)
-      scale(1);
-  }
-}
-
-
-@keyframes bsMicroLoginExit {
-
-  from {
-    opacity: 1;
-
-    transform:
-      scale(1);
-  }
-
-
-  to {
-    opacity: 0;
-
-    transform:
-      scale(0.992);
-  }
-}
-
-
-/* =========================================================
    TABLET
 ========================================================= */
-
-@media (max-width: 900px) {
-
-  .bs-login-orbit-one {
-    width: 680px;
-    height: 560px;
-  }
-
-
-  .bs-login-orbit-two {
-    width: 560px;
-    height: 560px;
-  }
-}
-
 
 @media (max-width: 750px) {
 
@@ -2099,91 +1864,15 @@
   }
 
 
-  /* STATIC TARGET FRAME */
-
   .bs-login-orbit-one {
-    width: 610px;
-    height: 530px;
-
-    background:
-
-      linear-gradient(
-        90deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      left top
-      / 65px 1px
-      no-repeat,
-
-      linear-gradient(
-        180deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      left top
-      / 1px 65px
-      no-repeat,
-
-      linear-gradient(
-        270deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      right top
-      / 65px 1px
-      no-repeat,
-
-      linear-gradient(
-        180deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      right top
-      / 1px 65px
-      no-repeat,
-
-      linear-gradient(
-        90deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      left bottom
-      / 65px 1px
-      no-repeat,
-
-      linear-gradient(
-        0deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      left bottom
-      / 1px 65px
-      no-repeat,
-
-      linear-gradient(
-        270deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      right bottom
-      / 65px 1px
-      no-repeat,
-
-      linear-gradient(
-        0deg,
-        rgba(37, 99, 235, 0.35),
-        rgba(37, 99, 235, 0.06)
-      )
-      right bottom
-      / 1px 65px
-      no-repeat;
+    width: 540px;
+    height: 540px;
   }
 
 
   .bs-login-orbit-two {
-    width: 520px;
-    height: 520px;
+    width: 690px;
+    height: 690px;
   }
 }
 
@@ -2285,7 +1974,21 @@
   }
 
 
-  /* RADAR */
+  .bs-login-orbit-one {
+    width: 420px;
+    height: 420px;
+
+    border-width: 1px;
+  }
+
+
+  .bs-login-orbit-two {
+    width: 540px;
+    height: 540px;
+
+    border-width: 1px;
+  }
+
 
   .bs-login-background::before,
   .bs-login-background::after,
@@ -2294,106 +1997,6 @@
     height: 280px;
 
     border-width: 1px;
-  }
-
-
-  /* STATIC TARGET */
-
-  .bs-login-orbit-one {
-    width:
-      calc(100vw - 38px);
-
-    height: 480px;
-
-    opacity: 0.62;
-
-    background:
-
-      linear-gradient(
-        90deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      left top
-      / 45px 1px
-      no-repeat,
-
-      linear-gradient(
-        180deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      left top
-      / 1px 45px
-      no-repeat,
-
-      linear-gradient(
-        270deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      right top
-      / 45px 1px
-      no-repeat,
-
-      linear-gradient(
-        180deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      right top
-      / 1px 45px
-      no-repeat,
-
-      linear-gradient(
-        90deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      left bottom
-      / 45px 1px
-      no-repeat,
-
-      linear-gradient(
-        0deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      left bottom
-      / 1px 45px
-      no-repeat,
-
-      linear-gradient(
-        270deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      right bottom
-      / 45px 1px
-      no-repeat,
-
-      linear-gradient(
-        0deg,
-        rgba(37, 99, 235, 0.3),
-        transparent
-      )
-      right bottom
-      / 1px 45px
-      no-repeat;
-  }
-
-
-  .bs-login-orbit-two {
-    width: 420px;
-    height: 420px;
-
-    opacity: 0.6;
-  }
-
-
-  .bs-login-orbit-one::before,
-  .bs-login-orbit-one::after {
-    display: none;
   }
 }
 
@@ -2426,17 +2029,6 @@
   .bs-login-security {
     flex-wrap: wrap;
   }
-
-
-  .bs-login-orbit-one {
-    height: 450px;
-  }
-
-
-  .bs-login-orbit-two {
-    width: 370px;
-    height: 370px;
-  }
 }
 
 
@@ -2446,52 +2038,379 @@
 
 @media (prefers-reduced-motion: reduce) {
 
+  .bs-login-glow,
   .bs-login-background::before,
   .bs-login-background::after,
   .bs-login-grid::after,
-  .bs-login-status-dot::after,
-  .bs-login-spinner {
-    animation: none !important;
-  }
-
-
-  .bs-login-background::before,
-  .bs-login-background::after,
-  .bs-login-grid::after {
-    opacity: 0;
-  }
-
-
   .bs-login-orbit-one,
   .bs-login-orbit-two,
-  .bs-login-glow {
+  .bs-login-status-dot::after {
     animation: none !important;
   }
 }
 /* =========================================================
-   BIOSYNC LOGIN VISUAL TUNING
-   CLEARER RADAR + CLEARER STATIC FRAME
+   BIOSYNC RADAR V2
+   BLUE ONLY + SLOW + SMOOTH
 ========================================================= */
 
 
 /* =========================================================
    RADAR WAVE 1
-   STRONGEST BLUE
 ========================================================= */
 
 .bs-login-background::before {
+  content: "";
+
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  width: 360px;
+  height: 360px;
+
   border:
     2px solid
-    rgba(37, 99, 235, 0.62) !important;
+    rgba(37, 99, 235, 0.52);
+
+  border-radius: 50%;
 
   box-shadow:
-    0 0 26px
-    rgba(37, 99, 235, 0.14),
-    0 0 55px
-    rgba(59, 130, 246, 0.05);
+    0 0 22px
+    rgba(37, 99, 235, 0.09);
+
+  opacity: 0;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.72);
 
   animation:
-    bsClearSmoothRadar
+    bsSmoothBlueRadar
+    13s
+    cubic-bezier(
+      0.22,
+      0.61,
+      0.36,
+      1
+    )
+    0s
+    infinite;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   RADAR WAVE 2
+========================================================= */
+
+.bs-login-background::after {
+  content: "";
+
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  width: 360px;
+  height: 360px;
+
+  border:
+    2px solid
+    rgba(37, 99, 235, 0.48);
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 22px
+    rgba(37, 99, 235, 0.08);
+
+  opacity: 0;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.72);
+
+  animation:
+    bsSmoothBlueRadar
+    13s
+    cubic-bezier(
+      0.22,
+      0.61,
+      0.36,
+      1
+    )
+    4.33s
+    infinite;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   RADAR WAVE 3
+========================================================= */
+
+.bs-login-grid::after {
+  content: "";
+
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  width: 360px;
+  height: 360px;
+
+  border:
+    2px solid
+    rgba(37, 99, 235, 0.44);
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 20px
+    rgba(37, 99, 235, 0.07);
+
+  opacity: 0;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.72);
+
+  animation:
+    bsSmoothBlueRadar
+    13s
+    cubic-bezier(
+      0.22,
+      0.61,
+      0.36,
+      1
+    )
+    8.66s
+    infinite;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   SLOW SMOOTH RADAR MOVEMENT
+========================================================= */
+
+@keyframes bsSmoothBlueRadar {
+
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.72);
+  }
+
+
+  /* wave gently appears */
+
+  8% {
+    opacity: 0.68;
+  }
+
+
+  /* still strong near login area */
+
+  23% {
+    opacity: 0.58;
+  }
+
+
+  /* moving through rotating rings */
+
+  42% {
+    opacity: 0.42;
+  }
+
+
+  /* getting further away */
+
+  62% {
+    opacity: 0.25;
+  }
+
+
+  /* approaching screen edge */
+
+  78% {
+    opacity: 0.12;
+  }
+
+
+  /* almost gone */
+
+  90% {
+    opacity: 0.04;
+  }
+
+
+  /* completely disappear */
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(6.4);
+  }
+}
+
+
+/* =========================================================
+   ROTATING RINGS - BLUE ONLY
+========================================================= */
+
+.bs-login-orbit-one {
+  border-color:
+    rgba(37, 99, 235, 0.34);
+
+  box-shadow:
+    0 0 28px
+    rgba(37, 99, 235, 0.05),
+    inset
+    0 0 48px
+    rgba(37, 99, 235, 0.022);
+}
+
+
+.bs-login-orbit-two {
+  border-color:
+    rgba(37, 99, 235, 0.22);
+
+  box-shadow:
+    0 0 30px
+    rgba(37, 99, 235, 0.045),
+    inset
+    0 0 58px
+    rgba(37, 99, 235, 0.018);
+}
+
+
+/* =========================================================
+   ALL ORBIT DOTS BLUE
+========================================================= */
+
+.bs-login-orbit-one::before,
+.bs-login-orbit-one::after,
+.bs-login-orbit-two::before,
+.bs-login-orbit-two::after {
+  background:
+    #2563eb;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(37, 99, 235, 0.08),
+    0 0 15px
+    rgba(37, 99, 235, 0.3);
+}
+
+
+/* =========================================================
+   CENTER GLOW - BLUE ONLY
+========================================================= */
+
+.bs-login-glow-three {
+  background:
+    rgba(37, 99, 235, 0.12);
+}
+
+
+/* =========================================================
+   REMOVE TURQUOISE FROM BACKGROUND GLOW
+========================================================= */
+
+.bs-login-glow-two {
+  background:
+    rgba(37, 99, 235, 0.13);
+}
+
+
+/* =========================================================
+   OLD HORIZONTAL LINE STAYS DISABLED
+========================================================= */
+
+.bs-login-scanline {
+  display: none !important;
+  animation: none !important;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+
+  .bs-login-background::before,
+  .bs-login-background::after,
+  .bs-login-grid::after {
+    width: 280px;
+    height: 280px;
+
+    border-width: 1px;
+  }
+}
+
+/* =========================================================
+   LOGIN -> DASHBOARD
+========================================================= */
+
+.bs-login-leaving-dashboard
+.bs-login-navbar,
+
+.bs-login-leaving-dashboard
+.bs-login-main {
+  animation:
+    bsMicroDashboardExit
+    220ms
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    )
+    forwards !important;
+}
+
+
+.bs-login-leaving-dashboard {
+  pointer-events: none;
+}
+
+
+@keyframes bsMicroDashboardExit {
+  from {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+
+  to {
+    opacity: 0;
+
+    transform:
+      translateY(-10px)
+      scale(1.015);
+  }
+}
+/* =========================================================
+   BIOSYNC RADAR SPEED UPDATE
+   SLOWER + SMOOTHER
+========================================================= */
+
+.bs-login-background::before {
+  animation:
+    bsSlowBlueRadar
     18s
     cubic-bezier(
       0.25,
@@ -2504,23 +2423,9 @@
 }
 
 
-/* =========================================================
-   RADAR WAVE 2
-========================================================= */
-
 .bs-login-background::after {
-  border:
-    2px solid
-    rgba(59, 130, 246, 0.56) !important;
-
-  box-shadow:
-    0 0 25px
-    rgba(59, 130, 246, 0.12),
-    0 0 50px
-    rgba(59, 130, 246, 0.045);
-
   animation:
-    bsClearSmoothRadar
+    bsSlowBlueRadar
     18s
     cubic-bezier(
       0.25,
@@ -2533,23 +2438,9 @@
 }
 
 
-/* =========================================================
-   RADAR WAVE 3
-========================================================= */
-
 .bs-login-grid::after {
-  border:
-    2px solid
-    rgba(96, 165, 250, 0.52) !important;
-
-  box-shadow:
-    0 0 24px
-    rgba(59, 130, 246, 0.1),
-    0 0 45px
-    rgba(59, 130, 246, 0.04);
-
   animation:
-    bsClearSmoothRadar
+    bsSlowBlueRadar
     18s
     cubic-bezier(
       0.25,
@@ -2563,13 +2454,10 @@
 
 
 /* =========================================================
-   RADAR ANIMATION
-
-   More visible at beginning,
-   then slowly disappears.
+   SLOW FULL-SCREEN RADAR
 ========================================================= */
 
-@keyframes bsClearSmoothRadar {
+@keyframes bsSlowBlueRadar {
 
   0% {
     opacity: 0;
@@ -2580,40 +2468,52 @@
   }
 
 
-  7% {
-    opacity: 0.76;
+  /* gently becomes visible */
+
+  8% {
+    opacity: 0.62;
   }
 
 
-  20% {
-    opacity: 0.68;
+  /* near login card */
+
+  22% {
+    opacity: 0.56;
   }
 
 
-  38% {
-    opacity: 0.52;
+  /* moving through inner area */
+
+  40% {
+    opacity: 0.43;
   }
 
 
-  55% {
-    opacity: 0.36;
+  /* moving toward outer screen */
+
+  58% {
+    opacity: 0.29;
   }
 
 
-  70% {
-    opacity: 0.21;
+  /* slowly fading */
+
+  72% {
+    opacity: 0.17;
   }
 
 
-  82% {
-    opacity: 0.11;
+  84% {
+    opacity: 0.08;
   }
 
 
-  92% {
-    opacity: 0.04;
+  93% {
+    opacity: 0.025;
   }
 
+
+  /* reaches far edge and disappears */
 
   100% {
     opacity: 0;
@@ -2624,251 +2524,536 @@
   }
 }
 
-
 /* =========================================================
-   STATIC BIOMETRIC FRAME
-   CLEARER BUT STILL LIGHT
+   LOGIN CARD ENTRANCE
+   FADE + SLIDE UP, STAGGERED (always plays on mount)
 ========================================================= */
 
-.bs-login-orbit-one {
-  opacity: 1 !important;
+.bs-login-card {
+  opacity: 0;
 
-  background:
-
-    /* TOP LEFT */
-
-    linear-gradient(
-      90deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    left top
-    / 95px 2px
-    no-repeat,
-
-    linear-gradient(
-      180deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    left top
-    / 2px 95px
-    no-repeat,
-
-
-    /* TOP RIGHT */
-
-    linear-gradient(
-      270deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    right top
-    / 95px 2px
-    no-repeat,
-
-    linear-gradient(
-      180deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    right top
-    / 2px 95px
-    no-repeat,
-
-
-    /* BOTTOM LEFT */
-
-    linear-gradient(
-      90deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    left bottom
-    / 95px 2px
-    no-repeat,
-
-    linear-gradient(
-      0deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    left bottom
-    / 2px 95px
-    no-repeat,
-
-
-    /* BOTTOM RIGHT */
-
-    linear-gradient(
-      270deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    right bottom
-    / 95px 2px
-    no-repeat,
-
-    linear-gradient(
-      0deg,
-      rgba(59, 130, 246, 0.62),
-      rgba(96, 165, 250, 0.12)
-    )
-    right bottom
-    / 2px 95px
-    no-repeat !important;
-
-  filter:
-    drop-shadow(
-      0 0 7px
-      rgba(37, 99, 235, 0.12)
-    );
+  transform:
+    translateY(24px)
+    scale(0.98);
 
   animation:
-    none !important;
+    bsCardEnter
+    0.6s
+    cubic-bezier(
+      0.16,
+      1,
+      0.3,
+      1
+    )
+    forwards;
+}
+
+
+@keyframes bsCardEnter {
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+.bs-login-status,
+.bs-login-shield-wrapper,
+.bs-login-heading,
+.bs-login-form,
+.bs-login-security,
+.bs-login-card-footer,
+.bs-login-footer {
+  opacity: 0;
+
+  animation:
+    bsCardFadeUp
+    0.5s
+    ease
+    forwards;
+}
+
+
+.bs-login-status {
+  animation-delay: 0.05s;
+}
+
+
+.bs-login-shield-wrapper {
+  animation-delay: 0.14s;
+}
+
+
+.bs-login-heading {
+  animation-delay: 0.2s;
+}
+
+
+.bs-login-form {
+  animation-delay: 0.28s;
+}
+
+
+.bs-login-security {
+  animation-delay: 0.36s;
+}
+
+
+.bs-login-card-footer {
+  animation-delay: 0.42s;
+}
+
+
+.bs-login-footer {
+  animation-delay: 0.48s;
+}
+
+
+@keyframes bsCardFadeUp {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
 }
 
 
 /* =========================================================
-   STATIC FRAME NODES
+   ERROR SHAKE
 ========================================================= */
 
-.bs-login-orbit-one::before,
-.bs-login-orbit-one::after {
-  width: 7px;
-  height: 7px;
-
-  border:
-    2px solid
-    rgba(59, 130, 246, 0.68);
-
-  background:
-    #eff6ff;
-
-  box-shadow:
-    0 0 0 3px
-    rgba(59, 130, 246, 0.08),
-    0 0 12px
-    rgba(37, 99, 235, 0.2);
-
+.bs-login-shake {
   animation:
-    none !important;
+    bsShake
+    0.45s
+    cubic-bezier(
+      0.36,
+      0.07,
+      0.19,
+      0.97
+    )
+    both;
+}
+
+
+@keyframes bsShake {
+  10%,
+  90% {
+    transform:
+      translateX(-1px);
+  }
+
+  20%,
+  80% {
+    transform:
+      translateX(2px);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform:
+      translateX(-4px);
+  }
+
+  40%,
+  60% {
+    transform:
+      translateX(4px);
+  }
 }
 
 
 /* =========================================================
-   STATIC CENTRAL HALO
-
-   Slightly more visible than before,
-   but still subtle.
+   INPUT FOCUS UNDERLINE
 ========================================================= */
 
-.bs-login-orbit-two {
-  border:
-    1.5px solid
-    rgba(59, 130, 246, 0.19) !important;
-
-  background:
-    radial-gradient(
-      circle,
-      transparent 61%,
-      rgba(59, 130, 246, 0.035) 73%,
-      rgba(59, 130, 246, 0.018) 76%,
-      transparent 78%
-    ) !important;
-
-  box-shadow:
-    0 0 35px
-    rgba(59, 130, 246, 0.025),
-    inset
-    0 0 65px
-    rgba(37, 99, 235, 0.025);
-
-  opacity: 1 !important;
-
-  animation:
-    none !important;
+.bs-login-input-wrapper {
+  overflow: hidden;
 }
 
 
-/* =========================================================
-   STATIC SIDE MARKERS
-========================================================= */
+.bs-login-input-wrapper::after {
+  content: "";
 
-.bs-login-orbit-two::before,
-.bs-login-orbit-two::after {
-  width: 38px;
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
   height: 2px;
 
   background:
     linear-gradient(
       90deg,
       transparent,
-      rgba(59, 130, 246, 0.5)
-    ) !important;
+      #38bdf8,
+      transparent
+    );
 
-  animation:
-    none !important;
+  transform:
+    scaleX(0);
+
+  transform-origin: center;
+
+  transition:
+    transform 0.35s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+
+  pointer-events: none;
+}
+
+
+.bs-login-input-wrapper:focus-within::after {
+  transform:
+    scaleX(1);
 }
 
 
 /* =========================================================
-   CENTER BACKGROUND GLOW
-   SLIGHTLY STRONGER BLUE
+   PASSWORD ICON CROSSFADE
 ========================================================= */
 
-.bs-login-glow-three {
+.bs-login-password-toggle {
+  position: relative;
+}
+
+
+.bs-login-eye-icon {
+  position: absolute;
+
+  top: 50%;
+  left: 50%;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.6)
+    rotate(-15deg);
+
+  opacity: 0;
+
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+
+.bs-login-eye-icon-visible {
+  transform:
+    translate(-50%, -50%)
+    scale(1)
+    rotate(0deg);
+
+  opacity: 1;
+}
+
+
+.bs-login-eye-icon-hidden {
+  transform:
+    translate(-50%, -50%)
+    scale(0.6)
+    rotate(15deg);
+
+  opacity: 0;
+}
+
+
+/* =========================================================
+   BUTTON MAGNETIC GLOW
+========================================================= */
+
+.bs-login-submit {
+  --bs-mx: 50%;
+  --bs-my: 50%;
+}
+
+
+.bs-login-submit::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
   background:
-    rgba(37, 99, 235, 0.12) !important;
+    radial-gradient(
+      120px circle at
+      var(--bs-mx)
+      var(--bs-my),
+      rgba(255, 255, 255, 0.35),
+      transparent 60%
+    );
 
-  opacity: 0.78 !important;
+  opacity: 0;
+
+  transition: opacity 0.25s ease;
+
+  pointer-events: none;
+}
+
+
+.bs-login-submit:hover:not(:disabled)::before {
+  opacity: 1;
 }
 
 
 /* =========================================================
-   GRID
-   KEEP IT LIGHT SO RADAR CAN STAND OUT
+   SUCCESS CHECKMARK
 ========================================================= */
 
-.bs-login-grid {
-  background-image:
-    linear-gradient(
-      rgba(37, 99, 235, 0.09) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(37, 99, 235, 0.09) 1px,
-      transparent 1px
-    ) !important;
+.bs-login-success-check {
+  animation:
+    bsCheckPop
+    0.4s
+    cubic-bezier(
+      0.34,
+      1.56,
+      0.64,
+      1
+    )
+    both;
+}
+
+
+@keyframes bsCheckPop {
+  0% {
+    opacity: 0;
+
+    transform:
+      scale(0.4)
+      rotate(-20deg);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform:
+      scale(1)
+      rotate(0deg);
+  }
 }
 
 
 /* =========================================================
-   MOBILE
+   STATUS DOT BREATHING
 ========================================================= */
 
-@media (max-width: 520px) {
+.bs-login-status-dot {
+  animation:
+    bsDotBreathe
+    2.4s
+    ease-in-out
+    infinite;
+}
 
-  .bs-login-background::before,
-  .bs-login-background::after,
-  .bs-login-grid::after {
-    border-width:
-      1.5px !important;
+
+@keyframes bsDotBreathe {
+  0%,
+  100% {
+    opacity: 1;
+
+    transform: scale(1);
   }
 
+  50% {
+    opacity: 0.72;
 
-  .bs-login-orbit-one {
-    opacity:
-      0.82 !important;
+    transform: scale(0.88);
+  }
+}
+
+
+/* =========================================================
+   SHIELD IDLE BREATHING
+========================================================= */
+
+.bs-login-shield {
+  animation:
+    bsShieldBreathe
+    4.5s
+    ease-in-out
+    1.1s
+    infinite;
+}
+
+
+.bs-login-shield-glow {
+  animation:
+    bsShieldGlowBreathe
+    4.5s
+    ease-in-out
+    1.1s
+    infinite;
+}
+
+
+@keyframes bsShieldBreathe {
+  0%,
+  100% {
+    transform: scale(1);
   }
 
-
-  .bs-login-orbit-two {
-    border-width:
-      1px !important;
-
-    opacity:
-      0.8 !important;
+  50% {
+    transform: scale(1.035);
   }
+}
+
+
+@keyframes bsShieldGlowBreathe {
+  0%,
+  100% {
+    opacity: 0.65;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1);
+  }
+
+  50% {
+    opacity: 0.85;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.12);
+  }
+}
+
+
+/* =========================================================
+   CURSOR-REACTIVE BACKGROUND PARALLAX
+========================================================= */
+
+.bs-login-background {
+  transition:
+    transform 0.5s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+
+  will-change: transform;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-login-background {
+    transition: none;
+  }
+}
+
+
+/* =========================================================
+   NEUTRALIZE BROWSER AUTOFILL BACKGROUND
+   Keeps autofilled fields visually consistent with the
+   dark input wrapper instead of forcing white
+========================================================= */
+
+.bs-login-input-wrapper input:-webkit-autofill,
+.bs-login-input-wrapper input:-webkit-autofill:hover,
+.bs-login-input-wrapper input:-webkit-autofill:focus,
+.bs-login-input-wrapper input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0f172a;
+
+  -webkit-box-shadow:
+    0 0 0px 1000px
+    #ffffff
+    inset;
+
+  box-shadow:
+    0 0 0px 1000px
+    #ffffff
+    inset;
+
+  caret-color: #0f172a;
+
+  transition:
+    background-color
+    5000s
+    ease-in-out
+    0s;
+}
+
+
+/* =========================================================
+   WHITE INPUT FIELDS
+========================================================= */
+
+.bs-login-input-wrapper {
+  background: #ffffff;
+
+  border-color:
+    rgba(148, 163, 184, 0.45);
+}
+
+
+.bs-login-input-wrapper:hover {
+  border-color:
+    rgba(148, 163, 184, 0.7);
+}
+
+
+.bs-login-input-wrapper:focus-within {
+  background: #ffffff;
+
+  border-color:
+    rgba(37, 99, 235, 0.75);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.14),
+    0 6px 20px
+    rgba(37, 99, 235, 0.08);
+}
+
+
+.bs-login-input-wrapper input {
+  color: #0f172a;
+}
+
+
+.bs-login-input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+
+.bs-login-input-icon {
+  color: #64748b;
+}
+
+
+.bs-login-input-wrapper:focus-within
+.bs-login-input-icon {
+  color: #2563eb;
+}
+
+
+.bs-login-password-toggle {
+  color: #64748b;
+}
+
+
+.bs-login-password-toggle:hover {
+  background:
+    rgba(15, 23, 42, 0.06);
+
+  color: #2563eb;
 }

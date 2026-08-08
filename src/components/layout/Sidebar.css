@@ -149,7 +149,7 @@
   object-position: center;
 
   /* Enlarges the actual logo inside the PNG */
-  transform: scale(1.75);
+  transform: scale(1.65);
   transform-origin: center center;
 
   background: transparent !important;

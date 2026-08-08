@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   signInWithEmailAndPassword,
@@ -10,10 +10,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 
-import {
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
   ArrowLeft,
@@ -56,54 +53,148 @@ function Login() {
     useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [
-    isEntering,
-    setIsEntering,
-  ] = useState(
-    () =>
-      location.state?.fromLanding === true
-  );
+    isLeavingToDashboard,
+    setIsLeavingToDashboard,
+  ] = useState(false);
+
+  const willTransitionToDashboardRef =
+    useRef(false);
+
+  const formRef = useRef(null);
+  const backgroundRef = useRef(null);
 
   const [
-    isLeavingToHome,
-    setIsLeavingToHome,
+    shakeTrigger,
+    setShakeTrigger,
+  ] = useState(0);
+
+  const [
+    loginSuccess,
+    setLoginSuccess,
   ] = useState(false);
 
 useEffect(() => {
-  if (!isEntering) {
+  if (shakeTrigger === 0) {
+    return;
+  }
+
+  const el = formRef.current;
+
+  if (!el) {
+    return;
+  }
+
+  el.classList.remove("bs-login-shake");
+
+  void el.offsetWidth;
+
+  el.classList.add("bs-login-shake");
+}, [shakeTrigger]);
+
+useEffect(() => {
+  const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+  const isFinePointer =
+    window.matchMedia &&
+    window.matchMedia(
+      "(pointer: fine)"
+    ).matches;
+
+  if (prefersReducedMotion || !isFinePointer) {
     return undefined;
   }
 
-  const timer =
-    window.setTimeout(() => {
-      setIsEntering(false);
-    }, 280);
+  let frame = null;
+
+  function handleMouseMove(event) {
+    if (frame) {
+      return;
+    }
+
+    frame = window.requestAnimationFrame(() => {
+      frame = null;
+
+      const el = backgroundRef.current;
+
+      if (!el) {
+        return;
+      }
+
+      const xRatio =
+        (event.clientX / window.innerWidth - 0.5) * 2;
+
+      const yRatio =
+        (event.clientY / window.innerHeight - 0.5) * 2;
+
+      const maxOffset = 12;
+
+      el.style.transform = `translate3d(${(
+        xRatio * maxOffset
+      ).toFixed(1)}px, ${(
+        yRatio * maxOffset
+      ).toFixed(1)}px, 0)`;
+    });
+  }
+
+  window.addEventListener(
+    "mousemove",
+    handleMouseMove
+  );
 
   return () => {
-    window.clearTimeout(timer);
+    window.removeEventListener(
+      "mousemove",
+      handleMouseMove
+    );
+
+    if (frame) {
+      window.cancelAnimationFrame(frame);
+    }
   };
-}, [isEntering]);
+}, []);
 
   /* =======================================================
      NAVIGATION
   ======================================================= */
 
 function handleLogoClick() {
-  if (isLeavingToHome) {
-    return;
-  }
+  navigate("/");
+}
 
-  setIsLeavingToHome(true);
+  /* =======================================================
+     ERROR (WITH SHAKE)
+  ======================================================= */
+
+function showError(message) {
+  setError(message);
+
+  setShakeTrigger((current) => current + 1);
+}
+
+  /* =======================================================
+     GO TO DASHBOARD (WITH TRANSITION)
+  ======================================================= */
+
+function goToDashboard(path) {
+  willTransitionToDashboardRef.current = true;
+
+  setLoginSuccess(true);
 
   window.setTimeout(() => {
-    navigate("/", {
-      state: {
-        fromLogin: true,
-      },
+    setIsLeavingToDashboard(true);
+  }, 180);
+
+  window.setTimeout(() => {
+    navigate(path, {
+      replace: true,
     });
-  }, 160);
+  }, 180 + 220);
 }
 
   /* =======================================================
@@ -123,7 +214,7 @@ function handleLogoClick() {
       email.trim().toLowerCase();
 
     if (!cleanEmail) {
-      setError(
+      showError(
         "Please enter your email address."
       );
 
@@ -131,7 +222,7 @@ function handleLogoClick() {
     }
 
     if (!password) {
-      setError(
+      showError(
         "Please enter your password."
       );
 
@@ -171,7 +262,7 @@ function handleLogoClick() {
       if (!userSnapshot.exists()) {
         await signOut(auth);
 
-        setError(
+        showError(
           "Your BioSync user profile could not be found."
         );
 
@@ -188,7 +279,7 @@ function handleLogoClick() {
       if (userData.active === false) {
         await signOut(auth);
 
-        setError(
+        showError(
           "This account has been deactivated. Please contact an administrator."
         );
 
@@ -200,41 +291,26 @@ function handleLogoClick() {
       --------------------------------------------------- */
 
       if (userData.role === "admin") {
-        navigate(
-          "/admin/dashboard",
-          {
-            replace: true,
-          }
-        );
+        goToDashboard("/admin/dashboard");
 
         return;
       }
 
       if (userData.role === "teacher") {
-        navigate(
-          "/teacher/dashboard",
-          {
-            replace: true,
-          }
-        );
+        goToDashboard("/teacher/dashboard");
 
         return;
       }
 
       if (userData.role === "student") {
-        navigate(
-          "/student/dashboard",
-          {
-            replace: true,
-          }
-        );
+        goToDashboard("/student/dashboard");
 
         return;
       }
 
       await signOut(auth);
 
-      setError(
+      showError(
         "This account does not have a valid BioSync role."
       );
     } catch (loginError) {
@@ -243,11 +319,13 @@ function handleLogoClick() {
         loginError
       );
 
-      setError(
+      showError(
         "Invalid email or password. Please try again."
       );
     } finally {
-      setLoading(false);
+      if (!willTransitionToDashboardRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -259,23 +337,13 @@ function handleLogoClick() {
     <div
       className={[
         "bs-login-page",
-        isEntering
-          ? "bs-login-entering"
-          : "",
-        isLeavingToHome
-          ? "bs-login-leaving"
+        isLeavingToDashboard
+          ? "bs-login-leaving-dashboard"
           : "",
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      {/* ROUTE TRANSITION */}
-
-      <div
-        className="bs-route-transition"
-        aria-hidden="true"
-      />
-
       {/* ===================================================
           BACKGROUND
       =================================================== */}
@@ -283,6 +351,7 @@ function handleLogoClick() {
       <div
         className="bs-login-background"
         aria-hidden="true"
+        ref={backgroundRef}
       >
         <div className="bs-login-grid" />
 
@@ -401,6 +470,7 @@ function handleLogoClick() {
             <form
               className="bs-login-form"
               onSubmit={handleLogin}
+              ref={formRef}
             >
               {/* EMAIL */}
 
@@ -492,11 +562,25 @@ function handleLogoClick() {
                       )
                     }
                   >
-                    {showPassword ? (
-                      <EyeOff size={17} />
-                    ) : (
-                      <Eye size={17} />
-                    )}
+                    <Eye
+                      size={17}
+                      className={[
+                        "bs-login-eye-icon",
+                        showPassword
+                          ? "bs-login-eye-icon-hidden"
+                          : "bs-login-eye-icon-visible",
+                      ].join(" ")}
+                    />
+
+                    <EyeOff
+                      size={17}
+                      className={[
+                        "bs-login-eye-icon",
+                        showPassword
+                          ? "bs-login-eye-icon-visible"
+                          : "bs-login-eye-icon-hidden",
+                      ].join(" ")}
+                    />
                   </button>
                 </div>
               </div>
@@ -524,8 +608,45 @@ function handleLogoClick() {
                 type="submit"
                 className="bs-login-submit"
                 disabled={loading}
+                onMouseMove={(event) => {
+                  const rect =
+                    event.currentTarget.getBoundingClientRect();
+
+                  const mx =
+                    (
+                      ((event.clientX - rect.left) /
+                        rect.width) *
+                      100
+                    ).toFixed(1);
+
+                  const my =
+                    (
+                      ((event.clientY - rect.top) /
+                        rect.height) *
+                      100
+                    ).toFixed(1);
+
+                  event.currentTarget.style.setProperty(
+                    "--bs-mx",
+                    `${mx}%`
+                  );
+
+                  event.currentTarget.style.setProperty(
+                    "--bs-my",
+                    `${my}%`
+                  );
+                }}
               >
-                {loading ? (
+                {loginSuccess ? (
+                  <>
+                    <CheckCircle2
+                      size={16}
+                      className="bs-login-success-check"
+                    />
+
+                    Success
+                  </>
+                ) : loading ? (
                   <>
                     <span className="bs-login-spinner" />
 

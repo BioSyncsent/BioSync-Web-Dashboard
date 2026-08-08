@@ -7,6 +7,8 @@ import {
   useAuth,
 } from "../contexts/AuthContext";
 
+import Loader from "../components/Loader";
+
 function ProtectedRoute({
   allowedRoles,
   children,
@@ -21,11 +23,7 @@ function ProtectedRoute({
   ========================================================= */
 
   if (loading) {
-    return (
-      <div>
-        Loading...
-      </div>
-    );
+    return <Loader />;
   }
 
   /* =========================================================
