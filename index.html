@@ -13,8 +13,11 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: #ffffff;
+        background-color: #050912;
         z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: opacity 0.5s ease, visibility 0.5s ease;
       }
       
@@ -23,74 +26,97 @@
         visibility: hidden;
       }
 
-      /* From Uiverse.io by terenceodonoghue */ 
-      #loader-wrapper .container {
+      /* From Uiverse.io by risabbir */ 
+      .warp-loader {
+        position: relative;
+        width: 160px;
+        height: 160px;
+      }
+
+      .ring {
         position: absolute;
         top: 50%;
         left: 50%;
-        border-radius: 50%;
-        height: 96px;
-        width: 96px;
-        animation: rotate_3922 1.2s linear infinite;
-        background-color: #9b59b6;
-        background-image: linear-gradient(#9b59b6, #84cdfa, #5ad1cd);
-      }
-
-      #loader-wrapper .container span {
-        position: absolute;
-        border-radius: 50%;
-        height: 100%;
         width: 100%;
-        background-color: #9b59b6;
-        background-image: linear-gradient(#9b59b6, #84cdfa, #5ad1cd);
-      }
-
-      #loader-wrapper .container span:nth-of-type(1) {
-        filter: blur(5px);
-      }
-
-      #loader-wrapper .container span:nth-of-type(2) {
-        filter: blur(10px);
-      }
-
-      #loader-wrapper .container span:nth-of-type(3) {
-        filter: blur(25px);
-      }
-
-      #loader-wrapper .container span:nth-of-type(4) {
-        filter: blur(50px);
-      }
-
-      #loader-wrapper .container::after {
-        content: "";
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-        background-color: #fff;
-        border: solid 5px #ffffff;
+        height: 100%;
         border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(
+          circle,
+          rgba(0, 255, 255, 0.15) 30%,
+          transparent 70%
+        );
+        animation: pulse 2.2s ease-out infinite;
+        opacity: 0;
+        box-shadow:
+          0 0 12px #00d1ff66,
+          0 0 24px #00d1ff33;
+        border: 2px solid rgba(0, 255, 255, 0.2);
       }
 
-      @keyframes rotate_3922 {
-        from {
-          transform: translate(-50%, -50%) rotate(0deg);
+      .ring:nth-child(1) {
+        animation-delay: 0s;
+      }
+      .ring:nth-child(2) {
+        animation-delay: 0.4s;
+      }
+      .ring:nth-child(3) {
+        animation-delay: 0.8s;
+      }
+      .ring:nth-child(4) {
+        animation-delay: 1.2s;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: translate(-50%, -50%) scale(0.3);
+          opacity: 1;
         }
-        to {
-          transform: translate(-50%, -50%) rotate(360deg);
+        70% {
+          transform: translate(-50%, -50%) scale(1.1);
+          opacity: 0.15;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(1.4);
+          opacity: 0;
+        }
+      }
+
+      .core-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 24px; /* Reduced size for the core glow */
+        height: 24px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: radial-gradient(circle at center, #00e5ff, #0099cc);
+        box-shadow:
+          0 0 25px #00e5ff,
+          0 0 60px #00e5ff88,
+          0 0 100px #00e5ff33;
+        animation: corePulse 1.6s ease-in-out infinite;
+      }
+
+      @keyframes corePulse {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.2);
         }
       }
     </style>
   </head>
   <body>
-    <!-- Responsive Page Loader -->
     <div id="loader-wrapper">
-      <div class="container">
-        <span></span>
-        <span></span>
-        <span></span>
-        <span></span>
+      <div class="warp-loader">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="core-glow"></div>
       </div>
     </div>
 
