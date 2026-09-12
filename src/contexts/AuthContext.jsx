@@ -11,6 +11,7 @@ import {
 
 import {
   doc,
+  getDoc,
   onSnapshot,
 } from "firebase/firestore";
 
@@ -19,138 +20,242 @@ import {
   db,
 } from "../firebase/firebase";
 
-/* =========================================================
-   AUTH CONTEXT
-========================================================= */
+const AuthContext =
+  createContext(null);
 
-const AuthContext = createContext();
+export function AuthProvider({
+  children,
+}) {
+  const [
+    user,
+    setUser,
+  ] = useState(null);
 
-/* =========================================================
-   AUTH PROVIDER
-========================================================= */
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-
-  const [loading, setLoading] = useState(true);
+  const [
+    profileError,
+    setProfileError,
+  ] = useState("");
 
   useEffect(() => {
-    let unsubscribeUserDocument = null;
+    let unsubscribeProfile =
+      null;
 
-    /* =====================================================
-       LISTEN TO FIREBASE AUTH
-    ===================================================== */
+    let cancelled =
+      false;
 
-    const unsubscribeAuth = onAuthStateChanged(
-      auth,
+    const unsubscribeAuth =
+      onAuthStateChanged(
+        auth,
 
-      (firebaseUser) => {
-        /* Remove previous Firestore listener */
+        async (
+          firebaseUser
+        ) => {
+          /* Remove old listener */
 
-        if (unsubscribeUserDocument) {
-          unsubscribeUserDocument();
-          unsubscribeUserDocument = null;
-        }
+          if (
+            unsubscribeProfile
+          ) {
+            unsubscribeProfile();
 
-        /* =================================================
-           NOT LOGGED IN
-        ================================================= */
+            unsubscribeProfile =
+              null;
+          }
 
-        if (!firebaseUser) {
-          setUser(null);
-          setLoading(false);
+          setProfileError("");
 
-          return;
-        }
+          /* ================================================
+             SIGNED OUT
+          ================================================ */
 
-        setLoading(true);
-
-        /* =================================================
-           LOAD USER PROFILE
-        ================================================= */
-
-        const userRef = doc(
-          db,
-          "users",
-          firebaseUser.uid
-        );
-
-        unsubscribeUserDocument = onSnapshot(
-          userRef,
-
-          (userSnapshot) => {
-            if (userSnapshot.exists()) {
-              const data = userSnapshot.data();
-
-              setUser({
-                /* Firebase Authentication information */
-
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-
-                /* Firestore user information */
-
-                ...data,
-
-                /* Computed full name */
-
-                fullName: `${data.firstName ?? ""} ${
-                  data.lastName ?? ""
-                }`.trim(),
-              });
-            } else {
-              console.warn(
-                "User document not found."
-              );
-
-              setUser({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-              });
+          if (
+            !firebaseUser
+          ) {
+            if (
+              !cancelled
+            ) {
+              setUser(null);
+              setLoading(false);
             }
 
-            setLoading(false);
-          },
+            return;
+          }
 
-          (error) => {
-            console.error(
-              "Error listening to user profile:",
-              error
+          setLoading(true);
+
+          const userRef =
+            doc(
+              db,
+              "users",
+              firebaseUser.uid
             );
 
+          /* ================================================
+             INITIAL PROFILE LOAD
+
+             getDoc gives us one reliable initial profile
+             before starting the live listener.
+          ================================================ */
+
+          try {
+            const snapshot =
+              await getDoc(
+                userRef
+              );
+
+            if (
+              cancelled
+            ) {
+              return;
+            }
+
+            if (
+              !snapshot.exists()
+            ) {
+              setUser(null);
+
+              setProfileError(
+                "Your BioSync profile could not be found."
+              );
+
+              setLoading(
+                false
+              );
+
+              return;
+            }
+
+            const data =
+              snapshot.data();
+
             setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
+              uid:
+                firebaseUser.uid,
+
+              email:
+                firebaseUser.email,
+
+              ...data,
+
+              fullName:
+                `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim(),
             });
 
             setLoading(false);
-          }
-        );
-      }
-    );
+          } catch (
+            error
+          ) {
+            console.error(
+              "Initial BioSync profile load failed:",
+              error
+            );
 
-    /* =====================================================
-       CLEANUP
-    ===================================================== */
+            if (
+              cancelled
+            ) {
+              return;
+            }
+
+            /*
+              Do NOT create a fake user with no role.
+              That was causing ProtectedRoute to redirect
+              incorrectly.
+            */
+
+            setUser(null);
+
+            setProfileError(
+              "Signed in successfully, but BioSync could not load your Firestore profile. Check your browser blocker/network and try again."
+            );
+
+            setLoading(false);
+
+            return;
+          }
+
+          /* ================================================
+             LIVE PROFILE SYNC
+
+             Navbar / role / department / status stay synced
+             with Firestore after login.
+          ================================================ */
+
+          unsubscribeProfile =
+            onSnapshot(
+              userRef,
+
+              (
+                snapshot
+              ) => {
+                if (
+                  cancelled ||
+                  !snapshot.exists()
+                ) {
+                  return;
+                }
+
+                const data =
+                  snapshot.data();
+
+                setUser({
+                  uid:
+                    firebaseUser.uid,
+
+                  email:
+                    firebaseUser.email,
+
+                  ...data,
+
+                  fullName:
+                    `${data.firstName ?? ""} ${data.lastName ?? ""}`.trim(),
+                });
+
+                setProfileError(
+                  ""
+                );
+              },
+
+              (
+                error
+              ) => {
+                console.error(
+                  "Live BioSync profile sync error:",
+                  error
+                );
+
+                /*
+                  Keep the already-loaded profile.
+                  Do not kick the user out just because
+                  the live listener temporarily failed.
+                */
+              }
+            );
+        }
+      );
 
     return () => {
+      cancelled = true;
+
       unsubscribeAuth();
 
-      if (unsubscribeUserDocument) {
-        unsubscribeUserDocument();
+      if (
+        unsubscribeProfile
+      ) {
+        unsubscribeProfile();
       }
     };
   }, []);
-
-  /* =======================================================
-     PROVIDER
-  ======================================================= */
 
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
+        profileError,
       }}
     >
       {children}
@@ -158,10 +263,8 @@ export function AuthProvider({ children }) {
   );
 }
 
-/* =========================================================
-   USE AUTH HOOK
-========================================================= */
-
 export function useAuth() {
-  return useContext(AuthContext);
+  return useContext(
+    AuthContext
+  );
 }

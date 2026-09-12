@@ -14,9 +14,71 @@ import {
   useState,
 } from "react";
 
+const ISSUE_OPTIONS = [
+  {
+    value: "",
+    label: "Select an attendance issue",
+  },
+  {
+    value: "wrong_status",
+    label: "Wrong attendance status",
+  },
+  {
+    value: "missing_record",
+    label: "Missing attendance record",
+  },
+  {
+    value: "wrong_checkin_time",
+    label: "Wrong check-in time",
+  },
+  {
+    value: "biometric_problem",
+    label: "Biometric verification problem",
+  },
+  {
+    value: "rfid_problem",
+    label: "RFID detection problem",
+  },
+  {
+    value: "approved_absence",
+    label: "Approved absence / medical reason",
+  },
+  {
+    value: "other",
+    label: "Other attendance issue",
+  },
+];
+
+const ISSUE_LABELS = {
+  wrong_status:
+    "Wrong attendance status",
+
+  missing_record:
+    "Missing attendance record",
+
+  wrong_checkin_time:
+    "Wrong check-in time",
+
+  biometric_problem:
+    "Biometric verification problem",
+
+  rfid_problem:
+    "RFID detection problem",
+
+  approved_absence:
+    "Approved absence / medical reason",
+
+  other:
+    "Other attendance issue",
+};
+
 function getEmptyForm() {
   return {
+    issueType: "",
     attendanceId: "",
+    missingAttendance: false,
+    attendanceDate: "",
+    requestedTime: "",
     originalStatus: "",
     requestedStatus: "present",
     reason: "",
@@ -26,11 +88,7 @@ function getEmptyForm() {
 }
 
 function formatAttendanceOption(record) {
-  return `${record.dateLabel} · ${
-    record.timeLabel
-  } · ${record.status} · ${
-    record.authMethod
-  }`;
+  return `${record.dateLabel} • ${record.status} • ${record.authMethod}`;
 }
 
 function StudentDisputeModal({
@@ -41,19 +99,54 @@ function StudentDisputeModal({
   onClose,
   onSubmit,
 }) {
-  const [formData, setFormData] =
-    useState(getEmptyForm());
+  const [
+    formData,
+    setFormData,
+  ] = useState(
+    getEmptyForm()
+  );
 
   useEffect(() => {
-    if (mode === "edit" && dispute) {
+    if (
+      mode === "edit" &&
+      dispute
+    ) {
+      const issueType =
+        dispute.issueType ||
+        dispute.raw?.issueType ||
+        (
+          dispute.missingAttendance
+            ? "missing_record"
+            : "wrong_status"
+        );
+
       setFormData({
+        issueType,
+
         attendanceId:
           dispute.attendanceId ||
           "",
 
+        missingAttendance:
+          Boolean(
+            dispute.missingAttendance
+          ),
+
+        attendanceDate:
+          dispute.attendanceDate ||
+          dispute.raw?.attendanceDate ||
+          "",
+
+        requestedTime:
+          dispute.requestedTime ||
+          dispute.raw?.requestedTime ||
+          "",
+
         originalStatus:
-          dispute.attendance?.status ||
-          dispute.raw?.originalStatus ||
+          dispute.attendance
+            ?.status ||
+          dispute.raw
+            ?.originalStatus ||
           "",
 
         requestedStatus:
@@ -62,6 +155,9 @@ function StudentDisputeModal({
 
         reason:
           dispute.reason ||
+          ISSUE_LABELS[
+            issueType
+          ] ||
           "",
 
         description:
@@ -76,8 +172,13 @@ function StudentDisputeModal({
       return;
     }
 
-    setFormData(getEmptyForm());
-  }, [mode, dispute]);
+    setFormData(
+      getEmptyForm()
+    );
+  }, [
+    mode,
+    dispute,
+  ]);
 
   const selectedAttendance =
     attendanceRecords.find(
@@ -88,58 +189,200 @@ function StudentDisputeModal({
     dispute?.attendance ||
     null;
 
-  function updateField(event) {
-    const { name, value } =
-      event.target;
+  const missingAttendance =
+    formData.issueType ===
+    "missing_record";
 
-    setFormData((current) => ({
-      ...current,
-      [name]: value,
-    }));
+  const needsAttendanceRecord =
+    [
+      "wrong_status",
+      "wrong_checkin_time",
+      "approved_absence",
+    ].includes(
+      formData.issueType
+    );
+
+  const optionalAttendanceRecord =
+    [
+      "biometric_problem",
+      "rfid_problem",
+      "other",
+    ].includes(
+      formData.issueType
+    );
+
+  const showAttendanceRecord =
+    needsAttendanceRecord ||
+    optionalAttendanceRecord;
+
+  const showAttendanceDate =
+    missingAttendance ||
+    (
+      optionalAttendanceRecord &&
+      !formData.attendanceId
+    );
+
+  const showRequestedTime =
+    formData.issueType ===
+    "wrong_checkin_time";
+
+  function updateField(
+    event
+  ) {
+    const {
+      name,
+      value,
+    } = event.target;
+
+    setFormData(
+      (current) => ({
+        ...current,
+        [name]: value,
+      })
+    );
   }
 
-  function selectAttendance(event) {
+  function selectIssue(
+    event
+  ) {
+    const issueType =
+      event.target.value;
+
+    setFormData(
+      (current) => ({
+        ...current,
+
+        issueType,
+
+        reason:
+          ISSUE_LABELS[
+            issueType
+          ] ||
+          "",
+
+        missingAttendance:
+          issueType ===
+          "missing_record",
+
+        attendanceId:
+          issueType ===
+          "missing_record"
+            ? ""
+            : current.attendanceId,
+
+        originalStatus:
+          issueType ===
+          "missing_record"
+            ? "missing"
+            : current.originalStatus,
+
+        requestedStatus:
+          issueType ===
+          "approved_absence"
+            ? "excused"
+            : current.requestedStatus,
+
+        requestedTime:
+          issueType ===
+          "wrong_checkin_time"
+            ? current.requestedTime
+            : "",
+      })
+    );
+  }
+
+  function selectAttendance(
+    event
+  ) {
     const attendanceId =
       event.target.value;
 
     const attendance =
       attendanceRecords.find(
         (record) =>
-          record.id === attendanceId
+          record.id ===
+          attendanceId
       );
 
-    setFormData((current) => ({
-      ...current,
+    setFormData(
+      (current) => ({
+        ...current,
 
-      attendanceId,
+        attendanceId,
 
-      originalStatus:
-        attendance?.status ||
-        "",
-    }));
+        originalStatus:
+          attendance?.status ||
+          "",
+      })
+    );
   }
 
-  function handleSubmit(event) {
+  function handleSubmit(
+    event
+  ) {
     event.preventDefault();
 
     onSubmit({
       ...formData,
 
+      missingAttendance,
+
+      reason:
+        ISSUE_LABELS[
+          formData.issueType
+        ] ||
+        formData.reason,
+
       originalStatus:
-        selectedAttendance?.status ||
-        formData.originalStatus,
+        missingAttendance
+          ? "missing"
+          : selectedAttendance
+              ?.status ||
+            formData.originalStatus,
     });
   }
+
+  const canSubmit =
+    Boolean(
+      formData.issueType
+    ) &&
+    (
+      !needsAttendanceRecord ||
+      Boolean(
+        formData.attendanceId
+      )
+    ) &&
+    (
+      !showAttendanceDate ||
+      Boolean(
+        formData.attendanceDate
+      )
+    ) &&
+    (
+      !showRequestedTime ||
+      Boolean(
+        formData.requestedTime
+      )
+    ) &&
+    Boolean(
+      formData.description.trim()
+    );
 
   return (
     <div
       className="sd-modal-overlay"
-      onMouseDown={onClose}
+      onMouseDown={
+        onClose
+      }
     >
       <form
         className="sd-modal"
-        onSubmit={handleSubmit}
-        onMouseDown={(event) =>
+        onSubmit={
+          handleSubmit
+        }
+        onMouseDown={(
+          event
+        ) =>
           event.stopPropagation()
         }
       >
@@ -152,78 +395,146 @@ function StudentDisputeModal({
             </h2>
 
             <p>
-              Explain which attendance record
-              is incorrect and request a
-              correction.
+              Report an attendance issue for
+              your teacher to review.
             </p>
           </div>
 
           <button
             type="button"
             className="sd-modal-close"
-            onClick={onClose}
-            disabled={saving}
-            aria-label="Close"
+            onClick={
+              onClose
+            }
+            disabled={
+              saving
+            }
           >
             <X size={21} />
           </button>
         </div>
 
         <div className="sd-modal-content">
+          {/* ISSUE TYPE */}
+
           <div className="sd-form-group">
-            <label htmlFor="attendanceId">
-              Attendance record
+            <label>
+              Attendance issue
             </label>
 
             <select
-              id="attendanceId"
-              name="attendanceId"
               value={
-                formData.attendanceId
+                formData.issueType
               }
-              onChange={selectAttendance}
+              onChange={
+                selectIssue
+              }
               disabled={
                 saving ||
                 mode === "edit"
               }
               required
             >
-              <option value="">
-                Select an attendance record
-              </option>
-
-              {attendanceRecords.map(
-                (record) => (
+              {ISSUE_OPTIONS.map(
+                (option) => (
                   <option
-                    key={record.id}
-                    value={record.id}
+                    key={
+                      option.value
+                    }
+                    value={
+                      option.value
+                    }
                   >
-                    {formatAttendanceOption(
-                      record
-                    )}
+                    {
+                      option.label
+                    }
                   </option>
                 )
               )}
             </select>
-
-            {attendanceRecords.length ===
-              0 && (
-              <small className="sd-warning-text">
-                No attendance record is linked
-                to your account. New attendance
-                documents should include your
-                Firebase userId.
-              </small>
-            )}
           </div>
+
+          {/* EXISTING ATTENDANCE */}
+
+          {showAttendanceRecord && (
+            <div className="sd-form-group">
+              <label>
+                Attendance record
+                {optionalAttendanceRecord && (
+                  <span>
+                    {" "}
+                    (optional)
+                  </span>
+                )}
+              </label>
+
+              <select
+                value={
+                  formData.attendanceId
+                }
+                onChange={
+                  selectAttendance
+                }
+                disabled={
+                  saving ||
+                  mode === "edit"
+                }
+                required={
+                  needsAttendanceRecord
+                }
+              >
+                <option value="">
+                  {needsAttendanceRecord
+                    ? "Select an attendance record"
+                    : "Select a record if available"}
+                </option>
+
+                {attendanceRecords.map(
+                  (
+                    record
+                  ) => (
+                    <option
+                      key={
+                        record.id
+                      }
+                      value={
+                        record.id
+                      }
+                    >
+                      {formatAttendanceOption(
+                        record
+                      )}
+                    </option>
+                  )
+                )}
+              </select>
+
+              {needsAttendanceRecord &&
+                attendanceRecords.length ===
+                  0 && (
+                  <small className="sd-warning-text">
+                    No attendance records were found.
+                    Choose Missing attendance record
+                    instead if no record exists.
+                  </small>
+                )}
+            </div>
+          )}
+
+          {/* ATTENDANCE PREVIEW */}
 
           {selectedAttendance && (
             <div className="sd-attendance-preview">
               <div>
-                <Calendar size={16} />
+                <Calendar
+                  size={16}
+                />
 
                 <span>
-                  <small>Date</small>
+                  <small>
+                    Date
+                  </small>
+
                   <strong>
                     {selectedAttendance.dateLabel ||
                       "N/A"}
@@ -232,10 +543,15 @@ function StudentDisputeModal({
               </div>
 
               <div>
-                <Clock3 size={16} />
+                <Clock3
+                  size={16}
+                />
 
                 <span>
-                  <small>Time</small>
+                  <small>
+                    Time
+                  </small>
+
                   <strong>
                     {selectedAttendance.timeLabel ||
                       "N/A"}
@@ -244,12 +560,15 @@ function StudentDisputeModal({
               </div>
 
               <div>
-                <ShieldCheck size={16} />
+                <ShieldCheck
+                  size={16}
+                />
 
                 <span>
                   <small>
-                    Original Status
+                    Status
                   </small>
+
                   <strong>
                     {selectedAttendance.status ||
                       "N/A"}
@@ -258,10 +577,15 @@ function StudentDisputeModal({
               </div>
 
               <div>
-                <Cpu size={16} />
+                <Cpu
+                  size={16}
+                />
 
                 <span>
-                  <small>Method</small>
+                  <small>
+                    Method
+                  </small>
+
                   <strong>
                     {selectedAttendance.authMethod ||
                       "N/A"}
@@ -271,20 +595,55 @@ function StudentDisputeModal({
             </div>
           )}
 
-          <div className="sd-form-grid">
+          {/* DATE WHEN NO RECORD */}
+
+          {showAttendanceDate && (
             <div className="sd-form-group">
-              <label htmlFor="requestedStatus">
-                Requested correction
+              <label>
+                Attendance date
+              </label>
+
+              <input
+                type="date"
+                name="attendanceDate"
+                value={
+                  formData.attendanceDate
+                }
+                onChange={
+                  updateField
+                }
+                disabled={
+                  saving
+                }
+                required
+              />
+            </div>
+          )}
+
+          {/* STATUS */}
+
+          {formData.issueType &&
+            !showRequestedTime && (
+            <div className="sd-form-group">
+              <label>
+                {missingAttendance
+                  ? "Expected attendance status"
+                  : "Requested correction"}
               </label>
 
               <select
-                id="requestedStatus"
                 name="requestedStatus"
                 value={
                   formData.requestedStatus
                 }
-                onChange={updateField}
-                disabled={saving}
+                onChange={
+                  updateField
+                }
+                disabled={
+                  saving ||
+                  formData.issueType ===
+                    "approved_absence"
+                }
                 required
               >
                 <option value="present">
@@ -304,127 +663,127 @@ function StudentDisputeModal({
                 </option>
               </select>
             </div>
+          )}
 
+          {/* TIME */}
+
+          {showRequestedTime && (
             <div className="sd-form-group">
-              <label htmlFor="reason">
-                Reason
+              <label>
+                Correct check-in time
               </label>
 
-              <select
-                id="reason"
-                name="reason"
-                value={formData.reason}
-                onChange={updateField}
-                disabled={saving}
-                required
-              >
-                <option value="">
-                  Select a reason
-                </option>
-
-                <option value="Incorrect attendance status">
-                  Incorrect attendance status
-                </option>
-
-                <option value="Face recognition failed">
-                  Face recognition failed
-                </option>
-
-                <option value="Fingerprint verification failed">
-                  Fingerprint verification
-                  failed
-                </option>
-
-                <option value="RFID card was not detected">
-                  RFID card was not detected
-                </option>
-
-                <option value="Device or system error">
-                  Device or system error
-                </option>
-
-                <option value="Approved absence or medical reason">
-                  Approved absence or medical
-                  reason
-                </option>
-
-                <option value="Other">
-                  Other
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div className="sd-form-group">
-            <label htmlFor="description">
-              Explanation
-            </label>
-
-            <div className="sd-input-icon">
-              <MessageSquare size={17} />
-
-              <textarea
-                id="description"
-                name="description"
-                rows="5"
-                value={
-                  formData.description
-                }
-                onChange={updateField}
-                disabled={saving}
-                placeholder="Explain what happened and why the attendance record should be corrected."
-                required
-              />
-            </div>
-          </div>
-
-          <div className="sd-form-group">
-            <label htmlFor="evidenceUrl">
-              Evidence link{" "}
-              <span>(optional)</span>
-            </label>
-
-            <div className="sd-input-icon sd-input-single">
-              <LinkIcon size={17} />
-
               <input
-                id="evidenceUrl"
-                name="evidenceUrl"
-                type="url"
+                type="time"
+                name="requestedTime"
                 value={
-                  formData.evidenceUrl
+                  formData.requestedTime
                 }
-                onChange={updateField}
-                disabled={saving}
-                placeholder="https://drive.google.com/..."
+                onChange={
+                  updateField
+                }
+                disabled={
+                  saving
+                }
+                required
               />
             </div>
+          )}
 
-            <small>
-              Paste a link to a screenshot,
-              medical certificate, PDF, or
-              supporting document.
-            </small>
-          </div>
+          {/* EXPLANATION */}
 
-          <div className="sd-form-notice">
-            <FileText size={18} />
+          {formData.issueType && (
+            <>
+              <div className="sd-form-group">
+                <label>
+                  Explanation
+                </label>
 
-            <p>
-              Submitting false information may
-              result in disciplinary action.
-              Review all information before
-              submitting.
-            </p>
-          </div>
+                <div className="sd-input-icon">
+                  <MessageSquare
+                    size={17}
+                  />
+
+                  <textarea
+                    name="description"
+                    rows="5"
+                    value={
+                      formData.description
+                    }
+                    onChange={
+                      updateField
+                    }
+                    disabled={
+                      saving
+                    }
+                    placeholder="Explain what happened and why the attendance information should be reviewed."
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="sd-form-group">
+                <label>
+                  Evidence link{" "}
+                  <span>
+                    (optional)
+                  </span>
+                </label>
+
+                <div className="sd-input-icon sd-input-single">
+                  <LinkIcon
+                    size={17}
+                  />
+
+                  <input
+                    name="evidenceUrl"
+                    type="url"
+                    value={
+                      formData.evidenceUrl
+                    }
+                    onChange={
+                      updateField
+                    }
+                    disabled={
+                      saving
+                    }
+                    placeholder="https://drive.google.com/..."
+                  />
+                </div>
+
+                <small>
+                  Add a screenshot, medical
+                  certificate, PDF or other
+                  supporting document if needed.
+                </small>
+              </div>
+
+              <div className="sd-form-notice">
+                <FileText
+                  size={18}
+                />
+
+                <p>
+                  Submitting false information may
+                  result in disciplinary action.
+                  Review all information before
+                  submitting.
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="sd-modal-footer">
           <button
             type="button"
             className="sd-btn sd-btn-secondary"
-            onClick={onClose}
-            disabled={saving}
+            onClick={
+              onClose
+            }
+            disabled={
+              saving
+            }
           >
             Cancel
           </button>
@@ -434,7 +793,7 @@ function StudentDisputeModal({
             className="sd-btn sd-btn-primary"
             disabled={
               saving ||
-              !formData.attendanceId
+              !canSubmit
             }
           >
             {saving

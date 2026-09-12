@@ -18,8 +18,10 @@ import {
   Edit3,
   Eye,
   FilePlus2,
+  Filter,
   RefreshCw,
   Search,
+  ShieldCheck,
   Trash2,
   Users,
   X,
@@ -136,25 +138,25 @@ function verificationClass(result) {
     normalized === "verified" ||
     normalized === "success"
   ) {
-    return "bs-verification bs-verification-success";
+    return "aa-verification aa-verification-success";
   }
 
   if (normalized === "manual") {
-    return "bs-verification bs-verification-manual";
+    return "aa-verification aa-verification-manual";
   }
 
   if (
     normalized === "failed" ||
     normalized === "rejected"
   ) {
-    return "bs-verification bs-verification-danger";
+    return "aa-verification aa-verification-danger";
   }
 
   if (normalized === "flagged") {
-    return "bs-verification bs-verification-warning";
+    return "aa-verification aa-verification-warning";
   }
 
-  return "bs-verification bs-verification-neutral";
+  return "aa-verification aa-verification-neutral";
 }
 
 function getEmptyForm() {
@@ -181,43 +183,62 @@ function AttendanceFormModal({
   onSubmit,
   saving,
 }) {
-  const [formData, setFormData] = useState(
-    getEmptyForm()
-  );
+  const [formData, setFormData] =
+    useState(getEmptyForm());
 
   useEffect(() => {
-    if (mode === "edit" && record) {
+    if (
+      mode === "edit" &&
+      record
+    ) {
       setFormData({
         userId: record.userId || "",
-        status: record.status || "present",
+        status:
+          record.status || "present",
         authMethod:
           record.authMethod || "Manual",
         deviceId:
-          record.deviceId || "Admin Portal",
+          record.deviceId ||
+          "Admin Portal",
         verificationResult:
           record.verificationResult ||
           "manual",
         date:
-          dateToInputValue(record.timestamp) ||
-          dateToInputValue(new Date()),
+          dateToInputValue(
+            record.timestamp
+          ) ||
+          dateToInputValue(
+            new Date()
+          ),
         time:
-          timeToInputValue(record.timestamp),
+          timeToInputValue(
+            record.timestamp
+          ),
         source:
-          record.source || "manual",
-        notes: record.notes || "",
+          record.source ||
+          "manual",
+        notes:
+          record.notes || "",
       });
     } else {
-      setFormData(getEmptyForm());
+      setFormData(
+        getEmptyForm()
+      );
     }
   }, [mode, record]);
 
   function updateField(event) {
-    const { name, value } = event.target;
+    const {
+      name,
+      value,
+    } = event.target;
 
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+    setFormData(
+      (previous) => ({
+        ...previous,
+        [name]: value,
+      })
+    );
   }
 
   function handleSubmit(event) {
@@ -267,7 +288,6 @@ function AttendanceFormModal({
             type="button"
             className="bs-modal-close"
             onClick={onClose}
-            aria-label="Close"
           >
             <X size={22} />
           </button>
@@ -276,41 +296,50 @@ function AttendanceFormModal({
         <div className="bs-modal-content">
           <div className="bs-form-grid">
             <div className="bs-form-group bs-form-span-2">
-              <label htmlFor="userId">
+              <label>
                 Student
               </label>
 
               <select
-                id="userId"
                 name="userId"
                 value={formData.userId}
                 onChange={updateField}
                 required
-                disabled={mode === "edit"}
+                disabled={
+                  mode === "edit"
+                }
               >
                 <option value="">
                   Select student
                 </option>
 
-                {users.map((student) => (
-                  <option
-                    key={student.userId}
-                    value={student.userId}
-                  >
-                    {student.studentName} —{" "}
-                    {student.studentId}
-                  </option>
-                ))}
+                {users.map(
+                  (student) => (
+                    <option
+                      key={
+                        student.userId
+                      }
+                      value={
+                        student.userId
+                      }
+                    >
+                      {
+                        student.studentName
+                      }{" "}
+                      —{" "}
+                      {
+                        student.studentId
+                      }
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
             <div className="bs-form-group">
-              <label htmlFor="status">
-                Status
-              </label>
+              <label>Status</label>
 
               <select
-                id="status"
                 name="status"
                 value={formData.status}
                 onChange={updateField}
@@ -331,14 +360,15 @@ function AttendanceFormModal({
             </div>
 
             <div className="bs-form-group">
-              <label htmlFor="authMethod">
+              <label>
                 Authentication method
               </label>
 
               <select
-                id="authMethod"
                 name="authMethod"
-                value={formData.authMethod}
+                value={
+                  formData.authMethod
+                }
                 onChange={updateField}
               >
                 <option value="Manual">
@@ -357,12 +387,9 @@ function AttendanceFormModal({
             </div>
 
             <div className="bs-form-group">
-              <label htmlFor="date">
-                Date
-              </label>
+              <label>Date</label>
 
               <input
-                id="date"
                 name="date"
                 type="date"
                 value={formData.date}
@@ -372,12 +399,9 @@ function AttendanceFormModal({
             </div>
 
             <div className="bs-form-group">
-              <label htmlFor="time">
-                Time
-              </label>
+              <label>Time</label>
 
               <input
-                id="time"
                 name="time"
                 type="time"
                 value={formData.time}
@@ -387,26 +411,25 @@ function AttendanceFormModal({
             </div>
 
             <div className="bs-form-group">
-              <label htmlFor="deviceId">
+              <label>
                 Device or terminal
               </label>
 
               <input
-                id="deviceId"
                 name="deviceId"
-                value={formData.deviceId}
+                value={
+                  formData.deviceId
+                }
                 onChange={updateField}
-                placeholder="Admin Portal"
               />
             </div>
 
             <div className="bs-form-group">
-              <label htmlFor="verificationResult">
+              <label>
                 Verification result
               </label>
 
               <select
-                id="verificationResult"
                 name="verificationResult"
                 value={
                   formData.verificationResult
@@ -429,17 +452,18 @@ function AttendanceFormModal({
             </div>
 
             <div className="bs-form-group bs-form-span-2">
-              <label htmlFor="notes">
+              <label>
                 Notes or reason
               </label>
 
               <textarea
-                id="notes"
                 name="notes"
                 rows="4"
-                value={formData.notes}
+                value={
+                  formData.notes
+                }
                 onChange={updateField}
-                placeholder="Explain why this attendance record was added or changed."
+                placeholder="Explain why this record was added or changed."
               />
             </div>
           </div>
@@ -487,8 +511,10 @@ function AdminAttendance() {
   const [searchTerm, setSearchTerm] =
     useState("");
 
-  const [selectedCourse, setSelectedCourse] =
-    useState("all");
+  const [
+    selectedCourse,
+    setSelectedCourse,
+  ] = useState("all");
 
   const [
     selectedDepartment,
@@ -501,231 +527,331 @@ function AdminAttendance() {
   const [dateTo, setDateTo] =
     useState("");
 
-  const [selectedStatus, setSelectedStatus] =
-    useState("all");
+  const [
+    selectedStatus,
+    setSelectedStatus,
+  ] = useState("all");
 
   const [
     selectedAuthMethod,
     setSelectedAuthMethod,
   ] = useState("all");
 
-  const [selectedDevice, setSelectedDevice] =
-    useState("all");
+  const [
+    selectedDevice,
+    setSelectedDevice,
+  ] = useState("all");
 
   const [
     selectedVerification,
     setSelectedVerification,
   ] = useState("all");
 
-  const [sortConfig, setSortConfig] =
-    useState({
-      key: "timestamp",
-      direction: "desc",
-    });
+  const [
+    sortConfig,
+    setSortConfig,
+  ] = useState({
+    key: "timestamp",
+    direction: "desc",
+  });
 
-  const [selectedIds, setSelectedIds] =
-    useState(new Set());
+  const [
+    selectedIds,
+    setSelectedIds,
+  ] = useState(new Set());
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] =
-    useState(10);
+  const [page, setPage] =
+    useState(1);
 
-  const [selectedModal, setSelectedModal] =
-    useState(null);
+  const [
+    pageSize,
+    setPageSize,
+  ] = useState(10);
 
-  const [formModal, setFormModal] =
-    useState(null);
+  const [
+    selectedModal,
+    setSelectedModal,
+  ] = useState(null);
+
+  const [
+    formModal,
+    setFormModal,
+  ] = useState(null);
 
   const [saving, setSaving] =
     useState(false);
 
-  const uniqueValues = useMemo(() => {
-    function makeUnique(field) {
-      return Array.from(
-        new Set(
-          records
-            .map((record) => record[field])
-            .filter(
-              (value) =>
-                value &&
-                value !== "N/A" &&
-                value !== "Unknown"
+  const uniqueValues =
+    useMemo(() => {
+      function makeUnique(
+        field
+      ) {
+        return Array.from(
+          new Set(
+            records
+              .map(
+                (record) =>
+                  record[field]
+              )
+              .filter(
+                (value) =>
+                  value &&
+                  value !== "N/A" &&
+                  value !==
+                    "Unknown"
+              )
+          )
+        ).sort();
+      }
+
+      return {
+        courses:
+          makeUnique("course"),
+        departments:
+          makeUnique(
+            "department"
+          ),
+        authMethods:
+          makeUnique(
+            "authMethod"
+          ),
+        devices:
+          makeUnique(
+            "deviceId"
+          ),
+        verificationResults:
+          makeUnique(
+            "verificationResult"
+          ),
+      };
+    }, [records]);
+
+  const studentOptions =
+    useMemo(() => {
+      const map =
+        new Map();
+
+      records.forEach(
+        (record) => {
+          if (!record.userId) {
+            return;
+          }
+
+          if (
+            !map.has(
+              record.userId
             )
-        )
-      ).sort();
-    }
-
-    return {
-      courses: makeUnique("course"),
-      departments: makeUnique(
-        "department"
-      ),
-      authMethods: makeUnique(
-        "authMethod"
-      ),
-      devices: makeUnique("deviceId"),
-      verificationResults: makeUnique(
-        "verificationResult"
-      ),
-    };
-  }, [records]);
-
-  const studentOptions = useMemo(() => {
-    const map = new Map();
-
-    records.forEach((record) => {
-      if (!record.userId) return;
-
-      if (!map.has(record.userId)) {
-        map.set(record.userId, {
-          userId: record.userId,
-          studentName:
-            record.studentName,
-          studentId:
-            record.studentId,
-        });
-      }
-    });
-
-    return Array.from(map.values()).sort(
-      (first, second) =>
-        first.studentName.localeCompare(
-          second.studentName
-        )
-    );
-  }, [records]);
-
-  const filteredRecords = useMemo(() => {
-    const query = searchTerm
-      .trim()
-      .toLowerCase();
-
-    return records.filter((record) => {
-      const searchableText = [
-        record.studentName,
-        record.studentId,
-        record.email,
-        record.course,
-        record.department,
-        record.authMethod,
-        record.deviceId,
-        record.rfidCardId,
-        record.verificationResult,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch =
-        !query ||
-        searchableText.includes(query);
-
-      const matchesCourse =
-        selectedCourse === "all" ||
-        record.course === selectedCourse;
-
-      const matchesDepartment =
-        selectedDepartment === "all" ||
-        record.department ===
-          selectedDepartment;
-
-      const matchesStatus =
-        selectedStatus === "all" ||
-        record.status === selectedStatus;
-
-      const matchesMethod =
-        selectedAuthMethod === "all" ||
-        record.authMethod ===
-          selectedAuthMethod;
-
-      const matchesDevice =
-        selectedDevice === "all" ||
-        record.deviceId === selectedDevice;
-
-      const matchesVerification =
-        selectedVerification === "all" ||
-        record.verificationResult ===
-          selectedVerification;
-
-      let matchesDateFrom = true;
-      let matchesDateTo = true;
-
-      if (record.timestamp) {
-        const recordDate =
-          dateToInputValue(
-            record.timestamp
-          );
-
-        if (dateFrom) {
-          matchesDateFrom =
-            recordDate >= dateFrom;
+          ) {
+            map.set(
+              record.userId,
+              {
+                userId:
+                  record.userId,
+                studentName:
+                  record.studentName,
+                studentId:
+                  record.studentId,
+              }
+            );
+          }
         }
-
-        if (dateTo) {
-          matchesDateTo =
-            recordDate <= dateTo;
-        }
-      } else if (dateFrom || dateTo) {
-        matchesDateFrom = false;
-        matchesDateTo = false;
-      }
-
-      return (
-        matchesSearch &&
-        matchesCourse &&
-        matchesDepartment &&
-        matchesStatus &&
-        matchesMethod &&
-        matchesDevice &&
-        matchesVerification &&
-        matchesDateFrom &&
-        matchesDateTo
       );
-    });
-  }, [
-    records,
-    searchTerm,
-    selectedCourse,
-    selectedDepartment,
-    selectedStatus,
-    selectedAuthMethod,
-    selectedDevice,
-    selectedVerification,
-    dateFrom,
-    dateTo,
-  ]);
 
-  const sortedRecords = useMemo(() => {
-    return [...filteredRecords].sort(
-      (first, second) => {
-        const comparison = compareValues(
-          first[sortConfig.key],
-          second[sortConfig.key]
-        );
+      return Array.from(
+        map.values()
+      ).sort(
+        (
+          first,
+          second
+        ) =>
+          first.studentName.localeCompare(
+            second.studentName
+          )
+      );
+    }, [records]);
 
-        return sortConfig.direction ===
-          "asc"
-          ? comparison
-          : -comparison;
-      }
+  const filteredRecords =
+    useMemo(() => {
+      const queryText =
+        searchTerm
+          .trim()
+          .toLowerCase();
+
+      return records.filter(
+        (record) => {
+          const searchableText =
+            [
+              record.studentName,
+              record.studentId,
+              record.email,
+              record.course,
+              record.department,
+              record.authMethod,
+              record.deviceId,
+              record.rfidCardId,
+              record.verificationResult,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+
+          const matchesSearch =
+            !queryText ||
+            searchableText.includes(
+              queryText
+            );
+
+          const matchesCourse =
+            selectedCourse ===
+              "all" ||
+            record.course ===
+              selectedCourse;
+
+          const matchesDepartment =
+            selectedDepartment ===
+              "all" ||
+            record.department ===
+              selectedDepartment;
+
+          const matchesStatus =
+            selectedStatus ===
+              "all" ||
+            record.status ===
+              selectedStatus;
+
+          const matchesMethod =
+            selectedAuthMethod ===
+              "all" ||
+            record.authMethod ===
+              selectedAuthMethod;
+
+          const matchesDevice =
+            selectedDevice ===
+              "all" ||
+            record.deviceId ===
+              selectedDevice;
+
+          const matchesVerification =
+            selectedVerification ===
+              "all" ||
+            record.verificationResult ===
+              selectedVerification;
+
+          let matchesDateFrom =
+            true;
+
+          let matchesDateTo =
+            true;
+
+          if (
+            record.timestamp
+          ) {
+            const recordDate =
+              dateToInputValue(
+                record.timestamp
+              );
+
+            if (dateFrom) {
+              matchesDateFrom =
+                recordDate >=
+                dateFrom;
+            }
+
+            if (dateTo) {
+              matchesDateTo =
+                recordDate <=
+                dateTo;
+            }
+          } else if (
+            dateFrom ||
+            dateTo
+          ) {
+            matchesDateFrom =
+              false;
+            matchesDateTo =
+              false;
+          }
+
+          return (
+            matchesSearch &&
+            matchesCourse &&
+            matchesDepartment &&
+            matchesStatus &&
+            matchesMethod &&
+            matchesDevice &&
+            matchesVerification &&
+            matchesDateFrom &&
+            matchesDateTo
+          );
+        }
+      );
+    }, [
+      records,
+      searchTerm,
+      selectedCourse,
+      selectedDepartment,
+      selectedStatus,
+      selectedAuthMethod,
+      selectedDevice,
+      selectedVerification,
+      dateFrom,
+      dateTo,
+    ]);
+
+  const sortedRecords =
+    useMemo(() => {
+      return [
+        ...filteredRecords,
+      ].sort(
+        (
+          first,
+          second
+        ) => {
+          const comparison =
+            compareValues(
+              first[
+                sortConfig.key
+              ],
+              second[
+                sortConfig.key
+              ]
+            );
+
+          return sortConfig.direction ===
+            "asc"
+            ? comparison
+            : -comparison;
+        }
+      );
+    }, [
+      filteredRecords,
+      sortConfig,
+    ]);
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        sortedRecords.length /
+          pageSize
+      )
     );
-  }, [filteredRecords, sortConfig]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      sortedRecords.length / pageSize
-    )
-  );
+  const paginatedRecords =
+    useMemo(() => {
+      const start =
+        (page - 1) *
+        pageSize;
 
-  const paginatedRecords = useMemo(() => {
-    const start = (page - 1) * pageSize;
-
-    return sortedRecords.slice(
-      start,
-      start + pageSize
-    );
-  }, [sortedRecords, page, pageSize]);
+      return sortedRecords.slice(
+        start,
+        start + pageSize
+      );
+    }, [
+      sortedRecords,
+      page,
+      pageSize,
+    ]);
 
   useEffect(() => {
     setPage(1);
@@ -743,145 +869,211 @@ function AdminAttendance() {
   ]);
 
   useEffect(() => {
-    if (page > totalPages) {
+    if (
+      page > totalPages
+    ) {
       setPage(totalPages);
     }
-  }, [page, totalPages]);
+  }, [
+    page,
+    totalPages,
+  ]);
 
-  const summary = useMemo(() => {
-    const total = filteredRecords.length;
+  const summary =
+    useMemo(() => {
+      const total =
+        filteredRecords.length;
 
-    const present =
-      filteredRecords.filter(
-        (record) =>
-          record.status === "present"
-      ).length;
+      const present =
+        filteredRecords.filter(
+          (record) =>
+            record.status ===
+            "present"
+        ).length;
 
-    const late =
-      filteredRecords.filter(
-        (record) =>
-          record.status === "late"
-      ).length;
+      const late =
+        filteredRecords.filter(
+          (record) =>
+            record.status ===
+            "late"
+        ).length;
 
-    const absent =
-      filteredRecords.filter(
-        (record) =>
-          record.status === "absent"
-      ).length;
+      const absent =
+        filteredRecords.filter(
+          (record) =>
+            record.status ===
+            "absent"
+        ).length;
 
-    const attended = present + late;
+      const attended =
+        present + late;
 
-    const percentage =
-      total > 0
-        ? (
-            (attended / total) *
-            100
-          ).toFixed(1)
-        : "0.0";
+      const percentage =
+        total > 0
+          ? (
+              (attended /
+                total) *
+              100
+            ).toFixed(1)
+          : "0.0";
 
-    return {
-      total,
-      present,
-      late,
-      absent,
-      percentage,
-    };
-  }, [filteredRecords]);
+      return {
+        total,
+        present,
+        late,
+        absent,
+        percentage,
+      };
+    }, [
+      filteredRecords,
+    ]);
 
   const allVisibleSelected =
-    paginatedRecords.length > 0 &&
-    paginatedRecords.every((record) =>
-      selectedIds.has(record.id)
+    paginatedRecords.length >
+      0 &&
+    paginatedRecords.every(
+      (record) =>
+        selectedIds.has(
+          record.id
+        )
     );
 
   const selectedRecords =
     useMemo(
       () =>
-        sortedRecords.filter((record) =>
-          selectedIds.has(record.id)
+        sortedRecords.filter(
+          (record) =>
+            selectedIds.has(
+              record.id
+            )
         ),
-      [sortedRecords, selectedIds]
+      [
+        sortedRecords,
+        selectedIds,
+      ]
     );
 
   function toggleSort(key) {
-    setSortConfig((previous) => ({
-      key,
-      direction:
-        previous.key === key &&
-        previous.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
+    setSortConfig(
+      (previous) => ({
+        key,
+        direction:
+          previous.key ===
+            key &&
+          previous.direction ===
+            "asc"
+            ? "desc"
+            : "asc",
+      })
+    );
   }
 
-  function renderSortIcon(key) {
-    if (sortConfig.key !== key) {
+  function renderSortIcon(
+    key
+  ) {
+    if (
+      sortConfig.key !== key
+    ) {
       return (
-        <ArrowUpDown size={13} />
+        <ArrowUpDown
+          size={13}
+        />
       );
     }
 
-    return sortConfig.direction === "asc" ? (
+    return sortConfig.direction ===
+      "asc" ? (
       <ArrowUp size={13} />
     ) : (
       <ArrowDown size={13} />
     );
   }
 
-  function toggleRecord(recordId) {
-    setSelectedIds((previous) => {
-      const next = new Set(previous);
+  function toggleRecord(
+    recordId
+  ) {
+    setSelectedIds(
+      (previous) => {
+        const next =
+          new Set(previous);
 
-      if (next.has(recordId)) {
-        next.delete(recordId);
-      } else {
-        next.add(recordId);
+        if (
+          next.has(recordId)
+        ) {
+          next.delete(
+            recordId
+          );
+        } else {
+          next.add(recordId);
+        }
+
+        return next;
       }
-
-      return next;
-    });
+    );
   }
 
   function toggleVisibleRecords() {
-    setSelectedIds((previous) => {
-      const next = new Set(previous);
+    setSelectedIds(
+      (previous) => {
+        const next =
+          new Set(previous);
 
-      if (allVisibleSelected) {
-        paginatedRecords.forEach(
-          (record) =>
-            next.delete(record.id)
-        );
-      } else {
-        paginatedRecords.forEach(
-          (record) =>
-            next.add(record.id)
-        );
+        if (
+          allVisibleSelected
+        ) {
+          paginatedRecords.forEach(
+            (record) =>
+              next.delete(
+                record.id
+              )
+          );
+        } else {
+          paginatedRecords.forEach(
+            (record) =>
+              next.add(
+                record.id
+              )
+          );
+        }
+
+        return next;
       }
-
-      return next;
-    });
+    );
   }
 
   function clearFilters() {
     setSearchTerm("");
     setSelectedCourse("all");
-    setSelectedDepartment("all");
+    setSelectedDepartment(
+      "all"
+    );
     setSelectedStatus("all");
-    setSelectedAuthMethod("all");
+    setSelectedAuthMethod(
+      "all"
+    );
     setSelectedDevice("all");
-    setSelectedVerification("all");
+    setSelectedVerification(
+      "all"
+    );
     setDateFrom("");
     setDateTo("");
-    setSelectedIds(new Set());
+    setSelectedIds(
+      new Set()
+    );
   }
 
-  function handleExport(format) {
+  function handleExport(
+    format
+  ) {
     const exportRecords =
-      selectedRecords.length > 0
+      selectedRecords.length >
+      0
         ? selectedRecords
         : sortedRecords;
 
-    if (format === "csv") {
+    if (
+      format === "csv"
+    ) {
       exportToCSV(
         exportRecords,
         "attendance"
@@ -894,18 +1086,29 @@ function AdminAttendance() {
     }
   }
 
-  async function handleDelete(record) {
-    const result = await Swal.fire({
-      icon: "warning",
-      title: "Delete attendance?",
-      html: `This will permanently delete the record for <strong>${record.studentName}</strong>.`,
-      showCancelButton: true,
-      confirmButtonText: "Delete",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#ef4444",
-    });
+  async function handleDelete(
+    record
+  ) {
+    const result =
+      await Swal.fire({
+        icon: "warning",
+        title:
+          "Delete attendance?",
+        html: `This will permanently delete the record for <strong>${record.studentName}</strong>.`,
+        showCancelButton: true,
+        confirmButtonText:
+          "Delete",
+        cancelButtonText:
+          "Cancel",
+        confirmButtonColor:
+          "#ef4444",
+      });
 
-    if (!result.isConfirmed) return;
+    if (
+      !result.isConfirmed
+    ) {
+      return;
+    }
 
     try {
       await deleteAttendanceRecord(
@@ -913,24 +1116,34 @@ function AdminAttendance() {
         user
       );
 
-      setSelectedIds((previous) => {
-        const next = new Set(previous);
-        next.delete(record.id);
-        return next;
-      });
+      setSelectedIds(
+        (previous) => {
+          const next =
+            new Set(
+              previous
+            );
+
+          next.delete(
+            record.id
+          );
+
+          return next;
+        }
+      );
 
       await Swal.fire({
         icon: "success",
-        title: "Attendance deleted",
+        title:
+          "Attendance deleted",
         timer: 1400,
-        showConfirmButton: false,
+        showConfirmButton:
+          false,
       });
     } catch (error) {
-      console.error(error);
-
       Swal.fire({
         icon: "error",
-        title: "Unable to delete",
+        title:
+          "Unable to delete",
         text:
           error.message ||
           "The attendance record could not be deleted.",
@@ -939,45 +1152,51 @@ function AdminAttendance() {
   }
 
   async function handleBulkDelete() {
-    if (selectedRecords.length === 0) {
+    if (
+      selectedRecords.length ===
+      0
+    ) {
       return;
     }
 
-    const result = await Swal.fire({
-      icon: "warning",
-      title: `Delete ${selectedRecords.length} records?`,
-      text: "This action cannot be undone.",
-      showCancelButton: true,
-      confirmButtonText:
-        "Delete selected",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#ef4444",
-    });
+    const result =
+      await Swal.fire({
+        icon: "warning",
+        title: `Delete ${selectedRecords.length} records?`,
+        text:
+          "This action cannot be undone.",
+        showCancelButton: true,
+        confirmButtonText:
+          "Delete selected",
+        cancelButtonText:
+          "Cancel",
+        confirmButtonColor:
+          "#ef4444",
+      });
 
-    if (!result.isConfirmed) return;
+    if (
+      !result.isConfirmed
+    ) {
+      return;
+    }
 
     try {
       await deleteAttendanceRecords(
         selectedRecords.map(
-          (record) => record.id
+          (record) =>
+            record.id
         ),
         user
       );
 
-      setSelectedIds(new Set());
-
-      await Swal.fire({
-        icon: "success",
-        title: "Records deleted",
-        timer: 1400,
-        showConfirmButton: false,
-      });
+      setSelectedIds(
+        new Set()
+      );
     } catch (error) {
-      console.error(error);
-
       Swal.fire({
         icon: "error",
-        title: "Unable to delete records",
+        title:
+          "Unable to delete records",
         text:
           error.message ||
           "The selected records could not be deleted.",
@@ -991,7 +1210,10 @@ function AdminAttendance() {
     setSaving(true);
 
     try {
-      if (formModal.mode === "edit") {
+      if (
+        formModal.mode ===
+        "edit"
+      ) {
         await updateAttendanceRecord(
           formModal.record.id,
           formData,
@@ -1009,18 +1231,19 @@ function AdminAttendance() {
       await Swal.fire({
         icon: "success",
         title:
-          formModal.mode === "edit"
+          formModal.mode ===
+          "edit"
             ? "Attendance updated"
             : "Attendance added",
         timer: 1400,
-        showConfirmButton: false,
+        showConfirmButton:
+          false,
       });
     } catch (error) {
-      console.error(error);
-
       Swal.fire({
         icon: "error",
-        title: "Unable to save",
+        title:
+          "Unable to save",
         text:
           error.message ||
           "The attendance record could not be saved.",
@@ -1030,45 +1253,53 @@ function AdminAttendance() {
     }
   }
 
-  if (attendanceSubscription.loading) {
+  if (
+    attendanceSubscription.loading
+  ) {
     return (
-      <div className="bs-page bs-loading-state">
-        <div className="bs-skeleton-loader">
-          <div className="bs-skeleton bs-skeleton-line" />
-          <div className="bs-skeleton bs-skeleton-line" />
-          <div className="bs-skeleton bs-skeleton-line" />
-          <div className="bs-skeleton bs-skeleton-line" />
-        </div>
+      <div className="admin-attendance-page aa-loading-page">
+        <div className="aa-loader" />
+        <p>
+          Loading attendance
+          management...
+        </p>
       </div>
     );
   }
 
-  if (attendanceSubscription.error) {
+  if (
+    attendanceSubscription.error
+  ) {
     return (
-      <div className="bs-page bs-attendance-page">
-        <div className="bs-card bs-attendance-error">
-          <AlertCircle size={34} />
+      <div className="admin-attendance-page">
+        <div className="aa-error-card">
+          <AlertCircle
+            size={30}
+          />
 
           <div>
             <h2>
-              Unable to load attendance
+              Unable to load
+              attendance
             </h2>
 
             <p>
-              {attendanceSubscription.error
-                .message ||
-                "Check your Firestore connection and try again."}
+              {
+                attendanceSubscription
+                  .error.message
+              }
             </p>
           </div>
 
           <button
             type="button"
-            className="bs-btn bs-btn-primary"
             onClick={
               attendanceSubscription.retry
             }
           >
-            <RefreshCw size={16} />
+            <RefreshCw
+              size={15}
+            />
             Retry
           </button>
         </div>
@@ -1077,32 +1308,48 @@ function AdminAttendance() {
   }
 
   const firstVisible =
-    sortedRecords.length === 0
+    sortedRecords.length ===
+    0
       ? 0
-      : (page - 1) * pageSize + 1;
+      : (page - 1) *
+          pageSize +
+        1;
 
-  const lastVisible = Math.min(
-    page * pageSize,
-    sortedRecords.length
-  );
+  const lastVisible =
+    Math.min(
+      page * pageSize,
+      sortedRecords.length
+    );
 
   return (
-    <div className="bs-page bs-attendance-page">
-      <div className="bs-page-header">
+    <div className="admin-attendance-page">
+      <section className="aa-hero">
+        <div className="aa-hero-grid" />
+
         <div>
-          <h1 className="bs-page-title">
+          <span className="aa-eyebrow">
+            <ShieldCheck
+              size={14}
+            />
+            Administrator Control
+          </span>
+
+          <h1>
             Attendance Management
           </h1>
 
-          <p className="bs-page-subtitle">
-            Monitor, create and manage student
-            attendance records.
+          <p>
+            Monitor, correct,
+            export and manage
+            attendance records
+            across the BioSync
+            Sentinel system.
           </p>
         </div>
 
         <button
           type="button"
-          className="bs-btn bs-btn-primary bs-btn-lg"
+          className="aa-add-button"
           onClick={() =>
             setFormModal({
               mode: "add",
@@ -1110,12 +1357,14 @@ function AdminAttendance() {
             })
           }
         >
-          <FilePlus2 size={17} />
+          <FilePlus2
+            size={17}
+          />
           Add Attendance
         </button>
-      </div>
+      </section>
 
-      <div className="bs-summary-grid">
+      <section className="aa-summary-grid">
         <SummaryCard
           icon={Users}
           label="Total Records"
@@ -1126,7 +1375,9 @@ function AdminAttendance() {
         <SummaryCard
           icon={CheckCircle}
           label="Present"
-          value={summary.present}
+          value={
+            summary.present
+          }
           tone="success"
         />
 
@@ -1140,7 +1391,9 @@ function AdminAttendance() {
         <SummaryCard
           icon={XCircle}
           label="Absent"
-          value={summary.absent}
+          value={
+            summary.absent
+          }
           tone="danger"
         />
 
@@ -1150,356 +1403,364 @@ function AdminAttendance() {
           value={`${summary.percentage}%`}
           tone="info"
         />
-      </div>
+      </section>
 
-      <div className="bs-card bs-filters-card">
-        <div className="bs-filters-container">
-          <div className="bs-search-box bs-search-lg">
-            <Search
-              size={18}
-              className="bs-search-icon"
-            />
-
-            <input
-              type="text"
-              placeholder="Search name, student ID, email, RFID, course, department, method or device..."
-              value={searchTerm}
-              onChange={(event) =>
-                setSearchTerm(
-                  event.target.value
-                )
-              }
-              className="bs-search-input"
-            />
-          </div>
-
-          <div className="bs-advanced-filter-grid">
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                Course
-              </label>
-
-              <select
-                value={selectedCourse}
-                onChange={(event) =>
-                  setSelectedCourse(
-                    event.target.value
-                  )
-                }
-                className="bs-filter-select"
-              >
-                <option value="all">
-                  All Courses
-                </option>
-
-                {uniqueValues.courses.map(
-                  (course) => (
-                    <option
-                      key={course}
-                      value={course}
-                    >
-                      {course}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                Department
-              </label>
-
-              <select
-                value={
-                  selectedDepartment
-                }
-                onChange={(event) =>
-                  setSelectedDepartment(
-                    event.target.value
-                  )
-                }
-                className="bs-filter-select"
-              >
-                <option value="all">
-                  All Departments
-                </option>
-
-                {uniqueValues.departments.map(
-                  (department) => (
-                    <option
-                      key={department}
-                      value={department}
-                    >
-                      {department}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                From
-              </label>
-
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(event) =>
-                  setDateFrom(
-                    event.target.value
-                  )
-                }
-                className="bs-filter-select"
-              />
-            </div>
-
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                To
-              </label>
-
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(event) =>
-                  setDateTo(
-                    event.target.value
-                  )
-                }
-                min={dateFrom || undefined}
-                className="bs-filter-select"
-              />
-            </div>
-
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                Status
-              </label>
-
-              <select
-                value={selectedStatus}
-                onChange={(event) =>
-                  setSelectedStatus(
-                    event.target.value
-                  )
-                }
-                className="bs-filter-select"
-              >
-                <option value="all">
-                  All Statuses
-                </option>
-                <option value="present">
-                  Present
-                </option>
-                <option value="late">
-                  Late
-                </option>
-                <option value="absent">
-                  Absent
-                </option>
-                <option value="excused">
-                  Excused
-                </option>
-              </select>
-            </div>
-
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                Auth Method
-              </label>
-
-              <select
-                value={selectedAuthMethod}
-                onChange={(event) =>
-                  setSelectedAuthMethod(
-                    event.target.value
-                  )
-                }
-                className="bs-filter-select"
-              >
-                <option value="all">
-                  All Methods
-                </option>
-
-                {uniqueValues.authMethods.map(
-                  (method) => (
-                    <option
-                      key={method}
-                      value={method}
-                    >
-                      {method}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                Device
-              </label>
-
-              <select
-                value={selectedDevice}
-                onChange={(event) =>
-                  setSelectedDevice(
-                    event.target.value
-                  )
-                }
-                className="bs-filter-select"
-              >
-                <option value="all">
-                  All Devices
-                </option>
-
-                {uniqueValues.devices.map(
-                  (device) => (
-                    <option
-                      key={device}
-                      value={device}
-                    >
-                      {device}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
-            <div className="bs-filter-group">
-              <label className="bs-filter-label">
-                Verification
-              </label>
-
-              <select
-                value={
-                  selectedVerification
-                }
-                onChange={(event) =>
-                  setSelectedVerification(
-                    event.target.value
-                  )
-                }
-                className="bs-filter-select"
-              >
-                <option value="all">
-                  All Results
-                </option>
-
-                {uniqueValues.verificationResults.map(
-                  (result) => (
-                    <option
-                      key={result}
-                      value={result}
-                    >
-                      {verificationLabel(
-                        result
-                      )}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-          </div>
-
-          <div className="bs-filter-actions">
-            <button
-              type="button"
-              className="bs-btn bs-btn-secondary"
-              onClick={clearFilters}
-            >
-              <X size={15} />
-              Clear Filters
-            </button>
-
-            <div className="bs-button-group">
-              <button
-                type="button"
-                onClick={() =>
-                  handleExport("csv")
-                }
-                className="bs-btn bs-btn-secondary"
-              >
-                <Download size={16} />
-                CSV
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  handleExport("pdf")
-                }
-                className="bs-btn bs-btn-secondary"
-              >
-                <Download size={16} />
-                PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {selectedRecords.length > 0 && (
-        <div className="bs-card bs-bulk-toolbar">
-          <span>
-            <strong>
-              {selectedRecords.length}
-            </strong>{" "}
-            record
-            {selectedRecords.length === 1
-              ? ""
-              : "s"}{" "}
-            selected
-          </span>
-
-          <div className="bs-button-group">
-            <button
-              type="button"
-              className="bs-btn bs-btn-secondary"
-              onClick={() =>
-                handleExport("csv")
-              }
-            >
-              <Download size={15} />
-              Export Selected
-            </button>
-
-            <button
-              type="button"
-              className="bs-btn bs-btn-danger"
-              onClick={handleBulkDelete}
-            >
-              <Trash2 size={15} />
-              Delete Selected
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="bs-card bs-table-card">
-        <div className="bs-table-heading">
+      <section className="aa-filter-panel">
+        <div className="aa-filter-heading">
           <div>
-            <h2>Attendance Records</h2>
+            <span>
+              <Filter
+                size={15}
+              />
+              Advanced Filters
+            </span>
+
             <p>
-              Showing {firstVisible}–
-              {lastVisible} of{" "}
-              {sortedRecords.length} records
+              Refine attendance
+              records using student,
+              course, device and
+              verification details.
             </p>
           </div>
 
-          <div className="bs-page-size">
-            <label htmlFor="pageSize">
-              Rows:
-            </label>
+          <div className="aa-export-actions">
+            <button
+              type="button"
+              onClick={() =>
+                handleExport(
+                  "csv"
+                )
+              }
+            >
+              <Download
+                size={14}
+              />
+              CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                handleExport(
+                  "pdf"
+                )
+              }
+            >
+              <Download
+                size={14}
+              />
+              PDF
+            </button>
+          </div>
+        </div>
+
+        <div className="aa-search">
+          <Search size={17} />
+
+          <input
+            value={searchTerm}
+            onChange={(
+              event
+            ) =>
+              setSearchTerm(
+                event.target
+                  .value
+              )
+            }
+            placeholder="Search student, ID, email, RFID, course, department, method or device..."
+          />
+        </div>
+
+        <div className="aa-filter-grid">
+          <select
+            value={
+              selectedCourse
+            }
+            onChange={(
+              event
+            ) =>
+              setSelectedCourse(
+                event.target
+                  .value
+              )
+            }
+          >
+            <option value="all">
+              All Courses
+            </option>
+
+            {uniqueValues.courses.map(
+              (value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              )
+            )}
+          </select>
+
+          <select
+            value={
+              selectedDepartment
+            }
+            onChange={(
+              event
+            ) =>
+              setSelectedDepartment(
+                event.target
+                  .value
+              )
+            }
+          >
+            <option value="all">
+              All Departments
+            </option>
+
+            {uniqueValues.departments.map(
+              (value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              )
+            )}
+          </select>
+
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(
+              event
+            ) =>
+              setDateFrom(
+                event.target
+                  .value
+              )
+            }
+          />
+
+          <input
+            type="date"
+            value={dateTo}
+            min={
+              dateFrom ||
+              undefined
+            }
+            onChange={(
+              event
+            ) =>
+              setDateTo(
+                event.target
+                  .value
+              )
+            }
+          />
+
+          <select
+            value={
+              selectedStatus
+            }
+            onChange={(
+              event
+            ) =>
+              setSelectedStatus(
+                event.target
+                  .value
+              )
+            }
+          >
+            <option value="all">
+              All Statuses
+            </option>
+            <option value="present">
+              Present
+            </option>
+            <option value="late">
+              Late
+            </option>
+            <option value="absent">
+              Absent
+            </option>
+            <option value="excused">
+              Excused
+            </option>
+          </select>
+
+          <select
+            value={
+              selectedAuthMethod
+            }
+            onChange={(
+              event
+            ) =>
+              setSelectedAuthMethod(
+                event.target
+                  .value
+              )
+            }
+          >
+            <option value="all">
+              All Methods
+            </option>
+
+            {uniqueValues.authMethods.map(
+              (value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              )
+            )}
+          </select>
+
+          <select
+            value={
+              selectedDevice
+            }
+            onChange={(
+              event
+            ) =>
+              setSelectedDevice(
+                event.target
+                  .value
+              )
+            }
+          >
+            <option value="all">
+              All Devices
+            </option>
+
+            {uniqueValues.devices.map(
+              (value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value}
+                </option>
+              )
+            )}
+          </select>
+
+          <select
+            value={
+              selectedVerification
+            }
+            onChange={(
+              event
+            ) =>
+              setSelectedVerification(
+                event.target
+                  .value
+              )
+            }
+          >
+            <option value="all">
+              All Verification
+            </option>
+
+            {uniqueValues.verificationResults.map(
+              (value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {verificationLabel(
+                    value
+                  )}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+
+        <button
+          type="button"
+          className="aa-clear-button"
+          onClick={clearFilters}
+        >
+          <X size={14} />
+          Clear Filters
+        </button>
+      </section>
+
+      {selectedRecords.length >
+        0 && (
+        <section className="aa-selection-bar">
+          <strong>
+            {
+              selectedRecords.length
+            }{" "}
+            selected
+          </strong>
+
+          <div>
+            <button
+              onClick={() =>
+                handleExport(
+                  "csv"
+                )
+              }
+            >
+              <Download
+                size={14}
+              />
+              Export
+            </button>
+
+            <button
+              className="aa-delete-selected"
+              onClick={
+                handleBulkDelete
+              }
+            >
+              <Trash2
+                size={14}
+              />
+              Delete
+            </button>
+          </div>
+        </section>
+      )}
+
+      <section className="aa-table-panel">
+        <div className="aa-table-heading">
+          <div>
+            <h2>
+              Attendance Records
+            </h2>
+
+            <p>
+              Showing{" "}
+              {firstVisible}–
+              {lastVisible} of{" "}
+              {
+                sortedRecords.length
+              }{" "}
+              records
+            </p>
+          </div>
+
+          <div>
+            <span>
+              Rows
+            </span>
 
             <select
-              id="pageSize"
               value={pageSize}
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 setPageSize(
                   Number(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 )
               }
@@ -1518,11 +1779,11 @@ function AdminAttendance() {
           </div>
         </div>
 
-        <div className="bs-table-scroll">
-          <table className="bs-table bs-attendance-table">
+        <div className="aa-table-scroll">
+          <table className="aa-table">
             <thead>
               <tr>
-                <th className="bs-checkbox-column">
+                <th>
                   <input
                     type="checkbox"
                     checked={
@@ -1531,21 +1792,18 @@ function AdminAttendance() {
                     onChange={
                       toggleVisibleRecords
                     }
-                    aria-label="Select visible records"
                   />
                 </th>
 
                 <th>
                   <button
-                    type="button"
-                    className="bs-sort-button"
                     onClick={() =>
                       toggleSort(
                         "studentName"
                       )
                     }
                   >
-                    Student Name
+                    Student
                     {renderSortIcon(
                       "studentName"
                     )}
@@ -1553,28 +1811,15 @@ function AdminAttendance() {
                 </th>
 
                 <th>
-                  <button
-                    type="button"
-                    className="bs-sort-button"
-                    onClick={() =>
-                      toggleSort(
-                        "studentId"
-                      )
-                    }
-                  >
-                    Student ID
-                    {renderSortIcon(
-                      "studentId"
-                    )}
-                  </button>
+                  Student ID
                 </th>
 
-                <th>Course</th>
+                <th>
+                  Course
+                </th>
 
                 <th>
                   <button
-                    type="button"
-                    className="bs-sort-button"
                     onClick={() =>
                       toggleSort(
                         "timestamp"
@@ -1589,40 +1834,24 @@ function AdminAttendance() {
                 </th>
 
                 <th>
-                  <button
-                    type="button"
-                    className="bs-sort-button"
-                    onClick={() =>
-                      toggleSort("status")
-                    }
-                  >
-                    Status
-                    {renderSortIcon(
-                      "status"
-                    )}
-                  </button>
+                  Status
                 </th>
 
                 <th>
-                  <button
-                    type="button"
-                    className="bs-sort-button"
-                    onClick={() =>
-                      toggleSort(
-                        "authMethod"
-                      )
-                    }
-                  >
-                    Method
-                    {renderSortIcon(
-                      "authMethod"
-                    )}
-                  </button>
+                  Method
                 </th>
 
-                <th>Device</th>
-                <th>Verification</th>
-                <th>Action</th>
+                <th>
+                  Device
+                </th>
+
+                <th>
+                  Verification
+                </th>
+
+                <th>
+                  Actions
+                </th>
               </tr>
             </thead>
 
@@ -1632,17 +1861,12 @@ function AdminAttendance() {
                 <tr>
                   <td
                     colSpan="10"
-                    className="bs-table-empty"
+                    className="aa-empty"
                   >
-                    <div className="bs-empty-state">
-                      <XCircle size={46} />
-
-                      <p>
-                        No attendance records
-                        match the selected
-                        filters.
-                      </p>
-                    </div>
+                    No attendance
+                    records match
+                    the current
+                    filters.
                   </td>
                 </tr>
               ) : (
@@ -1651,26 +1875,13 @@ function AdminAttendance() {
                     const date =
                       record.timestamp;
 
-                    const dateText = date
-                      ? date.toLocaleDateString(
-                          "en-MY"
-                        )
-                      : "N/A";
-
-                    const timeText = date
-                      ? date.toLocaleTimeString(
-                          "en-MY",
-                          {
-                            hour: "2-digit",
-                            minute:
-                              "2-digit",
-                          }
-                        )
-                      : "N/A";
-
                     return (
-                      <tr key={record.id}>
-                        <td className="bs-checkbox-column">
+                      <tr
+                        key={
+                          record.id
+                        }
+                      >
+                        <td>
                           <input
                             type="checkbox"
                             checked={selectedIds.has(
@@ -1681,19 +1892,20 @@ function AdminAttendance() {
                                 record.id
                               )
                             }
-                            aria-label={`Select ${record.studentName}`}
                           />
                         </td>
 
                         <td>
-                          <div className="bs-table-name">
-                            <span className="bs-avatar-small">
+                          <div className="aa-student">
+                            <span>
                               {record.studentName
-                                .charAt(0)
+                                .charAt(
+                                  0
+                                )
                                 .toUpperCase()}
                             </span>
 
-                            <span className="bs-student-cell">
+                            <div>
                               <strong>
                                 {
                                   record.studentName
@@ -1704,20 +1916,24 @@ function AdminAttendance() {
                                 {record.email ||
                                   "No email"}
                               </small>
-                            </span>
+                            </div>
                           </div>
                         </td>
 
                         <td>
-                          {record.studentId}
+                          {
+                            record.studentId
+                          }
                         </td>
 
                         <td>
-                          <span className="bs-course-cell">
-                            {record.course}
-                          </span>
+                          <strong>
+                            {
+                              record.course
+                            }
+                          </strong>
 
-                          <small className="bs-department-cell">
+                          <small className="aa-department">
                             {
                               record.department
                             }
@@ -1725,14 +1941,27 @@ function AdminAttendance() {
                         </td>
 
                         <td>
-                          <div className="bs-datetime-cell">
-                            <strong>
-                              {dateText}
-                            </strong>
-                            <small>
-                              {timeText}
-                            </small>
-                          </div>
+                          <strong>
+                            {date
+                              ? date.toLocaleDateString(
+                                  "en-MY"
+                                )
+                              : "N/A"}
+                          </strong>
+
+                          <small className="aa-date-time">
+                            {date
+                              ? date.toLocaleTimeString(
+                                  "en-MY",
+                                  {
+                                    hour:
+                                      "2-digit",
+                                    minute:
+                                      "2-digit",
+                                  }
+                                )
+                              : "N/A"}
+                          </small>
                         </td>
 
                         <td>
@@ -1744,7 +1973,7 @@ function AdminAttendance() {
                         </td>
 
                         <td>
-                          <span className="bs-badge bs-badge-method">
+                          <span className="aa-method">
                             {
                               record.authMethod
                             }
@@ -1752,9 +1981,9 @@ function AdminAttendance() {
                         </td>
 
                         <td>
-                          <span className="bs-device-cell">
-                            {record.deviceId}
-                          </span>
+                          {
+                            record.deviceId
+                          }
                         </td>
 
                         <td>
@@ -1770,40 +1999,44 @@ function AdminAttendance() {
                         </td>
 
                         <td>
-                          <div className="bs-row-actions">
+                          <div className="aa-actions">
                             <button
-                              type="button"
-                              className="bs-action-button bs-action-view"
-                              title="View details"
+                              title="View"
                               onClick={() =>
                                 setSelectedModal(
                                   record
                                 )
                               }
                             >
-                              <Eye size={15} />
-                            </button>
-
-                            <button
-                              type="button"
-                              className="bs-action-button bs-action-edit"
-                              title="Edit attendance"
-                              onClick={() =>
-                                setFormModal({
-                                  mode: "edit",
-                                  record,
-                                })
-                              }
-                            >
-                              <Edit3
-                                size={15}
+                              <Eye
+                                size={
+                                  14
+                                }
                               />
                             </button>
 
                             <button
-                              type="button"
-                              className="bs-action-button bs-action-delete"
-                              title="Delete attendance"
+                              title="Edit"
+                              onClick={() =>
+                                setFormModal(
+                                  {
+                                    mode:
+                                      "edit",
+                                    record,
+                                  }
+                                )
+                              }
+                            >
+                              <Edit3
+                                size={
+                                  14
+                                }
+                              />
+                            </button>
+
+                            <button
+                              title="Delete"
+                              className="aa-danger-action"
                               onClick={() =>
                                 handleDelete(
                                   record
@@ -1811,7 +2044,9 @@ function AdminAttendance() {
                               }
                             >
                               <Trash2
-                                size={15}
+                                size={
+                                  14
+                                }
                               />
                             </button>
                           </div>
@@ -1825,52 +2060,68 @@ function AdminAttendance() {
           </table>
         </div>
 
-        <div className="bs-pagination">
+        <div className="aa-pagination">
           <span>
-            Page {page} of {totalPages}
+            Page {page} of{" "}
+            {totalPages}
           </span>
 
-          <div className="bs-pagination-controls">
+          <div>
             <button
-              type="button"
-              disabled={page === 1}
+              disabled={
+                page === 1
+              }
               onClick={() =>
-                setPage((previous) =>
-                  Math.max(
-                    1,
-                    previous - 1
-                  )
+                setPage(
+                  (previous) =>
+                    Math.max(
+                      1,
+                      previous -
+                        1
+                    )
                 )
               }
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft
+                size={15}
+              />
               Previous
             </button>
 
             <button
-              type="button"
-              disabled={page === totalPages}
+              disabled={
+                page ===
+                totalPages
+              }
               onClick={() =>
-                setPage((previous) =>
-                  Math.min(
-                    totalPages,
-                    previous + 1
-                  )
+                setPage(
+                  (previous) =>
+                    Math.min(
+                      totalPages,
+                      previous +
+                        1
+                    )
                 )
               }
             >
               Next
-              <ChevronRight size={16} />
+              <ChevronRight
+                size={15}
+              />
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
       {selectedModal && (
         <AttendanceDetailsModal
-          record={selectedModal}
+          record={
+            selectedModal
+          }
           onClose={() =>
-            setSelectedModal(null)
+            setSelectedModal(
+              null
+            )
           }
         />
       )}
@@ -1878,14 +2129,20 @@ function AdminAttendance() {
       {formModal && (
         <AttendanceFormModal
           mode={formModal.mode}
-          record={formModal.record}
-          users={studentOptions}
+          record={
+            formModal.record
+          }
+          users={
+            studentOptions
+          }
           saving={saving}
           onClose={() =>
             !saving &&
             setFormModal(null)
           }
-          onSubmit={handleFormSubmit}
+          onSubmit={
+            handleFormSubmit
+          }
         />
       )}
     </div>

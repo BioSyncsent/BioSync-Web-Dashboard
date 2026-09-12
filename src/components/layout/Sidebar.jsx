@@ -18,8 +18,7 @@ import {
   CalendarCheck,
   LayoutDashboard,
   MonitorSmartphone,
-  Settings,
-  User,
+  UserCog,
   UsersRound,
 } from "lucide-react";
 
@@ -30,6 +29,7 @@ import {
 import {
   subscribeToAdminDisputeNotificationCount,
   subscribeToStudentResponseNotificationCount,
+  subscribeToTeacherDisputeNotificationCount,
 } from "../../services/disputeNotificationService";
 
 import "./Sidebar.css";
@@ -72,7 +72,7 @@ const adminNavItems = [
   {
     to: "/admin/account-center",
     label: "Account Center",
-    icon: User,
+    icon: UserCog,
   },
 ];
 
@@ -102,14 +102,9 @@ const teacherNavItems = [
     icon: BarChart3,
   },
   {
-    to: "/teacher/profile",
-    label: "Profile",
-    icon: User,
-  },
-  {
-    to: "/teacher/settings",
-    label: "Settings",
-    icon: Settings,
+    to: "/teacher/account-center",
+    label: "Account Center",
+    icon: UserCog,
   },
 ];
 
@@ -139,26 +134,24 @@ const studentNavItems = [
     icon: BarChart3,
   },
   {
-    to: "/student/profile",
-    label: "Profile",
-    icon: User,
-  },
-  {
-    to: "/student/settings",
-    label: "Settings",
-    icon: Settings,
+    to: "/student/account-center",
+    label: "Account Center",
+    icon: UserCog,
   },
 ];
 
 /* =========================================================
-   NOTIFICATION HELPERS
+   STORAGE
 ========================================================= */
 
 function createStorageKey(
   role,
   userId
 ) {
-  if (!role || !userId) {
+  if (
+    !role ||
+    !userId
+  ) {
     return "";
   }
 
@@ -166,22 +159,23 @@ function createStorageKey(
 }
 
 function readLastSeenTime(
-  storageKey
+  key
 ) {
-  if (!storageKey) {
+  if (!key) {
     return 0;
   }
 
-  const storedTime = Number(
-    localStorage.getItem(
-      storageKey
-    )
-  );
+  const value =
+    Number(
+      localStorage.getItem(
+        key
+      )
+    );
 
   return Number.isFinite(
-    storedTime
+    value
   )
-    ? storedTime
+    ? value
     : 0;
 }
 
@@ -190,8 +184,9 @@ function readLastSeenTime(
 ========================================================= */
 
 function Sidebar() {
-  const { user } =
-    useAuth();
+  const {
+    user,
+  } = useAuth();
 
   const [
     notificationCount,
@@ -203,11 +198,17 @@ function Sidebar() {
     setLastSeenAt,
   ] = useState(0);
 
-  const role = String(
-    user?.role || ""
-  )
-    .trim()
-    .toLowerCase();
+  const role =
+    String(
+      user?.role ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  /* =======================================================
+     STORAGE KEY
+  ======================================================= */
 
   const storageKey =
     useMemo(
@@ -222,11 +223,15 @@ function Sidebar() {
       ]
     );
 
-  /* NAVIGATION */
+  /* =======================================================
+     NAV ITEMS
+  ======================================================= */
 
   const navItems =
     useMemo(() => {
-      if (role === "admin") {
+      if (
+        role === "admin"
+      ) {
         return adminNavItems;
       }
 
@@ -243,12 +248,18 @@ function Sidebar() {
       }
 
       return [];
-    }, [role]);
+    }, [
+      role,
+    ]);
 
-  /* LOAD LAST-SEEN */
+  /* =======================================================
+     LOAD LAST-SEEN TIME
+  ======================================================= */
 
   useEffect(() => {
-    if (!storageKey) {
+    if (
+      !storageKey
+    ) {
       setLastSeenAt(0);
       setNotificationCount(0);
 
@@ -262,9 +273,13 @@ function Sidebar() {
     );
 
     setNotificationCount(0);
-  }, [storageKey]);
+  }, [
+    storageKey,
+  ]);
 
-  /* DISPUTE NOTIFICATION */
+  /* =======================================================
+     DISPUTE NOTIFICATION LISTENER
+  ======================================================= */
 
   useEffect(() => {
     if (
@@ -288,20 +303,47 @@ function Sidebar() {
       error
     ) {
       console.error(
-        "Sidebar dispute notification error:",
+        "Dispute notification error:",
         error
       );
 
       setNotificationCount(0);
     }
 
-    if (role === "admin") {
+    /* ADMIN */
+
+    if (
+      role === "admin"
+    ) {
       return subscribeToAdminDisputeNotificationCount(
         lastSeenAt,
         handleCount,
         handleError
       );
     }
+
+    /* TEACHER */
+
+    if (
+      role === "teacher"
+    ) {
+      if (
+        !user?.department
+      ) {
+        setNotificationCount(0);
+
+        return undefined;
+      }
+
+      return subscribeToTeacherDisputeNotificationCount(
+        user.department,
+        lastSeenAt,
+        handleCount,
+        handleError
+      );
+    }
+
+    /* STUDENT */
 
     if (
       role === "student"
@@ -319,61 +361,99 @@ function Sidebar() {
     return undefined;
   }, [
     user?.uid,
+    user?.department,
     role,
     lastSeenAt,
   ]);
 
-  /* MARK DISPUTES SEEN */
+  /* =======================================================
+     MARK DISPUTES AS SEEN
+  ======================================================= */
 
   const markDisputesAsSeen =
     useCallback(() => {
-      if (!storageKey) {
+      if (
+        !storageKey
+      ) {
         return;
       }
 
-      const currentTime =
+      const now =
         Date.now();
 
       localStorage.setItem(
         storageKey,
-        String(currentTime)
+        String(now)
       );
 
-      setLastSeenAt(
-        currentTime
-      );
-
+      setLastSeenAt(now);
       setNotificationCount(0);
-    }, [storageKey]);
+    }, [
+      storageKey,
+    ]);
+
+  /* =======================================================
+     NOTIFICATION DISPLAY
+  ======================================================= */
 
   const displayedCount =
     notificationCount > 99
       ? "99+"
       : notificationCount;
 
-  const pluralSuffix =
+  const plural =
     notificationCount === 1
       ? ""
       : "s";
 
-  const notificationTitle =
+  let notificationTitle =
+    "";
+
+  if (
     role === "admin"
-      ? `${notificationCount} new student dispute${pluralSuffix}`
-      : `${notificationCount} new administrator response${pluralSuffix}`;
+  ) {
+    notificationTitle =
+      `${notificationCount} new student dispute${plural}`;
+  }
+
+  if (
+    role === "teacher"
+  ) {
+    notificationTitle =
+      `${notificationCount} new department dispute${plural}`;
+  }
+
+  if (
+    role === "student"
+  ) {
+    notificationTitle =
+      `${notificationCount} new teacher response${plural}`;
+  }
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
     <aside className="db-sidebar">
-      {/* LOGO */}
+
+      {/* ===================================================
+          BRAND
+      =================================================== */}
 
       <div className="db-sidebar-brand">
         <img
-          src={bioSyncLogo}
+          src={
+            bioSyncLogo
+          }
           alt="BioSync Sentinel"
           className="db-sidebar-logo db-sidebar-logo-full"
         />
 
         <img
-          src={bioSyncShield}
+          src={
+            bioSyncShield
+          }
           alt="BioSync Sentinel"
           className="db-sidebar-logo db-sidebar-logo-shield"
         />
@@ -381,7 +461,9 @@ function Sidebar() {
 
       <div className="db-sidebar-separator" />
 
-      {/* NAVIGATION */}
+      {/* ===================================================
+          NAVIGATION
+      =================================================== */}
 
       <nav className="db-sidebar-nav">
         {navItems.map(
@@ -390,21 +472,20 @@ function Sidebar() {
             label,
             icon: Icon,
           }) => {
-            const isDisputeItem =
+            const isDisputes =
               label ===
               "Disputes";
 
             const showNotification =
-              isDisputeItem &&
-              notificationCount >
-                0;
+              isDisputes &&
+              notificationCount > 0;
 
             return (
               <NavLink
                 key={to}
                 to={to}
                 onClick={
-                  isDisputeItem
+                  isDisputes
                     ? markDisputesAsSeen
                     : undefined
                 }
@@ -440,10 +521,7 @@ function Sidebar() {
                     <span className="db-dispute-notification-dot" />
 
                     <span>
-                      {
-                        displayedCount
-                      }{" "}
-                      new
+                      {displayedCount} new
                     </span>
                   </span>
                 )}
@@ -453,7 +531,9 @@ function Sidebar() {
         )}
       </nav>
 
-      {/* FOOTER */}
+      {/* ===================================================
+          FOOTER
+      =================================================== */}
 
       <div className="db-sidebar-footer">
         <span className="db-sidebar-footer-dot" />

@@ -23,9 +23,13 @@ import {
 
 import Swal from "sweetalert2";
 
-import { useAuth } from "../../contexts/AuthContext";
+import {
+  useAuth,
+} from "../../contexts/AuthContext";
 
-import { useFirestoreSubscription } from "../../hooks/useFirestoreSubscription";
+import {
+  useFirestoreSubscription,
+} from "../../hooks/useFirestoreSubscription";
 
 import StudentDisputeModal from "../../components/StudentDisputeModal";
 
@@ -41,32 +45,63 @@ import "./Disputes.css";
 
 const PAGE_SIZE = 8;
 
-function getStatusLabel(status) {
+/* =========================================================
+   STATUS
+========================================================= */
+
+function getStatusLabel(
+  status
+) {
   const labels = {
-    pending: "Pending",
-    under_review: "Under Review",
+    pending:
+      "Pending",
+
+    under_review:
+      "Under Review",
+
     awaiting_information:
       "Awaiting Information",
-    approved: "Approved",
-    rejected: "Rejected",
-    cancelled: "Cancelled",
-    closed: "Closed",
+
+    approved:
+      "Approved",
+
+    rejected:
+      "Rejected",
+
+    cancelled:
+      "Cancelled",
+
+    closed:
+      "Closed",
   };
 
-  return labels[status] || "Pending";
+  return (
+    labels[status] ||
+    "Pending"
+  );
 }
 
 function StudentDisputeStatus({
   status,
 }) {
+  const safeStatus =
+    status ||
+    "pending";
+
   return (
     <span
-      className={`sd-status sd-status-${status}`}
+      className={`sd-status sd-status-${safeStatus}`}
     >
-      {getStatusLabel(status)}
+      {getStatusLabel(
+        safeStatus
+      )}
     </span>
   );
 }
+
+/* =========================================================
+   SUMMARY
+========================================================= */
 
 function SummaryCard({
   icon: Icon,
@@ -79,25 +114,70 @@ function SummaryCard({
       <div
         className={`sd-summary-icon sd-summary-${tone}`}
       >
-        <Icon size={20} />
+        <Icon
+          size={20}
+        />
       </div>
 
       <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
+        <span>
+          {label}
+        </span>
+
+        <strong>
+          {value}
+        </strong>
       </div>
     </div>
   );
 }
 
-function formatDateTime(value) {
-  if (!value) return "N/A";
+/* =========================================================
+   DATE
+========================================================= */
 
-  return value.toLocaleString("en-MY", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+function formatDateTime(
+  value
+) {
+  if (!value) {
+    return "N/A";
+  }
+
+  try {
+    const date =
+      value instanceof Date
+        ? value
+        : typeof value?.toDate ===
+            "function"
+          ? value.toDate()
+          : new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "N/A";
+    }
+
+    return date.toLocaleString(
+      "en-MY",
+      {
+        dateStyle:
+          "medium",
+
+        timeStyle:
+          "short",
+      }
+    );
+  } catch {
+    return "N/A";
+  }
 }
+
+/* =========================================================
+   DETAILS MODAL
+========================================================= */
 
 function DisputeDetails({
   dispute,
@@ -108,45 +188,73 @@ function DisputeDetails({
   return (
     <div
       className="sd-modal-overlay"
-      onMouseDown={onClose}
+      onMouseDown={
+        onClose
+      }
     >
       <div
         className="sd-modal sd-details-modal"
-        onMouseDown={(event) =>
+        onMouseDown={(
+          event
+        ) =>
           event.stopPropagation()
         }
       >
+        {/* HEADER */}
+
         <div className="sd-modal-header">
           <div>
-            <h2>Dispute Details</h2>
+            <span className="sd-modal-eyebrow">
+              Dispute Tracking
+            </span>
+
+            <h2>
+              Dispute Details
+            </h2>
 
             <p>
-              Review your submitted dispute and
-              its current progress.
+              Review your submitted dispute,
+              teacher response and current
+              progress.
             </p>
           </div>
 
           <button
             type="button"
             className="sd-modal-close"
-            onClick={onClose}
+            onClick={
+              onClose
+            }
           >
-            <X size={21} />
+            <X
+              size={20}
+            />
           </button>
         </div>
 
+        {/* CONTENT */}
+
         <div className="sd-modal-content">
+
+          {/* SUMMARY */}
+
           <div className="sd-details-banner">
             <div>
-              <span>Current Status</span>
+              <span>
+                Current Status
+              </span>
 
               <StudentDisputeStatus
-                status={dispute.status}
+                status={
+                  dispute.status
+                }
               />
             </div>
 
             <div>
-              <span>Submitted</span>
+              <span>
+                Submitted
+              </span>
 
               <strong>
                 {formatDateTime(
@@ -156,6 +264,8 @@ function DisputeDetails({
             </div>
           </div>
 
+          {/* ATTENDANCE */}
+
           <section className="sd-details-section">
             <h3>
               Attendance Information
@@ -163,34 +273,49 @@ function DisputeDetails({
 
             <div className="sd-details-grid">
               <div>
-                <span>Attendance Date</span>
+                <span>
+                  Attendance Date
+                </span>
 
                 <strong>
                   {dispute.attendance
                     ?.dateLabel ||
+                    dispute.attendanceDate ||
+                    dispute.raw
+                      ?.attendanceDate ||
                     "N/A"}
                 </strong>
               </div>
 
               <div>
-                <span>Attendance Time</span>
+                <span>
+                  Attendance Time
+                </span>
 
                 <strong>
                   {dispute.attendance
                     ?.timeLabel ||
+                    dispute.requestedTime ||
+                    dispute.raw
+                      ?.requestedTime ||
                     "N/A"}
                 </strong>
               </div>
 
               <div>
-                <span>Original Status</span>
+                <span>
+                  Original Status
+                </span>
 
                 <strong>
-                  {dispute.attendance
-                    ?.status ||
-                    dispute.raw
-                      ?.originalStatus ||
-                    "N/A"}
+                  {dispute.missingAttendance
+                    ? "Missing"
+                    : dispute.attendance
+                        ?.status ||
+                      dispute.raw
+                        ?.originalStatus ||
+                      dispute.originalStatus ||
+                      "N/A"}
                 </strong>
               </div>
 
@@ -218,23 +343,32 @@ function DisputeDetails({
               </div>
 
               <div>
-                <span>Device</span>
+                <span>
+                  Device
+                </span>
 
                 <strong>
                   {dispute.attendance
-                    ?.deviceId ||
+                    ?.deviceName ||
+                    dispute.attendance
+                      ?.deviceId ||
                     "N/A"}
                 </strong>
               </div>
             </div>
           </section>
 
+          {/* REASON */}
+
           <section className="sd-details-section">
-            <h3>Dispute Explanation</h3>
+            <h3>
+              Dispute Explanation
+            </h3>
 
             <div className="sd-reason-box">
               <strong>
-                {dispute.reason}
+                {dispute.reason ||
+                  "Attendance dispute"}
               </strong>
 
               <p>
@@ -245,26 +379,33 @@ function DisputeDetails({
 
             {dispute.evidenceUrl && (
               <a
-                href={dispute.evidenceUrl}
+                href={
+                  dispute.evidenceUrl
+                }
                 target="_blank"
                 rel="noreferrer"
                 className="sd-evidence-link"
               >
-                Open supporting evidence
+                Open Supporting Evidence
               </a>
             )}
           </section>
 
+          {/* TIMELINE */}
+
           <section className="sd-details-section">
-            <h3>Review Progress</h3>
+            <h3>
+              Review Progress
+            </h3>
 
             <div className="sd-timeline">
+
               <div className="sd-timeline-item sd-timeline-complete">
                 <span />
 
                 <div>
                   <strong>
-                    Dispute submitted
+                    Dispute Submitted
                   </strong>
 
                   <small>
@@ -287,7 +428,7 @@ function DisputeDetails({
 
                 <div>
                   <strong>
-                    Administrative review
+                    Teacher Review
                   </strong>
 
                   <small>
@@ -295,7 +436,7 @@ function DisputeDetails({
                       ? formatDateTime(
                           dispute.reviewedAt
                         )
-                      : "Waiting for review"}
+                      : "Waiting for teacher review"}
                   </small>
                 </div>
               </div>
@@ -317,7 +458,7 @@ function DisputeDetails({
 
                 <div>
                   <strong>
-                    Final decision
+                    Final Decision
                   </strong>
 
                   <small>
@@ -329,37 +470,56 @@ function DisputeDetails({
                   </small>
                 </div>
               </div>
+
             </div>
           </section>
 
+          {/* TEACHER RESPONSE */}
+
           <section className="sd-details-section">
-            <h3>Admin Response</h3>
+            <h3>
+              Teacher Response
+            </h3>
 
             <div className="sd-admin-response">
-              {dispute.adminComment ||
-                "No administrator comment has been added yet."}
+              {dispute.teacherComment ||
+                dispute.adminComment ||
+                "No teacher response has been added yet."}
             </div>
           </section>
         </div>
 
+        {/* FOOTER */}
+
         <div className="sd-modal-footer">
-          {dispute.status === "pending" && (
+          {dispute.status ===
+            "pending" && (
             <>
               <button
                 type="button"
                 className="sd-btn sd-btn-danger-outline"
-                onClick={onCancel}
+                onClick={
+                  onCancel
+                }
               >
-                <Trash2 size={15} />
+                <Trash2
+                  size={14}
+                />
+
                 Cancel Dispute
               </button>
 
               <button
                 type="button"
                 className="sd-btn sd-btn-secondary"
-                onClick={onEdit}
+                onClick={
+                  onEdit
+                }
               >
-                <Edit3 size={15} />
+                <Edit3
+                  size={14}
+                />
+
                 Edit
               </button>
             </>
@@ -368,7 +528,9 @@ function DisputeDetails({
           <button
             type="button"
             className="sd-btn sd-btn-primary"
-            onClick={onClose}
+            onClick={
+              onClose
+            }
           >
             Close
           </button>
@@ -378,173 +540,283 @@ function DisputeDetails({
   );
 }
 
+/* =========================================================
+   STUDENT DISPUTES
+========================================================= */
+
 function Disputes() {
-  const { user } = useAuth();
+  const {
+    user,
+  } = useAuth();
+
+  /* =======================================================
+     SUBSCRIPTIONS
+  ======================================================= */
 
   const disputeSubscription =
     useFirestoreSubscription(
-      (onData, onError) =>
+      (
+        onData,
+        onError
+      ) =>
         subscribeToStudentDisputes(
           user,
           onData,
           onError
         ),
-      [user?.uid]
+
+      [
+        user?.uid,
+      ]
     );
 
   const attendanceSubscription =
     useFirestoreSubscription(
-      (onData, onError) =>
+      (
+        onData,
+        onError
+      ) =>
         subscribeToStudentAttendance(
           user,
           onData,
           onError
         ),
-      [user?.uid]
+
+      [
+        user?.uid,
+      ]
     );
 
   const disputes =
-    disputeSubscription.data || [];
+    disputeSubscription.data ||
+    [];
 
   const attendanceRecords =
-    attendanceSubscription.data || [];
+    attendanceSubscription.data ||
+    [];
 
-  const [searchTerm, setSearchTerm] =
-    useState("");
+  /* =======================================================
+     STATE
+  ======================================================= */
 
-  const [statusFilter, setStatusFilter] =
-    useState("all");
-
-  const [page, setPage] = useState(1);
-
-  const [formModal, setFormModal] =
-    useState(null);
-
-  const [detailsDispute, setDetailsDispute] =
-    useState(null);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const filteredDisputes = useMemo(() => {
-    const query = searchTerm
-      .trim()
-      .toLowerCase();
-
-    return disputes.filter((dispute) => {
-      const searchable = [
-        dispute.reason,
-        dispute.description,
-        dispute.requestedStatus,
-        dispute.attendanceId,
-        dispute.id,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch =
-        !query ||
-        searchable.includes(query);
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        dispute.status === statusFilter;
-
-      return (
-        matchesSearch &&
-        matchesStatus
-      );
-    });
-  }, [
-    disputes,
+  const [
     searchTerm,
-    statusFilter,
-  ]);
+    setSearchTerm,
+  ] = useState("");
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      filteredDisputes.length /
-        PAGE_SIZE
-    )
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState(
+    "all"
   );
+
+  const [
+    page,
+    setPage,
+  ] = useState(1);
+
+  const [
+    formModal,
+    setFormModal,
+  ] = useState(null);
+
+  const [
+    detailsDispute,
+    setDetailsDispute,
+  ] = useState(null);
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
+
+  /* =======================================================
+     FILTER
+  ======================================================= */
+
+  const filteredDisputes =
+    useMemo(() => {
+      const query =
+        searchTerm
+          .trim()
+          .toLowerCase();
+
+      return disputes.filter(
+        (dispute) => {
+          const searchable =
+            [
+              dispute.reason,
+              dispute.description,
+              dispute.requestedStatus,
+              dispute.attendanceId,
+              dispute.attendanceDate,
+              dispute.id,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+
+          const matchesSearch =
+            !query ||
+            searchable.includes(
+              query
+            );
+
+          const matchesStatus =
+            statusFilter ===
+              "all" ||
+            dispute.status ===
+              statusFilter;
+
+          return (
+            matchesSearch &&
+            matchesStatus
+          );
+        }
+      );
+    }, [
+      disputes,
+      searchTerm,
+      statusFilter,
+    ]);
+
+  /* =======================================================
+     PAGINATION
+  ======================================================= */
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        filteredDisputes.length /
+          PAGE_SIZE
+      )
+    );
 
   const paginatedDisputes =
     useMemo(() => {
       const start =
-        (page - 1) * PAGE_SIZE;
+        (page - 1) *
+        PAGE_SIZE;
 
       return filteredDisputes.slice(
         start,
         start + PAGE_SIZE
       );
-    }, [filteredDisputes, page]);
+    }, [
+      filteredDisputes,
+      page,
+    ]);
 
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [
+    searchTerm,
+    statusFilter,
+  ]);
 
   useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
+    if (
+      page >
+      totalPages
+    ) {
+      setPage(
+        totalPages
+      );
     }
-  }, [page, totalPages]);
+  }, [
+    page,
+    totalPages,
+  ]);
 
-  const summary = useMemo(() => {
-    return disputes.reduce(
-      (result, dispute) => {
-        result.total += 1;
+  /* =======================================================
+     SUMMARY
+  ======================================================= */
 
-        if (
-          dispute.status === "pending"
-        ) {
-          result.pending += 1;
+  const summary =
+    useMemo(() => {
+      return disputes.reduce(
+        (
+          result,
+          dispute
+        ) => {
+          result.total +=
+            1;
+
+          if (
+            dispute.status ===
+            "pending"
+          ) {
+            result.pending +=
+              1;
+          }
+
+          if (
+            dispute.status ===
+              "under_review" ||
+            dispute.status ===
+              "awaiting_information"
+          ) {
+            result.reviewing +=
+              1;
+          }
+
+          if (
+            dispute.status ===
+            "approved"
+          ) {
+            result.approved +=
+              1;
+          }
+
+          if (
+            dispute.status ===
+            "rejected"
+          ) {
+            result.rejected +=
+              1;
+          }
+
+          return result;
+        },
+
+        {
+          total: 0,
+          pending: 0,
+          reviewing: 0,
+          approved: 0,
+          rejected: 0,
         }
+      );
+    }, [
+      disputes,
+    ]);
 
-        if (
-          dispute.status ===
-            "under_review" ||
-          dispute.status ===
-            "awaiting_information"
-        ) {
-          result.reviewing += 1;
-        }
-
-        if (
-          dispute.status === "approved"
-        ) {
-          result.approved += 1;
-        }
-
-        if (
-          dispute.status === "rejected"
-        ) {
-          result.rejected += 1;
-        }
-
-        return result;
-      },
-
-      {
-        total: 0,
-        pending: 0,
-        reviewing: 0,
-        approved: 0,
-        rejected: 0,
-      }
-    );
-  }, [disputes]);
+  /* =======================================================
+     CREATE / EDIT
+  ======================================================= */
 
   async function handleFormSubmit(
     formData
   ) {
+    if (
+      !formModal
+    ) {
+      return;
+    }
+
     setSaving(true);
 
+    const editMode =
+      formModal.mode ===
+      "edit";
+
     try {
-      if (formModal.mode === "edit") {
+      if (editMode) {
         await updateStudentDispute(
           formModal.dispute.id,
+
           {
             ...formData,
 
@@ -552,6 +824,7 @@ function Disputes() {
               formModal.dispute
                 .attendanceId,
           },
+
           user
         );
       } else {
@@ -562,28 +835,45 @@ function Disputes() {
         );
       }
 
-      setFormModal(null);
+      setFormModal(
+        null
+      );
 
       await Swal.fire({
-        icon: "success",
+        icon:
+          "success",
 
         title:
-          formModal.mode === "edit"
+          editMode
             ? "Dispute updated"
             : "Dispute submitted",
 
-        timer: 1600,
+        text:
+          editMode
+            ? "Your changes have been saved."
+            : "Your dispute has been sent to your teacher for review.",
 
-        showConfirmButton: false,
+        timer:
+          1700,
+
+        showConfirmButton:
+          false,
       });
     } catch (error) {
-      Swal.fire({
-        icon: "error",
+      console.error(
+        "Unable to save dispute:",
+        error
+      );
 
-        title: "Unable to save dispute",
+      await Swal.fire({
+        icon:
+          "error",
+
+        title:
+          "Unable to save dispute",
 
         text:
-          error.message ||
+          error?.message ||
           "The dispute could not be saved.",
       });
     } finally {
@@ -591,28 +881,40 @@ function Disputes() {
     }
   }
 
-  async function handleCancel(dispute) {
-    const result = await Swal.fire({
-      icon: "warning",
+  /* =======================================================
+     CANCEL
+  ======================================================= */
 
-      title: "Cancel this dispute?",
+  async function handleCancel(
+    dispute
+  ) {
+    const result =
+      await Swal.fire({
+        icon:
+          "warning",
 
-      text:
-        "The dispute will no longer be reviewed.",
+        title:
+          "Cancel this dispute?",
 
-      showCancelButton: true,
+        text:
+          "The dispute will no longer be reviewed.",
 
-      confirmButtonText:
-        "Cancel Dispute",
+        showCancelButton:
+          true,
 
-      cancelButtonText:
-        "Keep Dispute",
+        confirmButtonText:
+          "Cancel Dispute",
 
-      confirmButtonColor:
-        "#ef4444",
-    });
+        cancelButtonText:
+          "Keep Dispute",
 
-    if (!result.isConfirmed) {
+        confirmButtonColor:
+          "#ef4444",
+      });
+
+    if (
+      !result.isConfirmed
+    ) {
       return;
     }
 
@@ -622,36 +924,53 @@ function Disputes() {
         user
       );
 
-      setDetailsDispute(null);
+      setDetailsDispute(
+        null
+      );
 
       await Swal.fire({
-        icon: "success",
+        icon:
+          "success",
 
-        title: "Dispute cancelled",
+        title:
+          "Dispute cancelled",
 
-        timer: 1400,
+        timer:
+          1400,
 
-        showConfirmButton: false,
+        showConfirmButton:
+          false,
       });
     } catch (error) {
-      Swal.fire({
-        icon: "error",
+      console.error(
+        "Unable to cancel dispute:",
+        error
+      );
 
-        title: "Unable to cancel",
+      await Swal.fire({
+        icon:
+          "error",
+
+        title:
+          "Unable to cancel",
 
         text:
-          error.message ||
+          error?.message ||
           "The dispute could not be cancelled.",
       });
     }
   }
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (
     disputeSubscription.loading ||
     attendanceSubscription.loading
   ) {
     return (
-      <div className="sd-page">
+      <div className="student-disputes-page sd-page">
         <div className="sd-loading-card">
           <div className="sd-skeleton" />
           <div className="sd-skeleton" />
@@ -662,15 +981,23 @@ function Disputes() {
     );
   }
 
+  /* =======================================================
+     ERROR
+  ======================================================= */
+
   const pageError =
     disputeSubscription.error ||
     attendanceSubscription.error;
 
-  if (pageError) {
+  if (
+    pageError
+  ) {
     return (
-      <div className="sd-page">
+      <div className="student-disputes-page sd-page">
         <div className="sd-card sd-error-state">
-          <AlertCircle size={34} />
+          <AlertCircle
+            size={34}
+          />
 
           <div>
             <h2>
@@ -678,7 +1005,7 @@ function Disputes() {
             </h2>
 
             <p>
-              {pageError.message ||
+              {pageError?.message ||
                 "Check your connection and try again."}
             </p>
           </div>
@@ -688,10 +1015,14 @@ function Disputes() {
             className="sd-btn sd-btn-primary"
             onClick={() => {
               disputeSubscription.retry();
+
               attendanceSubscription.retry();
             }}
           >
-            <RefreshCw size={16} />
+            <RefreshCw
+              size={16}
+            />
+
             Retry
           </button>
         </div>
@@ -699,88 +1030,183 @@ function Disputes() {
     );
   }
 
+  /* =======================================================
+     UI
+  ======================================================= */
+
   return (
-    <div className="sd-page">
-      <div className="sd-page-header">
-        <div>
-          <h1>My Attendance Disputes</h1>
+    <div className="student-disputes-page sd-page">
+
+      {/* HERO */}
+
+      <section className="sd-page-header">
+        <div className="sd-header-copy">
+          <span className="sd-header-eyebrow">
+            <MessageSquareWarning
+              size={14}
+            />
+
+            Attendance Resolution
+          </span>
+
+          <h1>
+            My Attendance Disputes
+          </h1>
 
           <p>
-            Submit and track requests to
-            correct your attendance records.
+            Submit attendance correction requests
+            and track your teacher&apos;s review
+            from one secure workspace.
           </p>
+
+          <div className="sd-header-meta">
+            <span>
+              <Clock3
+                size={13}
+              />
+
+              {
+                summary.pending +
+                summary.reviewing
+              }{" "}
+              active
+            </span>
+
+            <span>
+              <CheckCircle
+                size={13}
+              />
+
+              {
+                summary.approved
+              }{" "}
+              approved
+            </span>
+          </div>
         </div>
 
-        <button
-          type="button"
-          className="sd-btn sd-btn-primary sd-submit-button"
-          onClick={() =>
-            setFormModal({
-              mode: "create",
-              dispute: null,
-            })
-          }
-        >
-          <FilePlus2 size={17} />
-          Submit New Dispute
-        </button>
-      </div>
+        <div className="sd-header-action">
+          <div className="sd-hero-count">
+            <strong>
+              {summary.total}
+            </strong>
 
-      <div className="sd-summary-grid">
+            <span>
+              Total Disputes
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="sd-btn sd-btn-primary sd-submit-button"
+            onClick={() =>
+              setFormModal({
+                mode:
+                  "create",
+
+                dispute:
+                  null,
+              })
+            }
+          >
+            <FilePlus2
+              size={16}
+            />
+
+            Submit New Dispute
+          </button>
+        </div>
+      </section>
+
+      {/* SUMMARY */}
+
+      <section className="sd-summary-grid">
         <SummaryCard
-          icon={MessageSquareWarning}
+          icon={
+            MessageSquareWarning
+          }
           label="Total"
-          value={summary.total}
+          value={
+            summary.total
+          }
           tone="blue"
         />
 
         <SummaryCard
-          icon={Clock3}
+          icon={
+            Clock3
+          }
           label="Pending"
-          value={summary.pending}
+          value={
+            summary.pending
+          }
           tone="yellow"
         />
 
         <SummaryCard
-          icon={RefreshCw}
+          icon={
+            RefreshCw
+          }
           label="In Review"
-          value={summary.reviewing}
+          value={
+            summary.reviewing
+          }
           tone="purple"
         />
 
         <SummaryCard
-          icon={CheckCircle}
+          icon={
+            CheckCircle
+          }
           label="Approved"
-          value={summary.approved}
+          value={
+            summary.approved
+          }
           tone="green"
         />
 
         <SummaryCard
-          icon={XCircle}
+          icon={
+            XCircle
+          }
           label="Rejected"
-          value={summary.rejected}
+          value={
+            summary.rejected
+          }
           tone="red"
         />
-      </div>
+      </section>
 
-      <div className="sd-card sd-filter-card">
+      {/* FILTER */}
+
+      <section className="sd-card sd-filter-card">
         <div className="sd-search-box">
-          <Search size={18} />
+          <Search
+            size={17}
+          />
 
           <input
-            value={searchTerm}
-            onChange={(event) =>
+            value={
+              searchTerm
+            }
+            onChange={(
+              event
+            ) =>
               setSearchTerm(
                 event.target.value
               )
             }
-            placeholder="Search by reason, requested status or dispute ID..."
+            placeholder="Search by reason, status, date or dispute ID..."
           />
         </div>
 
         <select
-          value={statusFilter}
-          onChange={(event) =>
+          value={
+            statusFilter
+          }
+          onChange={(
+            event
+          ) =>
             setStatusFilter(
               event.target.value
             )
@@ -818,16 +1244,25 @@ function Disputes() {
             Closed
           </option>
         </select>
-      </div>
+      </section>
 
-      <div className="sd-card sd-table-card">
+      {/* TABLE */}
+
+      <section className="sd-card sd-table-card">
         <div className="sd-table-header">
           <div>
-            <h2>My Disputes</h2>
+            <span>
+              Dispute History
+            </span>
+
+            <h2>
+              My Requests
+            </h2>
 
             <p>
               {filteredDisputes.length} dispute
-              {filteredDisputes.length === 1
+              {filteredDisputes.length ===
+              1
                 ? ""
                 : "s"}{" "}
               found
@@ -839,13 +1274,33 @@ function Disputes() {
           <table className="sd-table">
             <thead>
               <tr>
-                <th>Attendance</th>
-                <th>Original</th>
-                <th>Requested</th>
-                <th>Reason</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>
+                  Attendance
+                </th>
+
+                <th>
+                  Original
+                </th>
+
+                <th>
+                  Requested
+                </th>
+
+                <th>
+                  Reason
+                </th>
+
+                <th>
+                  Submitted
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Action
+                </th>
               </tr>
             </thead>
 
@@ -858,7 +1313,7 @@ function Disputes() {
                     className="sd-empty-cell"
                   >
                     <MessageSquareWarning
-                      size={44}
+                      size={42}
                     />
 
                     <h3>
@@ -867,38 +1322,52 @@ function Disputes() {
 
                     <p>
                       Submit a dispute when an
-                      attendance record is
-                      incorrect.
+                      attendance record needs
+                      correction.
                     </p>
                   </td>
                 </tr>
               ) : (
                 paginatedDisputes.map(
                   (dispute) => (
-                    <tr key={dispute.id}>
+                    <tr
+                      key={
+                        dispute.id
+                      }
+                    >
                       <td>
                         <div className="sd-date-cell">
                           <strong>
-                            {dispute.attendance
-                              ?.dateLabel ||
-                              "Not linked"}
+                            {dispute.missingAttendance
+                              ? dispute.attendanceDate ||
+                                "Missing record"
+                              : dispute.attendance
+                                  ?.dateLabel ||
+                                dispute.attendanceDate ||
+                                "Not linked"}
                           </strong>
 
                           <small>
-                            {dispute.attendance
-                              ?.timeLabel ||
-                              dispute.attendanceId}
+                            {dispute.missingAttendance
+                              ? "No attendance record"
+                              : dispute.attendance
+                                  ?.timeLabel ||
+                                dispute.attendanceId ||
+                                ""}
                           </small>
                         </div>
                       </td>
 
                       <td>
                         <span className="sd-attendance-status">
-                          {dispute.attendance
-                            ?.status ||
-                            dispute.raw
-                              ?.originalStatus ||
-                            "N/A"}
+                          {dispute.missingAttendance
+                            ? "Missing"
+                            : dispute.attendance
+                                ?.status ||
+                              dispute.originalStatus ||
+                              dispute.raw
+                                ?.originalStatus ||
+                              "N/A"}
                         </span>
                       </td>
 
@@ -912,7 +1381,8 @@ function Disputes() {
                       <td>
                         <div className="sd-reason-cell">
                           <strong>
-                            {dispute.reason}
+                            {dispute.reason ||
+                              "Attendance issue"}
                           </strong>
 
                           <small>
@@ -939,6 +1409,7 @@ function Disputes() {
                                   {
                                     hour:
                                       "2-digit",
+
                                     minute:
                                       "2-digit",
                                   }
@@ -967,7 +1438,10 @@ function Disputes() {
                               )
                             }
                           >
-                            <Eye size={15} />
+                            <Eye
+                              size={14}
+                            />
+
                             View
                           </button>
 
@@ -976,15 +1450,18 @@ function Disputes() {
                             <button
                               type="button"
                               className="sd-edit-button"
+                              title="Edit dispute"
                               onClick={() =>
                                 setFormModal({
-                                  mode: "edit",
+                                  mode:
+                                    "edit",
+
                                   dispute,
                                 })
                               }
                             >
                               <Edit3
-                                size={15}
+                                size={14}
                               />
                             </button>
                           )}
@@ -998,6 +1475,8 @@ function Disputes() {
           </table>
         </div>
 
+        {/* PAGINATION */}
+
         <div className="sd-pagination">
           <span>
             Page {page} of {totalPages}
@@ -1006,70 +1485,104 @@ function Disputes() {
           <div>
             <button
               type="button"
-              disabled={page === 1}
+              disabled={
+                page === 1
+              }
               onClick={() =>
-                setPage((current) =>
-                  Math.max(
-                    1,
-                    current - 1
-                  )
+                setPage(
+                  (current) =>
+                    Math.max(
+                      1,
+                      current - 1
+                    )
                 )
               }
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft
+                size={15}
+              />
+
               Previous
             </button>
 
             <button
               type="button"
               disabled={
-                page === totalPages
+                page ===
+                totalPages
               }
               onClick={() =>
-                setPage((current) =>
-                  Math.min(
-                    totalPages,
-                    current + 1
-                  )
+                setPage(
+                  (current) =>
+                    Math.min(
+                      totalPages,
+                      current + 1
+                    )
                 )
               }
             >
               Next
-              <ChevronRight size={16} />
+
+              <ChevronRight
+                size={15}
+              />
             </button>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* CREATE / EDIT MODAL */}
 
       {formModal && (
         <StudentDisputeModal
-          mode={formModal.mode}
-          dispute={formModal.dispute}
+          mode={
+            formModal.mode
+          }
+          dispute={
+            formModal.dispute
+          }
           attendanceRecords={
             attendanceRecords
           }
-          saving={saving}
+          saving={
+            saving
+          }
           onClose={() =>
             !saving &&
-            setFormModal(null)
+            setFormModal(
+              null
+            )
           }
-          onSubmit={handleFormSubmit}
+          onSubmit={
+            handleFormSubmit
+          }
         />
       )}
 
+      {/* DETAILS MODAL */}
+
       {detailsDispute && (
         <DisputeDetails
-          dispute={detailsDispute}
+          dispute={
+            detailsDispute
+          }
           onClose={() =>
-            setDetailsDispute(null)
+            setDetailsDispute(
+              null
+            )
           }
           onEdit={() => {
             setFormModal({
-              mode: "edit",
-              dispute: detailsDispute,
+              mode:
+                "edit",
+
+              dispute:
+                detailsDispute,
             });
 
-            setDetailsDispute(null);
+            setDetailsDispute(
+              null
+            );
           }}
           onCancel={() =>
             handleCancel(

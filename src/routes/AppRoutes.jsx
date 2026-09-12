@@ -32,8 +32,7 @@ import TeacherDashboard from "../pages/teacher/Dashboard";
 import TeacherAttendance from "../pages/teacher/Attendance";
 import TeacherDisputes from "../pages/teacher/Disputes";
 import TeacherAnalytics from "../pages/teacher/Analytics";
-import TeacherProfile from "../pages/teacher/Profile";
-import TeacherSettings from "../pages/teacher/Settings";
+import TeacherAccountCenter from "../pages/teacher/AccountCenter";
 
 /* =========================================================
    STUDENT
@@ -43,8 +42,7 @@ import StudentDashboard from "../pages/student/Dashboard";
 import StudentAttendance from "../pages/student/Attendance";
 import StudentDisputes from "../pages/student/Disputes";
 import StudentAnalytics from "../pages/student/Analytics";
-import StudentProfile from "../pages/student/Profile";
-import StudentSettings from "../pages/student/Settings";
+import StudentAccountCenter from "../pages/student/AccountCenter";
 
 /* =========================================================
    ROUTES
@@ -71,15 +69,15 @@ function AppRoutes() {
           element={<Unauthorized />}
         />
 
-        {/* ADMIN */}
+        {/* =================================================
+            ADMIN
+        ================================================= */}
 
         <Route
           path="/admin"
           element={
             <ProtectedRoute
-              allowedRoles={[
-                "admin",
-              ]}
+              allowedRoles={["admin"]}
             >
               <DashboardLayout />
             </ProtectedRoute>
@@ -87,63 +85,49 @@ function AppRoutes() {
         >
           <Route
             path="dashboard"
-            element={
-              <AdminDashboard />
-            }
+            element={<AdminDashboard />}
           />
 
           <Route
             path="attendance"
-            element={
-              <AdminAttendance />
-            }
+            element={<AdminAttendance />}
           />
 
           <Route
             path="disputes"
-            element={
-              <AdminDisputes />
-            }
+            element={<AdminDisputes />}
           />
 
           <Route
             path="devices"
-            element={
-              <AdminDevices />
-            }
+            element={<AdminDevices />}
           />
 
           <Route
             path="analytics"
-            element={
-              <AdminAnalytics />
-            }
+            element={<AdminAnalytics />}
           />
 
           <Route
             path="users"
-            element={
-              <AdminUserManagement />
-            }
+            element={<AdminUserManagement />}
           />
 
           <Route
             path="account-center"
-            element={
-              <AdminAccountCenter />
-            }
+            element={<AdminAccountCenter />}
           />
         </Route>
 
-        {/* TEACHER */}
+        {/* =================================================
+            TEACHER
+        ================================================= */}
 
         <Route
           path="/teacher"
           element={
             <ProtectedRoute
-              allowedRoles={[
-                "teacher",
-              ]}
+              allowedRoles={["teacher"]}
             >
               <DashboardLayout />
             </ProtectedRoute>
@@ -151,56 +135,39 @@ function AppRoutes() {
         >
           <Route
             path="dashboard"
-            element={
-              <TeacherDashboard />
-            }
+            element={<TeacherDashboard />}
           />
 
           <Route
             path="attendance"
-            element={
-              <TeacherAttendance />
-            }
+            element={<TeacherAttendance />}
           />
 
           <Route
             path="disputes"
-            element={
-              <TeacherDisputes />
-            }
+            element={<TeacherDisputes />}
           />
 
           <Route
             path="analytics"
-            element={
-              <TeacherAnalytics />
-            }
+            element={<TeacherAnalytics />}
           />
 
           <Route
-            path="profile"
-            element={
-              <TeacherProfile />
-            }
-          />
-
-          <Route
-            path="settings"
-            element={
-              <TeacherSettings />
-            }
+            path="account-center"
+            element={<TeacherAccountCenter />}
           />
         </Route>
 
-        {/* STUDENT */}
+        {/* =================================================
+            STUDENT
+        ================================================= */}
 
         <Route
           path="/student"
           element={
             <ProtectedRoute
-              allowedRoles={[
-                "student",
-              ]}
+              allowedRoles={["student"]}
             >
               <DashboardLayout />
             </ProtectedRoute>
@@ -208,44 +175,27 @@ function AppRoutes() {
         >
           <Route
             path="dashboard"
-            element={
-              <StudentDashboard />
-            }
+            element={<StudentDashboard />}
           />
 
           <Route
             path="attendance"
-            element={
-              <StudentAttendance />
-            }
+            element={<StudentAttendance />}
           />
 
           <Route
             path="disputes"
-            element={
-              <StudentDisputes />
-            }
+            element={<StudentDisputes />}
           />
 
           <Route
             path="analytics"
-            element={
-              <StudentAnalytics />
-            }
+            element={<StudentAnalytics />}
           />
 
           <Route
-            path="profile"
-            element={
-              <StudentProfile />
-            }
-          />
-
-          <Route
-            path="settings"
-            element={
-              <StudentSettings />
-            }
+            path="account-center"
+            element={<StudentAccountCenter />}
           />
         </Route>
       </Routes>

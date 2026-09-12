@@ -1,23 +1,23 @@
 /* =========================================================
    BIOSYNC SENTINEL
-   STUDENT ANALYTICS
+   TEACHER ANALYTICS COMMAND CENTER
 ========================================================= */
 
-.student-analytics-page {
+.teacher-analytics-page {
   display: flex;
   width: 100%;
   flex-direction: column;
   gap: 20px;
-  animation: staEnter 0.4s ease both;
+  animation: taaEnter 0.4s ease both;
 }
 
-.student-analytics-page *,
-.student-analytics-page *::before,
-.student-analytics-page *::after {
+.teacher-analytics-page *,
+.teacher-analytics-page *::before,
+.teacher-analytics-page *::after {
   box-sizing: border-box;
 }
 
-@keyframes staEnter {
+@keyframes taaEnter {
   from {
     opacity: 0;
     transform: translateY(7px);
@@ -33,7 +33,7 @@
    HERO
 ========================================================= */
 
-.sta-hero {
+.taa-hero {
   position: relative;
   display: flex;
   min-height: 245px;
@@ -66,7 +66,7 @@
     0 20px 48px rgba(2, 8, 20, 0.22);
 }
 
-.sta-hero-grid {
+.taa-hero-grid {
   position: absolute;
   inset: 0;
   opacity: 0.44;
@@ -91,18 +91,18 @@
   pointer-events: none;
 }
 
-.sta-hero-copy,
-.sta-score {
+.taa-hero-copy,
+.taa-rate {
   position: relative;
   z-index: 2;
 }
 
-.sta-hero-copy {
+.taa-hero-copy {
   flex: 1;
   min-width: 0;
 }
 
-.sta-eyebrow {
+.taa-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -118,7 +118,7 @@
   text-transform: uppercase;
 }
 
-.sta-hero h1 {
+.taa-hero h1 {
   margin: 0;
   color: #ffffff;
   font-family: var(--bs-font-heading, "Poppins", sans-serif);
@@ -127,7 +127,7 @@
   letter-spacing: -1.2px;
 }
 
-.sta-hero p {
+.taa-hero p {
   max-width: 650px;
   margin: 10px 0 0;
   color: #b5c8dc;
@@ -135,14 +135,18 @@
   line-height: 1.7;
 }
 
-.sta-hero-meta {
+.taa-hero p strong {
+  color: #ffffff;
+}
+
+.taa-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
   margin-top: 20px;
 }
 
-.sta-hero-meta span {
+.taa-meta span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -155,93 +159,113 @@
   font-weight: 650;
 }
 
-.sta-hero-meta svg {
+.taa-meta svg {
   color: #67e8f9;
 }
 
 /* =========================================================
-   SCORE
+   RATE
 ========================================================= */
 
-.sta-score {
+.taa-rate {
   display: flex;
-  min-width: 180px;
-  flex-direction: column;
+  width: 155px;
+  height: 155px;
+  flex-shrink: 0;
   align-items: center;
-  gap: 10px;
-}
-
-.sta-score-ring {
-  position: relative;
-  display: grid;
-  width: 150px;
-  height: 150px;
-  place-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border: 1px solid rgba(103, 232, 249, 0.18);
   border-radius: 50%;
   background:
-    conic-gradient(
-      #38bdf8 0 84%,
-      rgba(255, 255, 255, 0.09)
-        84% 100%
+    radial-gradient(
+      circle,
+      rgba(56, 189, 248, 0.13),
+      rgba(8, 26, 46, 0.72) 68%
     );
   box-shadow:
-    0 0 42px rgba(56, 189, 248, 0.16);
+    0 0 45px rgba(56, 189, 248, 0.16);
 }
 
-.sta-score-ring::before {
-  content: "";
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  border: 1px solid rgba(103, 232, 249, 0.15);
-  border-radius: 50%;
+.taa-rate strong {
+  color: #ffffff;
+  font-size: 31px;
+  line-height: 1;
+}
+
+.taa-rate span {
+  margin-top: 6px;
+  color: #8fb1cf;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.taa-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 17px;
+  border: 1px solid #dce7f4;
+  border-radius: 16px;
   background:
     linear-gradient(
       145deg,
-      #081a2e,
-      #0b223b
+      #ffffff,
+      #fbfdff
     );
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
-.sta-score-ring > div {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.taa-toolbar strong {
+  display: block;
+  color: #334155;
+  font-size: 10px;
 }
 
-.sta-score-ring strong {
-  color: #ffffff;
-  font-size: 29px;
-}
-
-.sta-score-ring span {
-  margin-top: 4px;
-  color: #8fb1cf;
+.taa-toolbar span {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
   font-size: 8px;
 }
 
-.sta-risk-badge {
-  display: inline-flex;
-  padding: 5px 9px;
-  border-radius: 999px;
-  font-size: 8px;
-  font-weight: 800;
+.taa-toolbar select {
+  min-width: 150px;
+  height: 39px;
+  padding: 0 10px;
+  border: 1px solid #dce7f4;
+  border-radius: 9px;
+  outline: none;
+  background: #f8fbff;
+  color: #475569;
+  font-family: inherit;
+  font-size: 8.5px;
+}
+
+.taa-toolbar select:focus {
+  border-color: #60a5fa;
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.07);
 }
 
 /* =========================================================
    METRICS
 ========================================================= */
 
-.sta-metrics {
+.taa-metrics {
   display: grid;
   grid-template-columns:
-    repeat(4, minmax(150px, 1fr));
+    repeat(5, minmax(145px, 1fr));
   gap: 14px;
 }
 
-.sta-metric {
+.taa-metric {
   position: relative;
   display: flex;
   min-height: 118px;
@@ -265,7 +289,7 @@
     box-shadow 0.2s ease;
 }
 
-.sta-metric::before {
+.taa-metric::before {
   content: "";
   position: absolute;
   top: 0;
@@ -274,117 +298,84 @@
   height: 100%;
 }
 
-.sta-metric:hover {
+.taa-metric:hover {
   transform: translateY(-4px);
   border-color: #bfdbfe;
   box-shadow:
     0 14px 32px rgba(37, 99, 235, 0.09);
 }
 
-.sta-metric > svg {
+.taa-metric > svg {
   width: 42px;
   height: 42px;
-  padding: 11px;
   flex-shrink: 0;
+  padding: 11px;
   border-radius: 12px;
 }
 
-.sta-metric span {
+.taa-metric span {
   color: #64748b;
   font-size: 8.5px;
   font-weight: 700;
 }
 
-.sta-metric strong {
+.taa-metric strong {
   display: block;
   margin-top: 4px;
   color: #0f172a;
   font-size: 23px;
 }
 
-.sta-blue::before {
+.taa-blue::before {
   background: #2563eb;
 }
 
-.sta-blue > svg {
+.taa-blue > svg {
   background: #dbeafe;
   color: #2563eb;
 }
 
-.sta-green::before {
+.taa-green::before {
   background: #22c55e;
 }
 
-.sta-green > svg {
+.taa-green > svg {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.sta-amber::before {
+.taa-amber::before {
   background: #f59e0b;
 }
 
-.sta-amber > svg {
+.taa-amber > svg {
   background: #fef3c7;
   color: #d97706;
 }
 
-.sta-red::before {
+.taa-red::before {
   background: #ef4444;
 }
 
-.sta-red > svg {
+.taa-red > svg {
   background: #fee2e2;
   color: #dc2626;
 }
 
-/* =========================================================
-   RISK ALERT
-========================================================= */
-
-.sta-risk-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  padding: 14px 16px;
-  border: 1px solid;
-  border-radius: 14px;
+.taa-purple::before {
+  background: #8b5cf6;
 }
 
-.sta-risk-card strong {
-  display: block;
-  font-size: 10px;
-}
-
-.sta-risk-card p {
-  margin: 3px 0 0;
-  font-size: 9px;
-  line-height: 1.5;
-}
-
-.sta-risk-excellent {
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-  color: #15803d;
-}
-
-.sta-risk-warning {
-  border-color: #fde68a;
-  background: #fffbeb;
-  color: #b45309;
-}
-
-.sta-risk-critical {
-  border-color: #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+.taa-purple > svg {
+  background: #f3e8ff;
+  color: #7c3aed;
 }
 
 /* =========================================================
    CARDS
 ========================================================= */
 
-.sta-card {
+.taa-card {
   min-width: 0;
   padding: 20px;
   border: 1px solid #dce7f4;
@@ -402,13 +393,13 @@
     box-shadow 0.2s ease;
 }
 
-.sta-card:hover {
+.taa-card:hover {
   border-color: #bfdbfe;
   box-shadow:
     0 14px 32px rgba(37, 99, 235, 0.08);
 }
 
-.sta-card-heading {
+.taa-card-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -416,7 +407,7 @@
   margin-bottom: 16px;
 }
 
-.sta-card-heading > div > span {
+.taa-card-heading span {
   color: #2563eb;
   font-size: 7.5px;
   font-weight: 850;
@@ -424,203 +415,174 @@
   text-transform: uppercase;
 }
 
-.sta-card-heading h2 {
+.taa-card-heading h2 {
   margin: 4px 0 0;
   color: #172033;
   font-size: 14px;
 }
 
-.sta-card-heading p {
+.taa-card-heading p {
   margin: 4px 0 0;
   color: #94a3b8;
   font-size: 8.5px;
 }
 
-.sta-card-heading > svg {
+.taa-card-heading > svg {
+  padding: 9px;
   width: 38px;
   height: 38px;
   flex-shrink: 0;
-  padding: 9px;
   border-radius: 11px;
   background: #eff6ff;
   color: #2563eb;
 }
 
 /* =========================================================
-   LAYOUT
+   GRIDS
 ========================================================= */
 
-.sta-main-grid {
+.taa-main-grid {
   display: grid;
   grid-template-columns:
     minmax(0, 1.55fr)
-    minmax(285px, 0.55fr);
+    minmax(290px, 0.55fr);
   gap: 18px;
 }
 
-.sta-side-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.sta-two-grid {
+.taa-two-grid {
   display: grid;
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
 
-.sta-chart {
-  min-height: 220px;
+.taa-chart {
+  min-height: 285px;
 }
 
 /* =========================================================
-   ATTENDANCE GOAL
+   LEGEND
 ========================================================= */
 
-.sta-goal-values {
-  display: grid;
-  grid-template-columns:
-    repeat(2, 1fr);
-  gap: 10px;
-}
-
-.sta-goal-values > div {
-  padding: 12px;
-  border: 1px solid #e5edf5;
-  border-radius: 11px;
-  background:
-    linear-gradient(
-      145deg,
-      #fbfdff,
-      #f7fbff
-    );
-}
-
-.sta-goal-values span {
-  display: block;
-  color: #94a3b8;
-  font-size: 8px;
-}
-
-.sta-goal-values strong {
-  display: block;
-  margin-top: 4px;
-  color: #0f172a;
-  font-size: 19px;
-}
-
-.sta-goal-track {
-  height: 9px;
-  margin-top: 14px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #e8eef6;
-}
-
-.sta-goal-fill {
-  height: 100%;
-  border-radius: inherit;
-  background:
-    linear-gradient(
-      90deg,
-      #2563eb,
-      #06b6d4
-    );
-  box-shadow:
-    0 0 12px rgba(6, 182, 212, 0.25);
-}
-
-.sta-goal-message {
-  margin: 9px 0 0;
-  color: #64748b;
-  font-size: 8.5px;
-  line-height: 1.5;
-}
-
-/* =========================================================
-   DISPUTES
-========================================================= */
-
-.sta-dispute-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(2, 1fr);
-  gap: 9px;
-}
-
-.sta-dispute-grid > div {
-  padding: 11px;
-  border: 1px solid #e5edf5;
-  border-radius: 10px;
-  background:
-    linear-gradient(
-      145deg,
-      #fbfdff,
-      #f7fbff
-    );
-  text-align: center;
-  transition:
-    transform 0.18s ease,
-    border-color 0.18s ease;
-}
-
-.sta-dispute-grid > div:hover {
-  transform: translateY(-2px);
-  border-color: #bfdbfe;
-}
-
-.sta-dispute-grid strong {
-  display: block;
-  color: #0f172a;
-  font-size: 18px;
-}
-
-.sta-dispute-grid span {
-  display: block;
-  margin-top: 3px;
-  color: #94a3b8;
-  font-size: 7.5px;
-}
-
-/* =========================================================
-   AUTH METHOD PIE
-========================================================= */
-
-.sta-pie-layout {
-  display: grid;
-  grid-template-columns:
-    minmax(180px, 0.9fr)
-    minmax(160px, 0.7fr);
-  align-items: center;
-  gap: 12px;
-}
-
-.sta-method-list {
+.taa-legend {
   display: flex;
   flex-direction: column;
 }
 
-.sta-method-list > div {
+.taa-legend > div {
+  display: grid;
+  grid-template-columns:
+    8px
+    minmax(0, 1fr)
+    auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid #edf2f7;
+  color: #64748b;
+  font-size: 8px;
+}
+
+.taa-legend > div:last-child {
+  border-bottom: 0;
+}
+
+.taa-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.taa-dot-0 {
+  background: #22c55e;
+}
+
+.taa-dot-1 {
+  background: #f59e0b;
+}
+
+.taa-dot-2 {
+  background: #ef4444;
+}
+
+/* =========================================================
+   RISK LIST
+========================================================= */
+
+.taa-risk-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.taa-risk-list > div {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.taa-risk-list > div:last-child {
+  border-bottom: 0;
+}
+
+.taa-risk-list strong {
+  display: block;
+  color: #334155;
+  font-size: 9px;
+}
+
+.taa-risk-list small {
+  display: block;
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 7.5px;
+}
+
+.taa-risk-list > div > span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.taa-risk-list .taa-late-count {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* =========================================================
+   AUTH METHODS
+========================================================= */
+
+.taa-auth-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.taa-auth-list > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 9px 0;
+  gap: 15px;
+  padding: 11px 0;
   border-bottom: 1px solid #edf2f7;
   font-size: 8.5px;
 }
 
-.sta-method-list > div:last-child {
+.taa-auth-list > div:last-child {
   border-bottom: 0;
 }
 
-.sta-method-list span {
+.taa-auth-list span {
   color: #64748b;
 }
 
-.sta-method-list strong {
+.taa-auth-list strong {
   display: inline-flex;
   min-width: 28px;
   justify-content: center;
@@ -632,22 +594,67 @@
 }
 
 /* =========================================================
+   DISPUTES
+========================================================= */
+
+.taa-dispute-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, 1fr);
+  gap: 9px;
+}
+
+.taa-dispute-grid > div {
+  padding: 12px 7px;
+  border: 1px solid #e5edf5;
+  border-radius: 11px;
+  background:
+    linear-gradient(
+      145deg,
+      #fbfdff,
+      #f7fbff
+    );
+  text-align: center;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.taa-dispute-grid > div:hover {
+  transform: translateY(-2px);
+  border-color: #bfdbfe;
+}
+
+.taa-dispute-grid strong {
+  display: block;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.taa-dispute-grid span {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 7px;
+}
+
+/* =========================================================
    TABLE
 ========================================================= */
 
-.sta-table-scroll {
+.taa-table-scroll {
   overflow-x: auto;
   border: 1px solid #e5edf5;
   border-radius: 12px;
 }
 
-.sta-table {
+.taa-table {
   width: 100%;
-  min-width: 600px;
+  min-width: 700px;
   border-collapse: collapse;
 }
 
-.sta-table th {
+.taa-table th {
   padding: 10px 13px;
   background: #f8fafc;
   color: #94a3b8;
@@ -658,85 +665,60 @@
   text-transform: uppercase;
 }
 
-.sta-table td {
+.taa-table td {
   padding: 11px 13px;
   border-top: 1px solid #edf2f7;
   color: #475569;
   font-size: 8.5px;
 }
 
-.sta-table tbody tr:hover {
+.taa-table tbody tr:hover {
   background: #f8fbff;
 }
 
-.sta-status {
+.taa-risk {
   display: inline-flex;
   padding: 4px 7px;
   border-radius: 999px;
   font-size: 7px;
   font-weight: 800;
-  text-transform: capitalize;
 }
 
-.sta-status-present {
+.taa-risk-success {
   background: #dcfce7;
   color: #15803d;
 }
 
-.sta-status-late {
+.taa-risk-warning {
   background: #fef3c7;
   color: #b45309;
 }
 
-.sta-status-absent {
+.taa-risk-danger {
   background: #fee2e2;
   color: #b91c1c;
 }
 
-.sta-status-excused {
-  background: #dbeafe;
-  color: #1d4ed8;
+.taa-risk-neutral {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 /* =========================================================
-   EMPTY / LOADING / ERROR
+   STATES
 ========================================================= */
 
-.sta-table-empty,
-.sta-empty {
-  padding: 35px;
+.taa-empty {
+  display: grid;
+  min-height: 100px;
+  place-items: center;
+  padding: 20px;
   color: #94a3b8;
-  font-size: 9px;
+  font-size: 8.5px;
   text-align: center;
 }
 
-.sta-loading {
-  display: flex;
-  min-height: 430px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 11px;
-  color: #64748b;
-  font-size: 10px;
-}
-
-.sta-spinner {
-  width: 42px;
-  height: 42px;
-  border: 4px solid #dbeafe;
-  border-top-color: #2563eb;
-  border-radius: 50%;
-  animation: staSpin 0.8s linear infinite;
-}
-
-@keyframes staSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.sta-error {
+.taa-error {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -748,54 +730,90 @@
   font-size: 9px;
 }
 
+.taa-loading {
+  display: flex;
+  min-height: 430px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 11px;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.taa-spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: taaSpin 0.8s linear infinite;
+}
+
+@keyframes taaSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* =========================================================
    RESPONSIVE
 ========================================================= */
 
-@media (max-width: 1050px) {
-  .sta-main-grid {
+@media (max-width: 1100px) {
+  .taa-main-grid {
     grid-template-columns: 1fr;
   }
 
-  .sta-side-stack {
-    display: grid;
+  .taa-metrics {
     grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+      repeat(3, minmax(150px, 1fr));
   }
 }
 
 @media (max-width: 800px) {
-  .sta-metrics,
-  .sta-two-grid {
+  .taa-two-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .taa-metrics {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
   }
 
-  .sta-hero {
+  .taa-hero {
     align-items: flex-start;
     flex-direction: column;
     padding: 27px 23px;
   }
 
-  .sta-score {
-    width: 100%;
+  .taa-rate {
+    align-self: center;
   }
 }
 
-@media (max-width: 650px) {
-  .sta-side-stack,
-  .sta-pie-layout {
-    grid-template-columns: 1fr;
+@media (max-width: 600px) {
+  .taa-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .taa-toolbar select {
+    width: 100%;
+  }
+
+  .taa-dispute-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
   }
 }
 
 @media (max-width: 500px) {
-  .sta-metrics,
-  .sta-two-grid {
+  .taa-metrics {
     grid-template-columns: 1fr;
   }
 
-  .sta-card {
+  .taa-card {
     padding: 17px;
   }
 }

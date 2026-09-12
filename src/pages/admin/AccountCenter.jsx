@@ -4,9 +4,23 @@ import {
   useState,
 } from "react";
 
-import toast, { Toaster } from "react-hot-toast";
+import {
+  sendPasswordResetEmail,
+} from "firebase/auth";
 
 import {
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
+
+import toast, {
+  Toaster,
+} from "react-hot-toast";
+
+import {
+  BadgeCheck,
   Bell,
   Building2,
   CheckCircle2,
@@ -15,15 +29,25 @@ import {
   KeyRound,
   LockKeyhole,
   Mail,
-  MonitorSmartphone,
+  Pencil,
   Phone,
+  Radio,
+  Save,
   ScanFace,
   ShieldCheck,
   SlidersHorizontal,
   UserRound,
+  X,
 } from "lucide-react";
 
-import { useAuth } from "../../contexts/AuthContext";
+import {
+  auth,
+  db,
+} from "../../firebase/firebase";
+
+import {
+  useAuth,
+} from "../../contexts/AuthContext";
 
 import "./AccountCenter.css";
 
@@ -31,23 +55,33 @@ import "./AccountCenter.css";
    HELPERS
 ========================================================= */
 
-function capitalize(text) {
-  const value = String(text || "").trim();
+function capitalize(value) {
+  const text =
+    String(
+      value || ""
+    ).trim();
 
-  if (!value) {
+  if (!text) {
     return "N/A";
   }
 
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return (
+    text.charAt(0).toUpperCase() +
+    text.slice(1)
+  );
 }
 
 function getInitials(name) {
-  const cleanName = String(name || "Admin").trim();
-
-  return cleanName
+  return String(
+    name || "Admin"
+  )
+    .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .map((part) => part.charAt(0))
+    .map(
+      (part) =>
+        part.charAt(0)
+    )
     .join("")
     .slice(0, 2)
     .toUpperCase();
@@ -60,658 +94,1097 @@ function formatDate(value) {
 
   try {
     const date =
-      typeof value?.toDate === "function"
+      typeof value?.toDate ===
+      "function"
         ? value.toDate()
         : value instanceof Date
           ? value
-          : new Date(value);
+          : new Date(
+              value
+            );
 
-    if (Number.isNaN(date.getTime())) {
-      return "Not available";
-    }
-
-    return date.toLocaleDateString("en-MY", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+    return Number.isNaN(
+      date.getTime()
+    )
+      ? "Not available"
+      : date.toLocaleDateString(
+          "en-MY",
+          {
+            day:
+              "2-digit",
+            month:
+              "long",
+            year:
+              "numeric",
+          }
+        );
   } catch {
     return "Not available";
   }
 }
 
-function hasFaceBiometric(user) {
-  return Boolean(
-    user?.faceRegistered ||
-      user?.faceTemplate ||
-      user?.faceEncoding ||
-      user?.biometrics?.face ||
-      user?.biometric?.face
-  );
-}
+function normalizeEnrollmentStatus(
+  profile,
+  type
+) {
+  const possibleValues =
+    [
+      profile?.[
+        `${type}Status`
+      ],
 
-function hasFingerprintBiometric(user) {
-  return Boolean(
-    user?.fingerprintRegistered ||
-      user?.fingerprintTemplate ||
-      user?.fingerprintEncoding ||
-      user?.biometrics?.fingerprint ||
-      user?.biometric?.fingerprint
-  );
-}
+      profile?.[
+        type
+      ]?.status,
 
-/* =========================================================
-   PREFERENCE TOGGLE
-========================================================= */
+      profile?.biometrics?.[
+        type
+      ]?.status,
 
-function PreferenceToggle({
-  checked,
-  onChange,
-  label,
-  description,
-}) {
-  return (
-    <div className="ac-preference-row">
-      <div className="ac-preference-copy">
-        <span className="ac-preference-label">
-          {label}
-        </span>
+      profile?.[
+        `${type}Registered`
+      ]
+        ? "enrolled"
+        : "",
+    ]
+      .filter(Boolean)
+      .map(
+        (value) =>
+          String(value)
+            .toLowerCase()
+            .trim()
+      );
 
-        <span className="ac-preference-description">
-          {description}
-        </span>
-      </div>
+  if (
+    possibleValues.some(
+      (value) =>
+        [
+          "enrolled",
+          "registered",
+          "complete",
+          "completed",
+          "active",
+        ].includes(
+          value
+        )
+    )
+  ) {
+    return "enrolled";
+  }
 
-      <label className="ac-toggle">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) =>
-            onChange(event.target.checked)
-          }
-        />
-
-        <span className="ac-toggle-slider" />
-      </label>
-    </div>
-  );
+  return "pending";
 }
 
 /* =========================================================
-   ACCOUNT CENTER
+   COMPONENT
 ========================================================= */
 
 function AccountCenter() {
-  const { user } = useAuth();
+  const {
+    user,
+  } = useAuth();
 
-  const [preferences, setPreferences] = useState({
+  const [
+    profile,
+    setProfile,
+  ] = useState(null);
+
+  const [
+    authProfile,
+    setAuthProfile,
+  ] = useState(null);
+
+  const [
+    editOpen,
+    setEditOpen,
+  ] = useState(false);
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
+
+  const [
+    form,
+    setForm,
+  ] = useState({
+    firstName: "",
+    lastName: "",
+    phoneNum: "",
+    department: "",
+  });
+
+  const [
+    preferences,
+    setPreferences,
+  ] = useState({
     disputeAlerts: true,
     deviceAlerts: true,
     attendanceAlerts: true,
     emailAlerts: false,
   });
 
-  const fullName =
-    user?.fullName ||
-    [user?.firstName, user?.lastName]
-      .filter(Boolean)
-      .join(" ") ||
-    "Administrator";
+  const preferenceKey =
+    user?.uid
+      ? `biosync:admin-account-preferences:${user.uid}`
+      : "";
 
-  const initials = useMemo(
-    () => getInitials(fullName),
-    [fullName]
-  );
-
-  const role = capitalize(user?.role || "admin");
-
-  const isActive = user?.active !== false;
-
-  const faceRegistered =
-    hasFaceBiometric(user);
-
-  const fingerprintRegistered =
-    hasFingerprintBiometric(user);
-
-  const preferenceStorageKey = useMemo(
-    () =>
-      user?.uid
-        ? `biosync:account-center-preferences:${user.uid}`
-        : "",
-    [user?.uid]
-  );
-
-  /* =========================================================
-     LOAD LOCAL PREFERENCES
-  ========================================================= */
+  /* =======================================================
+     LIVE PROFILE
+  ======================================================= */
 
   useEffect(() => {
-    if (!preferenceStorageKey) {
+    if (!user?.uid) {
+      return undefined;
+    }
+
+    const unsubscribeUser =
+      onSnapshot(
+        doc(
+          db,
+          "users",
+          user.uid
+        ),
+        (snapshot) => {
+          if (
+            snapshot.exists()
+          ) {
+            setProfile({
+              id:
+                snapshot.id,
+
+              ...snapshot.data(),
+            });
+          }
+        }
+      );
+
+    const unsubscribeAuth =
+      onSnapshot(
+        doc(
+          db,
+          "authProfile",
+          user.uid
+        ),
+        (snapshot) => {
+          setAuthProfile(
+            snapshot.exists()
+              ? {
+                  id:
+                    snapshot.id,
+
+                  ...snapshot.data(),
+                }
+              : null
+          );
+        },
+        () => {
+          setAuthProfile(
+            null
+          );
+        }
+      );
+
+    return () => {
+      unsubscribeUser();
+      unsubscribeAuth();
+    };
+  }, [
+    user?.uid,
+  ]);
+
+  /* =======================================================
+     PREFERENCES
+  ======================================================= */
+
+  useEffect(() => {
+    if (!preferenceKey) {
       return;
     }
 
     try {
       const stored =
         localStorage.getItem(
-          preferenceStorageKey
+          preferenceKey
         );
 
-      if (!stored) {
-        return;
+      if (stored) {
+        setPreferences(
+          (current) => ({
+            ...current,
+            ...JSON.parse(
+              stored
+            ),
+          })
+        );
       }
-
-      const parsed = JSON.parse(stored);
-
-      setPreferences((current) => ({
-        ...current,
-        ...parsed,
-      }));
-    } catch (error) {
-      console.error(
-        "Unable to load Account Center preferences:",
-        error
-      );
+    } catch {
+      // ignore invalid local preference
     }
-  }, [preferenceStorageKey]);
-
-  /* =========================================================
-     SAVE LOCAL PREFERENCES
-  ========================================================= */
+  }, [
+    preferenceKey,
+  ]);
 
   useEffect(() => {
-    if (!preferenceStorageKey) {
+    if (!preferenceKey) {
+      return;
+    }
+
+    localStorage.setItem(
+      preferenceKey,
+      JSON.stringify(
+        preferences
+      )
+    );
+  }, [
+    preferences,
+    preferenceKey,
+  ]);
+
+  /* =======================================================
+     VALUES
+  ======================================================= */
+
+  const current =
+    profile || user || {};
+
+  const fullName =
+    current.fullName ||
+    [
+      current.firstName,
+      current.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    "Administrator";
+
+  const initials =
+    useMemo(
+      () =>
+        getInitials(
+          fullName
+        ),
+      [
+        fullName,
+      ]
+    );
+
+  const role =
+    capitalize(
+      current.role ||
+        "admin"
+    );
+
+  const isActive =
+    current.active !== false;
+
+  const rfidStatus =
+    normalizeEnrollmentStatus(
+      authProfile,
+      "rfid"
+    );
+
+  const faceStatus =
+    normalizeEnrollmentStatus(
+      authProfile,
+      "face"
+    );
+
+  const fingerprintStatus =
+    normalizeEnrollmentStatus(
+      authProfile,
+      "fingerprint"
+    );
+
+  const enrolledCount =
+    [
+      rfidStatus,
+      faceStatus,
+      fingerprintStatus,
+    ].filter(
+      (status) =>
+        status === "enrolled"
+    ).length;
+
+  const securityScore =
+    Math.round(
+      (
+        enrolledCount /
+        3
+      ) *
+        100
+    );
+
+  /* =======================================================
+     ACTIONS
+  ======================================================= */
+
+  function openEdit() {
+    setForm({
+      firstName:
+        current.firstName ||
+        "",
+
+      lastName:
+        current.lastName ||
+        "",
+
+      phoneNum:
+        current.phoneNum ||
+        current.phone ||
+        "",
+
+      department:
+        current.department ||
+        "",
+    });
+
+    setEditOpen(true);
+  }
+
+  async function saveProfile(
+    event
+  ) {
+    event.preventDefault();
+
+    if (!user?.uid) {
+      return;
+    }
+
+    if (
+      !form.firstName.trim()
+    ) {
+      toast.error(
+        "First name is required"
+      );
+
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await updateDoc(
+        doc(
+          db,
+          "users",
+          user.uid
+        ),
+        {
+          firstName:
+            form.firstName.trim(),
+
+          lastName:
+            form.lastName.trim(),
+
+          phoneNum:
+            form.phoneNum.trim(),
+
+          department:
+            form.department.trim(),
+
+          updatedAt:
+            serverTimestamp(),
+        }
+      );
+
+      toast.success(
+        "Profile updated"
+      );
+
+      setEditOpen(false);
+    } catch (error) {
+      console.error(
+        error
+      );
+
+      toast.error(
+        "Unable to update profile"
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function resetPassword() {
+    if (
+      !current.email
+    ) {
+      toast.error(
+        "Email address is unavailable"
+      );
+
       return;
     }
 
     try {
-      localStorage.setItem(
-        preferenceStorageKey,
-        JSON.stringify(preferences)
+      await sendPasswordResetEmail(
+        auth,
+        current.email
+      );
+
+      toast.success(
+        `Password reset email sent to ${current.email}`
       );
     } catch (error) {
       console.error(
-        "Unable to save Account Center preferences:",
         error
       );
+
+      toast.error(
+        "Unable to send password reset email"
+      );
     }
-  }, [
-    preferences,
-    preferenceStorageKey,
-  ]);
+  }
 
-  /* =========================================================
-     ACTIONS
-  ========================================================= */
+  async function copyUid() {
+    if (!user?.uid) {
+      return;
+    }
 
-  function updatePreference(key, value) {
-    setPreferences((current) => ({
-      ...current,
-      [key]: value,
-    }));
+    await navigator.clipboard.writeText(
+      user.uid
+    );
+
+    toast.success(
+      "Account ID copied"
+    );
+  }
+
+  function updatePreference(
+    key,
+    value
+  ) {
+    setPreferences(
+      (currentValue) => ({
+        ...currentValue,
+        [key]: value,
+      })
+    );
 
     toast.success(
       "Preference updated"
     );
   }
 
-  async function handleCopyUid() {
-    if (!user?.uid) {
-      toast.error(
-        "Account ID is not available"
-      );
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(
-        user.uid
-      );
-
-      toast.success(
-        "Account ID copied"
-      );
-    } catch {
-      toast.error(
-        "Unable to copy Account ID"
-      );
-    }
-  }
-
-  function handleEditProfile() {
-    toast(
-      "Profile editing will be connected to your Firebase user update flow."
-    );
-  }
-
-  function handleChangePassword() {
-    toast(
-      "Password management will be connected to Firebase Authentication."
-    );
-  }
-
-  /* =========================================================
-     UI
-  ========================================================= */
-
   return (
-    <div className="account-center-page">
+    <div className="admin-account-page">
       <Toaster position="top-right" />
 
-      {/* =====================================================
-          PAGE HEADER
-      ====================================================== */}
+      {/* HERO */}
 
-      <section className="ac-page-heading">
-        <div>
-          <div className="ac-eyebrow">
-            <ShieldCheck size={15} />
+      <section className="aac-hero">
+        <div className="aac-grid-pattern" />
 
-            Administrator Account
+        <div className="aac-profile">
+          <div className="aac-avatar-wrap">
+            <div className="aac-avatar">
+              {initials}
+            </div>
+
+            <span
+              className={
+                isActive
+                  ? "aac-online"
+                  : "aac-online inactive"
+              }
+            />
           </div>
 
-          <h1>Account Center</h1>
+          <div className="aac-profile-copy">
+            <span className="aac-eyebrow">
+              <ShieldCheck
+                size={14}
+              />
 
-          <p>
-            Manage your administrator
-            profile, security settings,
-            authentication information
-            and personal preferences.
-          </p>
-        </div>
-
-        <div
-          className={`ac-account-status ${
-            isActive
-              ? "is-active"
-              : "is-inactive"
-          }`}
-        >
-          <span className="ac-status-dot" />
-
-          {isActive
-            ? "Account Active"
-            : "Account Inactive"}
-        </div>
-      </section>
-
-      {/* =====================================================
-          PROFILE HERO
-      ====================================================== */}
-
-      <section className="ac-profile-hero">
-        <div className="ac-profile-avatar-wrap">
-          <div className="ac-profile-avatar">
-            {initials}
-          </div>
-
-          <span
-            className={`ac-avatar-status ${
-              isActive
-                ? "is-active"
-                : "is-inactive"
-            }`}
-          />
-        </div>
-
-        <div className="ac-profile-details">
-          <div className="ac-profile-topline">
-            <h2>{fullName}</h2>
-
-            <span className="ac-role-badge">
-              <ShieldCheck size={13} />
-
-              {role}
+              Administrator Identity
             </span>
+
+            <h1>
+              {fullName}
+            </h1>
+
+            <p>
+              {current.email ||
+                "Email unavailable"}
+            </p>
+
+            <div className="aac-tags">
+              <span>
+                <BadgeCheck
+                  size={13}
+                />
+
+                {role}
+              </span>
+
+              <span>
+                <Building2
+                  size={13}
+                />
+
+                {current.department ||
+                  "No department"}
+              </span>
+
+              <span
+                className={
+                  isActive
+                    ? "success"
+                    : "danger"
+                }
+              >
+                {isActive
+                  ? "Account Active"
+                  : "Account Inactive"}
+              </span>
+            </div>
           </div>
-
-          <p className="ac-profile-email">
-            <Mail size={15} />
-
-            {user?.email ||
-              "Email not available"}
-          </p>
-
-          <p className="ac-profile-description">
-            BioSync Sentinel administrator
-            account with access to attendance,
-            dispute, device and system
-            monitoring features.
-          </p>
         </div>
 
-        <div className="ac-profile-actions">
+        <div className="aac-hero-actions">
           <button
-            type="button"
-            className="ac-button ac-button-primary"
-            onClick={handleEditProfile}
+            onClick={
+              openEdit
+            }
           >
-            <UserRound size={16} />
+            <Pencil
+              size={15}
+            />
 
             Edit Profile
           </button>
 
           <button
-            type="button"
-            className="ac-button ac-button-secondary"
-            onClick={handleChangePassword}
+            onClick={
+              resetPassword
+            }
           >
-            <KeyRound size={16} />
+            <KeyRound
+              size={15}
+            />
 
-            Change Password
+            Reset Password
           </button>
         </div>
       </section>
 
-      {/* =====================================================
-          MAIN GRID
-      ====================================================== */}
+      {/* SECURITY SUMMARY */}
 
-      <div className="ac-main-grid">
-        {/* LEFT SIDE */}
+      <section className="aac-summary-grid">
+        <article>
+          <span className="aac-summary-icon blue">
+            <ShieldCheck
+              size={20}
+            />
+          </span>
 
-        <div className="ac-column">
-          {/* PERSONAL INFORMATION */}
+          <div>
+            <span>
+              Security Score
+            </span>
 
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <UserRound size={18} />
-              </div>
+            <strong>
+              {securityScore}%
+            </strong>
+
+            <small>
+              Biometric enrollment
+            </small>
+          </div>
+        </article>
+
+        <article>
+          <span className="aac-summary-icon cyan">
+            <Radio
+              size={20}
+            />
+          </span>
+
+          <div>
+            <span>
+              RFID
+            </span>
+
+            <strong>
+              {capitalize(
+                rfidStatus
+              )}
+            </strong>
+
+            <small>
+              Identity claim
+            </small>
+          </div>
+        </article>
+
+        <article>
+          <span className="aac-summary-icon purple">
+            <ScanFace
+              size={20}
+            />
+          </span>
+
+          <div>
+            <span>
+              Face
+            </span>
+
+            <strong>
+              {capitalize(
+                faceStatus
+              )}
+            </strong>
+
+            <small>
+              Facial biometric
+            </small>
+          </div>
+        </article>
+
+        <article>
+          <span className="aac-summary-icon amber">
+            <Fingerprint
+              size={20}
+            />
+          </span>
+
+          <div>
+            <span>
+              Fingerprint
+            </span>
+
+            <strong>
+              {capitalize(
+                fingerprintStatus
+              )}
+            </strong>
+
+            <small>
+              Fallback biometric
+            </small>
+          </div>
+        </article>
+      </section>
+
+      {/* MAIN */}
+
+      <div className="aac-main-grid">
+        <div className="aac-column">
+
+          <section className="aac-card">
+            <div className="aac-card-heading">
+              <span>
+                <UserRound
+                  size={18}
+                />
+              </span>
 
               <div>
-                <h3>
+                <h2>
                   Personal Information
-                </h3>
+                </h2>
 
                 <p>
-                  Administrator profile
-                  information stored with
-                  your account.
+                  Administrator profile information stored in Firestore.
                 </p>
               </div>
             </div>
 
-            <div className="ac-info-grid">
-              <div className="ac-info-item">
-                <div className="ac-info-icon">
-                  <UserRound size={16} />
-                </div>
+            <div className="aac-info-grid">
+              <div>
+                <Mail
+                  size={16}
+                />
 
-                <div>
-                  <span className="ac-info-label">
-                    Full Name
-                  </span>
+                <span>
+                  Email
+                </span>
 
-                  <strong>
-                    {fullName}
-                  </strong>
-                </div>
+                <strong>
+                  {current.email ||
+                    "Not available"}
+                </strong>
               </div>
 
-              <div className="ac-info-item">
-                <div className="ac-info-icon">
-                  <Mail size={16} />
-                </div>
+              <div>
+                <Phone
+                  size={16}
+                />
 
-                <div>
-                  <span className="ac-info-label">
-                    Email Address
-                  </span>
+                <span>
+                  Phone
+                </span>
 
-                  <strong>
-                    {user?.email ||
-                      "Not available"}
-                  </strong>
-                </div>
+                <strong>
+                  {current.phoneNum ||
+                    current.phone ||
+                    "Not available"}
+                </strong>
               </div>
 
-              <div className="ac-info-item">
-                <div className="ac-info-icon">
-                  <Phone size={16} />
-                </div>
+              <div>
+                <Building2
+                  size={16}
+                />
 
-                <div>
-                  <span className="ac-info-label">
-                    Phone Number
-                  </span>
+                <span>
+                  Department
+                </span>
 
-                  <strong>
-                    {user?.phoneNum ||
-                      user?.phone ||
-                      "Not available"}
-                  </strong>
-                </div>
+                <strong>
+                  {current.department ||
+                    "Not available"}
+                </strong>
               </div>
 
-              <div className="ac-info-item">
-                <div className="ac-info-icon">
-                  <Building2 size={16} />
-                </div>
+              <div>
+                <ShieldCheck
+                  size={16}
+                />
 
-                <div>
-                  <span className="ac-info-label">
-                    Department
-                  </span>
+                <span>
+                  Role
+                </span>
 
-                  <strong>
-                    {user?.department ||
-                      "Not available"}
-                  </strong>
-                </div>
+                <strong>
+                  {role}
+                </strong>
               </div>
             </div>
           </section>
 
-          {/* SECURITY */}
-
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <LockKeyhole size={18} />
-              </div>
+          <section className="aac-card">
+            <div className="aac-card-heading">
+              <span>
+                <LockKeyhole
+                  size={18}
+                />
+              </span>
 
               <div>
-                <h3>
-                  Security & Login
-                </h3>
+                <h2>
+                  Security & Access
+                </h2>
 
                 <p>
-                  Review account access and
-                  login security options.
+                  Account authentication and access information.
                 </p>
               </div>
             </div>
 
-            <div className="ac-security-list">
-              <div className="ac-security-row">
-                <div className="ac-security-left">
-                  <div className="ac-security-icon">
-                    <KeyRound size={17} />
-                  </div>
+            <div className="aac-security-list">
+              <div>
+                <KeyRound
+                  size={17}
+                />
 
-                  <div>
-                    <strong>
-                      Account Password
-                    </strong>
+                <div>
+                  <strong>
+                    Firebase Password
+                  </strong>
 
-                    <span>
-                      Manage your Firebase
-                      Authentication password.
-                    </span>
-                  </div>
+                  <span>
+                    Managed through Firebase Authentication.
+                  </span>
                 </div>
 
                 <button
-                  type="button"
-                  className="ac-small-button"
                   onClick={
-                    handleChangePassword
+                    resetPassword
                   }
                 >
-                  Update
+                  Reset
                 </button>
               </div>
 
-              <div className="ac-security-row">
-                <div className="ac-security-left">
-                  <div className="ac-security-icon">
-                    <ShieldCheck size={17} />
-                  </div>
+              <div>
+                <ShieldCheck
+                  size={17}
+                />
 
-                  <div>
-                    <strong>
-                      Authentication Status
-                    </strong>
+                <div>
+                  <strong>
+                    Role-Based Access
+                  </strong>
 
-                    <span>
-                      Current account session
-                      is authenticated.
-                    </span>
-                  </div>
+                  <span>
+                    Administrator permissions are active.
+                  </span>
                 </div>
 
-                <span className="ac-success-chip">
-                  <CheckCircle2 size={13} />
-
+                <b className="aac-chip success">
                   Secured
-                </span>
+                </b>
               </div>
 
-              <div className="ac-security-row">
-                <div className="ac-security-left">
-                  <div className="ac-security-icon">
-                    <MonitorSmartphone
-                      size={17}
-                    />
-                  </div>
+              <div>
+                <CheckCircle2
+                  size={17}
+                />
 
-                  <div>
-                    <strong>
-                      Current Session
-                    </strong>
+                <div>
+                  <strong>
+                    Account Status
+                  </strong>
 
-                    <span>
-                      BioSync Sentinel web
-                      dashboard session.
-                    </span>
-                  </div>
+                  <span>
+                    Firestore account availability.
+                  </span>
                 </div>
 
-                <span className="ac-neutral-chip">
-                  Active
-                </span>
+                <b
+                  className={`aac-chip ${
+                    isActive
+                      ? "success"
+                      : "danger"
+                  }`}
+                >
+                  {isActive
+                    ? "Active"
+                    : "Inactive"}
+                </b>
               </div>
             </div>
           </section>
 
-          {/* NOTIFICATION PREFERENCES */}
-
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <Bell size={18} />
-              </div>
+          <section className="aac-card">
+            <div className="aac-card-heading">
+              <span>
+                <Bell
+                  size={18}
+                />
+              </span>
 
               <div>
-                <h3>
-                  Notification Preferences
-                </h3>
+                <h2>
+                  Preferences
+                </h2>
 
                 <p>
-                  Choose which BioSync events
-                  should receive your
-                  attention.
+                  Local dashboard notification preferences.
                 </p>
               </div>
             </div>
 
-            <div className="ac-preferences-list">
-              <PreferenceToggle
-                label="Dispute Alerts"
-                description="Show alerts when students submit new attendance disputes."
-                checked={
-                  preferences.disputeAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "disputeAlerts",
-                    value
-                  )
-                }
-              />
+            {[
+              [
+                "disputeAlerts",
+                "Dispute Alerts",
+                "Highlight new attendance disputes.",
+              ],
 
-              <PreferenceToggle
-                label="Device Alerts"
-                description="Receive important warnings about registered biometric terminals."
-                checked={
-                  preferences.deviceAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "deviceAlerts",
-                    value
-                  )
-                }
-              />
+              [
+                "deviceAlerts",
+                "Device Alerts",
+                "Show terminal/device warnings.",
+              ],
 
-              <PreferenceToggle
-                label="Attendance Alerts"
-                description="Enable notifications for important attendance activity."
-                checked={
-                  preferences.attendanceAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "attendanceAlerts",
-                    value
-                  )
-                }
-              />
+              [
+                "attendanceAlerts",
+                "Attendance Alerts",
+                "Show important attendance events.",
+              ],
 
-              <PreferenceToggle
-                label="Email Notifications"
-                description="Allow email-based account notifications when supported."
-                checked={
-                  preferences.emailAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "emailAlerts",
-                    value
-                  )
-                }
-              />
-            </div>
+              [
+                "emailAlerts",
+                "Email Notifications",
+                "Reserve email notifications when supported.",
+              ],
+            ].map(
+              ([
+                key,
+                label,
+                description,
+              ]) => (
+                <div
+                  className="aac-preference"
+                  key={key}
+                >
+                  <div>
+                    <strong>
+                      {label}
+                    </strong>
+
+                    <span>
+                      {description}
+                    </span>
+                  </div>
+
+                  <label className="aac-toggle">
+                    <input
+                      type="checkbox"
+                      checked={
+                        preferences[
+                          key
+                        ]
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updatePreference(
+                          key,
+                          event
+                            .target
+                            .checked
+                        )
+                      }
+                    />
+
+                    <i />
+                  </label>
+                </div>
+              )
+            )}
           </section>
         </div>
 
-        {/* RIGHT SIDE */}
+        <div className="aac-column">
 
-        <div className="ac-column">
-          {/* ACCOUNT ACCESS */}
-
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <ShieldCheck size={18} />
-              </div>
+          <section className="aac-card">
+            <div className="aac-card-heading">
+              <span>
+                <Fingerprint
+                  size={18}
+                />
+              </span>
 
               <div>
-                <h3>
-                  Account & Access
-                </h3>
+                <h2>
+                  Authentication Methods
+                </h2>
 
                 <p>
-                  Identity and access details
-                  for this administrator.
+                  Enrollment state from your BioSync authentication profile.
                 </p>
               </div>
             </div>
 
-            <div className="ac-account-list">
-              <div className="ac-account-row">
+            {[
+              {
+                label: "RFID",
+                description:
+                  "Physical identity card claim",
+
+                icon:
+                  Radio,
+
+                status:
+                  rfidStatus,
+
+                className:
+                  "cyan",
+              },
+
+              {
+                label:
+                  "Face Recognition",
+
+                description:
+                  "Facial verification template",
+
+                icon:
+                  ScanFace,
+
+                status:
+                  faceStatus,
+
+                className:
+                  "blue",
+              },
+
+              {
+                label:
+                  "Fingerprint",
+
+                description:
+                  "Fallback biometric verification",
+
+                icon:
+                  Fingerprint,
+
+                status:
+                  fingerprintStatus,
+
+                className:
+                  "purple",
+              },
+            ].map(
+              (method) => {
+                const Icon =
+                  method.icon;
+
+                return (
+                  <div
+                    className="aac-biometric"
+                    key={
+                      method.label
+                    }
+                  >
+                    <span
+                      className={`aac-biometric-icon ${method.className}`}
+                    >
+                      <Icon
+                        size={24}
+                      />
+                    </span>
+
+                    <div>
+                      <strong>
+                        {
+                          method.label
+                        }
+                      </strong>
+
+                      <span>
+                        {
+                          method.description
+                        }
+                      </span>
+                    </div>
+
+                    <b
+                      className={
+                        method.status ===
+                        "enrolled"
+                          ? "enrolled"
+                          : "pending"
+                      }
+                    >
+                      {method.status ===
+                      "enrolled"
+                        ? "Enrolled"
+                        : "Pending"}
+                    </b>
+                  </div>
+                );
+              }
+            )}
+          </section>
+
+          <section className="aac-card">
+            <div className="aac-card-heading">
+              <span>
+                <ShieldCheck
+                  size={18}
+                />
+              </span>
+
+              <div>
+                <h2>
+                  Account Information
+                </h2>
+
+                <p>
+                  System-managed administrator account metadata.
+                </p>
+              </div>
+            </div>
+
+            <div className="aac-account-list">
+              <div>
                 <span>
-                  Account Role
+                  Role
                 </span>
 
                 <strong>
@@ -719,56 +1192,50 @@ function AccountCenter() {
                 </strong>
               </div>
 
-              <div className="ac-account-row">
+              <div>
                 <span>
-                  Account Status
+                  Status
                 </span>
 
-                <strong
-                  className={
-                    isActive
-                      ? "ac-text-success"
-                      : "ac-text-danger"
-                  }
-                >
+                <strong>
                   {isActive
                     ? "Active"
                     : "Inactive"}
                 </strong>
               </div>
 
-              <div className="ac-account-row">
+              <div>
                 <span>
                   Member Since
                 </span>
 
                 <strong>
                   {formatDate(
-                    user?.createdAt
+                    current.createdAt
                   )}
                 </strong>
               </div>
 
-              <div className="ac-account-id-block">
+              <div className="aac-uid">
                 <div>
                   <span>
-                    Firebase Account ID
+                    Firebase UID
                   </span>
 
                   <code>
                     {user?.uid ||
-                      "Not available"}
+                      "Unavailable"}
                   </code>
                 </div>
 
                 <button
-                  type="button"
-                  className="ac-copy-button"
-                  onClick={handleCopyUid}
-                  disabled={!user?.uid}
-                  title="Copy Account ID"
+                  onClick={
+                    copyUid
+                  }
                 >
-                  <Copy size={15} />
+                  <Copy
+                    size={14}
+                  />
 
                   Copy
                 </button>
@@ -776,168 +1243,53 @@ function AccountCenter() {
             </div>
           </section>
 
-          {/* BIOMETRICS */}
-
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <Fingerprint size={18} />
-              </div>
-
-              <div>
-                <h3>
-                  Biometric Authentication
-                </h3>
-
-                <p>
-                  Registration status detected
-                  from your current account
-                  information.
-                </p>
-              </div>
-            </div>
-
-            <div className="ac-biometric-grid">
-              <div className="ac-biometric-item">
-                <div className="ac-biometric-visual ac-face">
-                  <ScanFace size={27} />
-                </div>
-
-                <div className="ac-biometric-copy">
-                  <strong>
-                    Face Recognition
-                  </strong>
-
-                  <span>
-                    Facial biometric template
-                  </span>
-                </div>
-
-                <span
-                  className={`ac-biometric-status ${
-                    faceRegistered
-                      ? "registered"
-                      : "not-registered"
-                  }`}
-                >
-                  {faceRegistered
-                    ? "Registered"
-                    : "Not configured"}
-                </span>
-              </div>
-
-              <div className="ac-biometric-item">
-                <div className="ac-biometric-visual ac-fingerprint">
-                  <Fingerprint size={27} />
-                </div>
-
-                <div className="ac-biometric-copy">
-                  <strong>
-                    Fingerprint
-                  </strong>
-
-                  <span>
-                    Fingerprint biometric
-                    template
-                  </span>
-                </div>
-
-                <span
-                  className={`ac-biometric-status ${
-                    fingerprintRegistered
-                      ? "registered"
-                      : "not-registered"
-                  }`}
-                >
-                  {fingerprintRegistered
-                    ? "Registered"
-                    : "Not configured"}
-                </span>
-              </div>
-            </div>
-
-            <div className="ac-biometric-note">
-              <ShieldCheck size={16} />
-
+          <section className="aac-card">
+            <div className="aac-card-heading">
               <span>
-                Biometric enrollment should
-                continue to be performed
-                through your authorized
-                BioSync enrollment terminal.
-              </span>
-            </div>
-          </section>
-
-          {/* INTERFACE */}
-
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
                 <SlidersHorizontal
                   size={18}
                 />
-              </div>
+              </span>
 
               <div>
-                <h3>
-                  Interface Preferences
-                </h3>
+                <h2>
+                  Interface
+                </h2>
 
                 <p>
-                  Current dashboard display
-                  configuration.
+                  Current BioSync administrative environment.
                 </p>
               </div>
             </div>
 
-            <div className="ac-interface-list">
-              <div className="ac-interface-row">
-                <div>
-                  <span>
-                    Dashboard Experience
-                  </span>
-
-                  <small>
-                    BioSecure Enterprise
-                  </small>
-                </div>
+            <div className="aac-interface">
+              <div>
+                <span>
+                  Portal
+                </span>
 
                 <strong>
-                  Standard
+                  Admin Dashboard
                 </strong>
               </div>
 
-              <div className="ac-interface-row">
-                <div>
-                  <span>
-                    Date Format
-                  </span>
+              <div>
+                <span>
+                  Region
+                </span>
 
-                  <small>
-                    Malaysian regional
-                    formatting
-                  </small>
-                </div>
+                <strong>
+                  Malaysia
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  Date Format
+                </span>
 
                 <strong>
                   DD/MM/YYYY
-                </strong>
-              </div>
-
-              <div className="ac-interface-row">
-                <div>
-                  <span>
-                    Default Admin Page
-                  </span>
-
-                  <small>
-                    Page displayed after admin
-                    navigation
-                  </small>
-                </div>
-
-                <strong>
-                  Dashboard
                 </strong>
               </div>
             </div>
@@ -945,30 +1297,182 @@ function AccountCenter() {
         </div>
       </div>
 
-      {/* =====================================================
-          SECURITY FOOTER
-      ====================================================== */}
+      {/* EDIT MODAL */}
 
-      <section className="ac-security-footer">
-        <div className="ac-security-footer-icon">
-          <ShieldCheck size={22} />
+      {editOpen && (
+        <div className="aac-modal-backdrop">
+          <form
+            className="aac-modal"
+            onSubmit={
+              saveProfile
+            }
+          >
+            <div className="aac-modal-header">
+              <div>
+                <span>
+                  <Pencil
+                    size={18}
+                  />
+                </span>
+
+                <div>
+                  <h2>
+                    Edit Profile
+                  </h2>
+
+                  <p>
+                    Update safe administrator profile fields.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setEditOpen(
+                    false
+                  )
+                }
+              >
+                <X
+                  size={18}
+                />
+              </button>
+            </div>
+
+            <div className="aac-form-grid">
+              <label>
+                First Name
+
+                <input
+                  value={
+                    form.firstName
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setForm(
+                      (
+                        currentValue
+                      ) => ({
+                        ...currentValue,
+                        firstName:
+                          event
+                            .target
+                            .value,
+                      })
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                Last Name
+
+                <input
+                  value={
+                    form.lastName
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setForm(
+                      (
+                        currentValue
+                      ) => ({
+                        ...currentValue,
+                        lastName:
+                          event
+                            .target
+                            .value,
+                      })
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                Phone
+
+                <input
+                  value={
+                    form.phoneNum
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setForm(
+                      (
+                        currentValue
+                      ) => ({
+                        ...currentValue,
+                        phoneNum:
+                          event
+                            .target
+                            .value,
+                      })
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                Department
+
+                <input
+                  value={
+                    form.department
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setForm(
+                      (
+                        currentValue
+                      ) => ({
+                        ...currentValue,
+                        department:
+                          event
+                            .target
+                            .value,
+                      })
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="aac-modal-actions">
+              <button
+                type="button"
+                onClick={() =>
+                  setEditOpen(
+                    false
+                  )
+                }
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="primary"
+                disabled={
+                  saving
+                }
+              >
+                <Save
+                  size={15}
+                />
+
+                {saving
+                  ? "Saving..."
+                  : "Save Changes"}
+              </button>
+            </div>
+          </form>
         </div>
-
-        <div>
-          <strong>
-            BioSync Sentinel Account Security
-          </strong>
-
-          <p>
-            Your account is protected through
-            BioSync role-based access controls.
-            Keep administrator credentials
-            private and use authorized
-            biometric terminals for biometric
-            enrollment.
-          </p>
-        </div>
-      </section>
+      )}
     </div>
   );
 }

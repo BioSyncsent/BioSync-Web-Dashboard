@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import {
   signInWithEmailAndPassword,
-  signOut,
 } from "firebase/auth";
 
 import {
@@ -10,11 +9,12 @@ import {
   getDoc,
 } from "firebase/firestore";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import {
-  ArrowLeft,
-  CheckCircle2,
   Eye,
   EyeOff,
   LockKeyhole,
@@ -27,21 +27,23 @@ import {
   db,
 } from "../firebase/firebase";
 
-import bioSyncLogo from "../assets/BioSync_Logo_Navbar.png";
+import navbarLogo from "../assets/BioSync_Logo_Navbar.png";
 import loginShield from "../assets/BioSync_Login_Shield.png";
 
 import "./Login.css";
 
-/* =========================================================
-   BIOSYNC LOGIN
-========================================================= */
-
 function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [email, setEmail] =
     useState("");
 
   const [password, setPassword] =
     useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
 
   const [error, setError] =
     useState("");
@@ -49,192 +51,40 @@ function Login() {
   const [loading, setLoading] =
     useState(false);
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  /* =========================================================
+     NAVIGATION
+  ========================================================= */
 
-  const navigate = useNavigate();
-
-  const [
-    isLeavingToDashboard,
-    setIsLeavingToDashboard,
-  ] = useState(false);
-
-  const willTransitionToDashboardRef =
-    useRef(false);
-
-  const formRef = useRef(null);
-  const backgroundRef = useRef(null);
-
-  const [
-    shakeTrigger,
-    setShakeTrigger,
-  ] = useState(0);
-
-  const [
-    loginSuccess,
-    setLoginSuccess,
-  ] = useState(false);
-
-useEffect(() => {
-  if (shakeTrigger === 0) {
-    return;
-  }
-
-  const el = formRef.current;
-
-  if (!el) {
-    return;
-  }
-
-  el.classList.remove("bs-login-shake");
-
-  void el.offsetWidth;
-
-  el.classList.add("bs-login-shake");
-}, [shakeTrigger]);
-
-useEffect(() => {
-  const prefersReducedMotion =
-    window.matchMedia &&
-    window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-  const isFinePointer =
-    window.matchMedia &&
-    window.matchMedia(
-      "(pointer: fine)"
-    ).matches;
-
-  if (prefersReducedMotion || !isFinePointer) {
-    return undefined;
-  }
-
-  let frame = null;
-
-  function handleMouseMove(event) {
-    if (frame) {
+  function handleLogoClick() {
+    if (location.pathname === "/") {
+      window.location.reload();
       return;
     }
 
-    frame = window.requestAnimationFrame(() => {
-      frame = null;
-
-      const el = backgroundRef.current;
-
-      if (!el) {
-        return;
-      }
-
-      const xRatio =
-        (event.clientX / window.innerWidth - 0.5) * 2;
-
-      const yRatio =
-        (event.clientY / window.innerHeight - 0.5) * 2;
-
-      const maxOffset = 12;
-
-      el.style.transform = `translate3d(${(
-        xRatio * maxOffset
-      ).toFixed(1)}px, ${(
-        yRatio * maxOffset
-      ).toFixed(1)}px, 0)`;
-    });
+    navigate("/");
   }
 
-  window.addEventListener(
-    "mousemove",
-    handleMouseMove
-  );
-
-  return () => {
-    window.removeEventListener(
-      "mousemove",
-      handleMouseMove
-    );
-
-    if (frame) {
-      window.cancelAnimationFrame(frame);
-    }
-  };
-}, []);
-
-  /* =======================================================
-     NAVIGATION
-  ======================================================= */
-
-function handleLogoClick() {
-  navigate("/");
-}
-
-  /* =======================================================
-     ERROR (WITH SHAKE)
-  ======================================================= */
-
-function showError(message) {
-  setError(message);
-
-  setShakeTrigger((current) => current + 1);
-}
-
-  /* =======================================================
-     GO TO DASHBOARD (WITH TRANSITION)
-  ======================================================= */
-
-function goToDashboard(path) {
-  willTransitionToDashboardRef.current = true;
-
-  setLoginSuccess(true);
-
-  window.setTimeout(() => {
-    setIsLeavingToDashboard(true);
-  }, 180);
-
-  window.setTimeout(() => {
-    navigate(path, {
-      replace: true,
-    });
-  }, 180 + 220);
-}
-
-  /* =======================================================
+  /* =========================================================
      LOGIN
-  ======================================================= */
+  ========================================================= */
 
   async function handleLogin(event) {
     event.preventDefault();
 
-    if (loading) {
-      return;
-    }
-
-    setError("");
-
     const cleanEmail =
       email.trim().toLowerCase();
 
-    if (!cleanEmail) {
-      showError(
-        "Please enter your email address."
+    if (!cleanEmail || !password) {
+      setError(
+        "Please enter your email and password."
       );
 
       return;
     }
-
-    if (!password) {
-      showError(
-        "Please enter your password."
-      );
-
-      return;
-    }
-
-    setLoading(true);
 
     try {
-      /* ---------------------------------------------------
-         FIREBASE AUTHENTICATION
-      --------------------------------------------------- */
+      setLoading(true);
+      setError("");
 
       const userCredential =
         await signInWithEmailAndPassword(
@@ -246,10 +96,6 @@ function goToDashboard(path) {
       const uid =
         userCredential.user.uid;
 
-      /* ---------------------------------------------------
-         LOAD FIRESTORE PROFILE
-      --------------------------------------------------- */
-
       const userSnapshot =
         await getDoc(
           doc(
@@ -260,10 +106,8 @@ function goToDashboard(path) {
         );
 
       if (!userSnapshot.exists()) {
-        await signOut(auth);
-
-        showError(
-          "Your BioSync user profile could not be found."
+        setError(
+          "User profile not found."
         );
 
         return;
@@ -272,46 +116,59 @@ function goToDashboard(path) {
       const userData =
         userSnapshot.data();
 
-      /* ---------------------------------------------------
-         ACCOUNT STATUS
-      --------------------------------------------------- */
-
       if (userData.active === false) {
-        await signOut(auth);
-
-        showError(
-          "This account has been deactivated. Please contact an administrator."
+        navigate(
+          "/unauthorized",
+          {
+            replace: true,
+          }
         );
 
         return;
       }
 
-      /* ---------------------------------------------------
-         ROLE REDIRECTION
-      --------------------------------------------------- */
+      const role =
+        String(
+          userData.role || ""
+        )
+          .trim()
+          .toLowerCase();
 
-      if (userData.role === "admin") {
-        goToDashboard("/admin/dashboard");
-
-        return;
-      }
-
-      if (userData.role === "teacher") {
-        goToDashboard("/teacher/dashboard");
-
-        return;
-      }
-
-      if (userData.role === "student") {
-        goToDashboard("/student/dashboard");
+      if (role === "admin") {
+        navigate(
+          "/admin/dashboard",
+          {
+            replace: true,
+          }
+        );
 
         return;
       }
 
-      await signOut(auth);
+      if (role === "teacher") {
+        navigate(
+          "/teacher/dashboard",
+          {
+            replace: true,
+          }
+        );
 
-      showError(
-        "This account does not have a valid BioSync role."
+        return;
+      }
+
+      if (role === "student") {
+        navigate(
+          "/student/dashboard",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      setError(
+        "Invalid user role."
       );
     } catch (loginError) {
       console.error(
@@ -319,150 +176,217 @@ function goToDashboard(path) {
         loginError
       );
 
-      showError(
-        "Invalid email or password. Please try again."
-      );
-    } finally {
-      if (!willTransitionToDashboardRef.current) {
-        setLoading(false);
+      const code =
+        loginError?.code || "";
+
+      if (
+        code === "auth/invalid-credential" ||
+        code === "auth/wrong-password" ||
+        code === "auth/user-not-found"
+      ) {
+        setError(
+          "Incorrect email or password."
+        );
+      } else if (
+        code === "auth/invalid-email"
+      ) {
+        setError(
+          "Please enter a valid email address."
+        );
+      } else if (
+        code === "auth/too-many-requests"
+      ) {
+        setError(
+          "Too many login attempts. Please try again later."
+        );
+      } else if (
+        code === "auth/network-request-failed"
+      ) {
+        setError(
+          "Unable to connect. Please check your network connection."
+        );
+      } else {
+        setError(
+          "Unable to sign in. Please try again."
+        );
       }
+    } finally {
+      setLoading(false);
     }
   }
 
-  /* =======================================================
-     UI
-  ======================================================= */
-
   return (
-    <div
-      className={[
-        "bs-login-page",
-        isLeavingToDashboard
-          ? "bs-login-leaving-dashboard"
-          : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      {/* ===================================================
-          BACKGROUND
-      =================================================== */}
+    <div className="bs-login-page">
 
-      <div
-        className="bs-login-background"
-        aria-hidden="true"
-        ref={backgroundRef}
-      >
-        <div className="bs-login-grid" />
-
-        <div className="bs-login-glow bs-login-glow-one" />
-
-        <div className="bs-login-glow bs-login-glow-two" />
-
-        <div className="bs-login-glow bs-login-glow-three" />
-
-        <div className="bs-login-scanline" />
-
-        <div className="bs-login-orbit bs-login-orbit-one" />
-
-        <div className="bs-login-orbit bs-login-orbit-two" />
-      </div>
-
-      {/* ===================================================
+      {/* =====================================================
           NAVBAR
-      =================================================== */}
+      ===================================================== */}
 
       <header className="bs-login-navbar">
         <div className="bs-login-navbar-inner">
+
           <button
             type="button"
             className="bs-login-brand"
             onClick={handleLogoClick}
-            aria-label="Return to BioSync Sentinel home"
+            aria-label="BioSync Sentinel"
           >
             <img
-              src={bioSyncLogo}
+              src={navbarLogo}
               alt="BioSync Sentinel"
             />
           </button>
 
-          <button
-            type="button"
-            className="bs-login-home-button"
-            onClick={handleLogoClick}
-          >
-            <ArrowLeft size={15} />
+          <div className="bs-login-nav-right">
 
-            <span>
-              Back to Home
-            </span>
-          </button>
+            <div className="bs-nav-online">
+              <span className="bs-online-dot" />
+
+              SYSTEM ONLINE
+            </div>
+
+            <div className="bs-nav-secure">
+              <ShieldCheck size={15} />
+
+              Secure Access
+            </div>
+
+            <div className="bs-nav-message">
+              <span>
+                Smarter Security.
+              </span>
+
+              <strong>
+                Brighter Campuses.
+              </strong>
+            </div>
+
+          </div>
+
         </div>
       </header>
 
-      {/* ===================================================
-          MAIN CONTENT
-      =================================================== */}
+      {/* =====================================================
+          MAIN PAGE
+      ===================================================== */}
 
       <main className="bs-login-main">
-        <section className="bs-login-container">
-          {/* -----------------------------------------------
-              SECURITY STATUS
-          ------------------------------------------------ */}
 
-          <div className="bs-login-status">
-            <span className="bs-login-status-dot" />
+        {/* BACKGROUND GRID */}
+
+        <div
+          className="bs-login-grid"
+          aria-hidden="true"
+        />
+
+        {/* IMPULSE WAVES */}
+
+        <div
+          className="bs-impulse-system"
+          aria-hidden="true"
+        >
+          <span className="bs-impulse-wave bs-impulse-wave-1" />
+
+          <span className="bs-impulse-wave bs-impulse-wave-2" />
+
+          <span className="bs-impulse-wave bs-impulse-wave-3" />
+
+          <span className="bs-impulse-wave bs-impulse-wave-4" />
+        </div>
+
+        {/* ===================================================
+            LEFT INFORMATION
+        =================================================== */}
+
+        <section className="bs-login-intro">
+
+          <span className="bs-intro-eyebrow">
+            INTEGRATED
+            <br />
+            BIOMETRIC
+            <br />
+            ATTENDANCE SYSTEM
+          </span>
+
+          <span className="bs-intro-line" />
+
+          <h1>
+            Security
+            <br />
 
             <span>
-              BioSync authentication
-              service online
+              Beyond
             </span>
+
+            <br />
+
+            Attendance.
+          </h1>
+
+          <p>
+            RFID, facial recognition and
+            fingerprint verification provide
+            secure, multi-factor attendance
+            authentication for a smarter and
+            safer campus.
+          </p>
+
+        </section>
+
+        {/* ===================================================
+            CENTER LOGIN / RADAR
+        =================================================== */}
+
+        <section className="bs-login-center">
+
+          {/* RADAR */}
+
+          <div
+            className="bs-radar"
+            aria-hidden="true"
+          >
+            <div className="bs-radar-ring bs-radar-ring-1" />
+            <div className="bs-radar-ring bs-radar-ring-2" />
+            <div className="bs-radar-ring bs-radar-ring-3" />
+            <div className="bs-radar-ring bs-radar-ring-4" />
+
+            <span className="bs-radar-dot bs-radar-dot-1" />
+            <span className="bs-radar-dot bs-radar-dot-2" />
+            <span className="bs-radar-dot bs-radar-dot-3" />
           </div>
 
-          {/* -----------------------------------------------
-              LOGIN CARD
-          ------------------------------------------------ */}
+          {/* LOGIN CARD */}
 
-          <div className="bs-login-card">
-            <div
-              className="bs-login-card-glow"
-              aria-hidden="true"
-            />
+          <section className="bs-login-card">
 
-            <div
-              className="bs-login-card-line"
-              aria-hidden="true"
-            />
+            <div className="bs-login-card-line" />
 
-            {/* LOGO */}
+            {/* SHIELD */}
 
-            <div className="bs-login-shield-wrapper">
-              <div className="bs-login-shield-glow" />
-
+            <div className="bs-login-shield">
               <img
                 src={loginShield}
-                alt=""
-                className="bs-login-shield"
+                alt="BioSync Sentinel Shield"
               />
             </div>
 
-            {/* TITLE */}
+            {/* HEADING */}
 
             <div className="bs-login-heading">
-              <div className="bs-login-secure-label">
-                <ShieldCheck size={13} />
 
-                Secure Portal
-              </div>
+              <span>
+                SECURE PORTAL
+              </span>
 
-              <h1>
-                Welcome back
-              </h1>
+              <h2>
+                Welcome Back
+              </h2>
 
               <p>
-                Secure access to
-                BioSync Sentinel
+                Sign in to your BioSync Sentinel
+                account to continue.
               </p>
+
             </div>
 
             {/* FORM */}
@@ -470,30 +394,26 @@ function goToDashboard(path) {
             <form
               className="bs-login-form"
               onSubmit={handleLogin}
-              ref={formRef}
             >
+
               {/* EMAIL */}
 
               <div className="bs-login-field">
-                <label
-                  htmlFor="login-email"
-                  className="bs-login-label"
-                >
+
+                <label htmlFor="login-email">
                   Email Address
                 </label>
 
-                <div className="bs-login-input-wrapper">
-                  <Mail
-                    size={17}
-                    className="bs-login-input-icon"
-                  />
+                <div className="bs-login-input">
+
+                  <Mail size={17} />
 
                   <input
                     id="login-email"
                     type="email"
                     value={email}
-                    autoComplete="email"
                     placeholder="user@biosync.net"
+                    autoComplete="email"
                     disabled={loading}
                     onChange={(event) => {
                       setEmail(
@@ -504,25 +424,32 @@ function goToDashboard(path) {
                         setError("");
                       }
                     }}
+                    required
                   />
+
                 </div>
+
               </div>
 
               {/* PASSWORD */}
 
               <div className="bs-login-field">
-                <label
-                  htmlFor="login-password"
-                  className="bs-login-label"
-                >
-                  Password
-                </label>
 
-                <div className="bs-login-input-wrapper">
-                  <LockKeyhole
-                    size={17}
-                    className="bs-login-input-icon"
-                  />
+                <div className="bs-login-label-row">
+
+                  <label htmlFor="login-password">
+                    Password
+                  </label>
+
+                  <span>
+                    PROTECTED
+                  </span>
+
+                </div>
+
+                <div className="bs-login-input">
+
+                  <LockKeyhole size={17} />
 
                   <input
                     id="login-password"
@@ -532,8 +459,8 @@ function goToDashboard(path) {
                         : "password"
                     }
                     value={password}
-                    autoComplete="current-password"
                     placeholder="Enter your password"
+                    autoComplete="current-password"
                     disabled={loading}
                     onChange={(event) => {
                       setPassword(
@@ -544,45 +471,34 @@ function goToDashboard(path) {
                         setError("");
                       }
                     }}
+                    required
                   />
 
                   <button
                     type="button"
-                    className="bs-login-password-toggle"
-                    aria-label={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
-                    }
-                    disabled={loading}
+                    className="bs-password-toggle"
                     onClick={() =>
                       setShowPassword(
                         (current) =>
                           !current
                       )
                     }
+                    disabled={loading}
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
                   >
-                    <Eye
-                      size={17}
-                      className={[
-                        "bs-login-eye-icon",
-                        showPassword
-                          ? "bs-login-eye-icon-hidden"
-                          : "bs-login-eye-icon-visible",
-                      ].join(" ")}
-                    />
-
-                    <EyeOff
-                      size={17}
-                      className={[
-                        "bs-login-eye-icon",
-                        showPassword
-                          ? "bs-login-eye-icon-visible"
-                          : "bs-login-eye-icon-hidden",
-                      ].join(" ")}
-                    />
+                    {showPassword ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
                   </button>
+
                 </div>
+
               </div>
 
               {/* ERROR */}
@@ -592,9 +508,7 @@ function goToDashboard(path) {
                   className="bs-login-error"
                   role="alert"
                 >
-                  <span className="bs-login-error-icon">
-                    !
-                  </span>
+                  <ShieldCheck size={15} />
 
                   <span>
                     {error}
@@ -602,51 +516,15 @@ function goToDashboard(path) {
                 </div>
               )}
 
-              {/* LOGIN */}
+              {/* BUTTON */}
 
               <button
                 type="submit"
                 className="bs-login-submit"
                 disabled={loading}
-                onMouseMove={(event) => {
-                  const rect =
-                    event.currentTarget.getBoundingClientRect();
-
-                  const mx =
-                    (
-                      ((event.clientX - rect.left) /
-                        rect.width) *
-                      100
-                    ).toFixed(1);
-
-                  const my =
-                    (
-                      ((event.clientY - rect.top) /
-                        rect.height) *
-                      100
-                    ).toFixed(1);
-
-                  event.currentTarget.style.setProperty(
-                    "--bs-mx",
-                    `${mx}%`
-                  );
-
-                  event.currentTarget.style.setProperty(
-                    "--bs-my",
-                    `${my}%`
-                  );
-                }}
               >
-                {loginSuccess ? (
-                  <>
-                    <CheckCircle2
-                      size={16}
-                      className="bs-login-success-check"
-                    />
 
-                    Success
-                  </>
-                ) : loading ? (
+                {loading ? (
                   <>
                     <span className="bs-login-spinner" />
 
@@ -654,60 +532,94 @@ function goToDashboard(path) {
                   </>
                 ) : (
                   <>
-                    <LockKeyhole
-                      size={16}
-                    />
+                    <ShieldCheck size={18} />
 
-                    Sign In Securely
+                    Secure Sign In
                   </>
                 )}
+
               </button>
+
             </form>
 
-            {/* SECURITY FOOTER */}
+            {/* SECURITY */}
 
             <div className="bs-login-security">
-              <div className="bs-login-security-item">
-                <CheckCircle2
-                  size={13}
-                />
-
-                Firebase secured
-              </div>
-
-              <div className="bs-login-security-divider" />
-
-              <div className="bs-login-security-item">
-                <ShieldCheck
-                  size={13}
-                />
-
-                Role protected
-              </div>
-            </div>
-
-            <div className="bs-login-card-footer">
-              <ShieldCheck size={12} />
 
               <span>
-                Authorized users only
+                <i />
+
+                Firebase Authentication
               </span>
+
+              <span className="bs-security-divider" />
+
+              <span>
+                <ShieldCheck size={12} />
+
+                Encrypted Access
+              </span>
+
             </div>
+
+            <div className="bs-authorized">
+              AUTHORIZED USERS ONLY
+            </div>
+
+          </section>
+
+        </section>
+
+        {/* ===================================================
+            RIGHT DECORATION
+        =================================================== */}
+
+        <aside className="bs-login-right">
+
+          <div className="bs-right-line" />
+
+          <div>
+            <span>
+              TRUST
+            </span>
+
+            <span>
+              IDENTITY
+            </span>
+
+            <span>
+              PROTECT
+            </span>
+
+            <span>
+              TOGETHER
+            </span>
           </div>
 
-          {/* -----------------------------------------------
-              PAGE FOOTER
-          ------------------------------------------------ */}
+        </aside>
 
-          <p className="bs-login-footer">
-            BioSync Sentinel
-            <span>•</span>
-            BioSecure Enterprise
-            <span>•</span>
-            v4.2.1
-          </p>
-        </section>
       </main>
+
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+
+      <footer className="bs-login-footer">
+
+        <span>
+          © 2026 BioSync Sentinel
+        </span>
+
+        <span>
+          Secure Biometric Attendance Gateway
+        </span>
+
+        <span>
+          v4.2.1
+        </span>
+
+      </footer>
+
     </div>
   );
 }

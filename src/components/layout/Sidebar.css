@@ -10,10 +10,13 @@
   flex-direction: column;
 
   width: 252px;
+  min-width: 252px;
+  max-width: 252px;
+
   height: 100vh;
   height: 100dvh;
 
-  flex-shrink: 0;
+  flex: 0 0 252px;
 
   padding: 18px 14px 16px;
 
@@ -37,7 +40,6 @@
   box-shadow:
     12px 0 32px rgba(2, 8, 23, 0.1);
 }
-
 
 /* =========================================================
    BACKGROUND GLOW
@@ -66,7 +68,6 @@
   pointer-events: none;
 }
 
-
 /* =========================================================
    BIOSYNC LOGO AREA
 ========================================================= */
@@ -78,15 +79,13 @@
   display: flex;
 
   width: 100%;
+  min-width: 0;
   min-height: 66px;
 
   align-items: center;
   justify-content: center;
 
-  padding:
-    4px
-    4px
-    8px;
+  padding: 4px 4px 8px;
 
   margin: 0;
 
@@ -99,7 +98,6 @@
 
   overflow: visible;
 }
-
 
 /* =========================================================
    LOGO BASE
@@ -133,7 +131,6 @@
   user-select: none;
 }
 
-
 /* =========================================================
    FULL BIOSYNC LOGO
 ========================================================= */
@@ -142,13 +139,12 @@
   display: block;
 
   width: 180px;
-  max-width: none;
+  max-width: 180px;
   height: auto;
 
   object-fit: contain;
   object-position: center;
 
-  /* Enlarges the actual logo inside the PNG */
   transform: scale(1.65);
   transform-origin: center center;
 
@@ -157,21 +153,19 @@
   image-rendering: auto;
 }
 
-
 /* =========================================================
    SHIELD LOGO
-   Hidden while sidebar is full size
 ========================================================= */
 
 .db-sidebar-logo-shield {
   display: none;
 
   width: 44px;
+  max-width: 44px;
   height: auto;
 
   background: transparent !important;
 }
-
 
 /* =========================================================
    SEPARATOR
@@ -184,10 +178,7 @@
   width: 100%;
   height: 1px;
 
-  margin:
-    8px
-    5px
-    19px;
+  margin: 8px 5px 19px;
 
   background:
     linear-gradient(
@@ -197,7 +188,6 @@
       transparent
     );
 }
-
 
 /* =========================================================
    NAVIGATION
@@ -222,20 +212,13 @@
   padding-right: 1px;
 }
 
-
-/* =========================================================
-   SCROLLBAR
-========================================================= */
-
 .db-sidebar-nav::-webkit-scrollbar {
   width: 4px;
 }
 
-
 .db-sidebar-nav::-webkit-scrollbar-track {
   background: transparent;
 }
-
 
 .db-sidebar-nav::-webkit-scrollbar-thumb {
   border-radius: 999px;
@@ -244,9 +227,8 @@
     rgba(148, 163, 184, 0.25);
 }
 
-
 /* =========================================================
-   NAVIGATION LINKS
+   LINKS
 ========================================================= */
 
 .db-sidebar-link {
@@ -264,16 +246,11 @@
 
   gap: 12px;
 
-  padding:
-    11px
-    13px;
+  padding: 11px 13px;
 
   overflow: hidden;
 
-  border:
-    1px
-    solid
-    transparent;
+  border: 1px solid transparent;
 
   border-radius: 12px;
 
@@ -294,11 +271,6 @@
     transform 220ms ease;
 }
 
-
-/* =========================================================
-   LEFT ACTIVE INDICATOR
-========================================================= */
-
 .db-sidebar-link::before {
   content: "";
 
@@ -310,32 +282,21 @@
 
   width: 3px;
 
-  border-radius:
-    0
-    999px
-    999px
-    0;
+  border-radius: 0 999px 999px 0;
 
   background: #38bdf8;
 
   opacity: 0;
 
-  transform:
-    scaleY(0.5);
+  transform: scaleY(0.5);
 
   transition:
     opacity 220ms ease,
     transform 220ms ease;
 }
 
-
-/* =========================================================
-   LINK HOVER
-========================================================= */
-
 .db-sidebar-link:hover {
-  border-color:
-    rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.15);
 
   background:
     linear-gradient(
@@ -346,14 +307,8 @@
 
   color: #ffffff;
 
-  transform:
-    translateX(2px);
+  transform: translateX(2px);
 }
-
-
-/* =========================================================
-   ICON
-========================================================= */
 
 .db-sidebar-icon {
   flex-shrink: 0;
@@ -366,19 +321,11 @@
     transform 220ms ease;
 }
 
-
-.db-sidebar-link:hover
-.db-sidebar-icon {
+.db-sidebar-link:hover .db-sidebar-icon {
   color: #60a5fa;
 
-  transform:
-    scale(1.06);
+  transform: scale(1.06);
 }
-
-
-/* =========================================================
-   LABEL
-========================================================= */
 
 .db-sidebar-label {
   min-width: 0;
@@ -392,14 +339,12 @@
   white-space: nowrap;
 }
 
-
 /* =========================================================
    ACTIVE LINK
 ========================================================= */
 
 .db-sidebar-link-active {
-  border-color:
-    rgba(96, 165, 250, 0.3);
+  border-color: rgba(96, 165, 250, 0.3);
 
   background:
     linear-gradient(
@@ -411,40 +356,24 @@
   color: #ffffff;
 
   box-shadow:
-    0
-    11px
-    24px
-    rgba(37, 99, 235, 0.29),
-
-    inset
-    0
-    1px
-    0
-    rgba(255, 255, 255, 0.17);
+    0 11px 24px rgba(37, 99, 235, 0.29),
+    inset 0 1px 0 rgba(255, 255, 255, 0.17);
 }
-
 
 .db-sidebar-link-active::before {
   opacity: 1;
 
-  transform:
-    scaleY(1);
+  transform: scaleY(1);
 }
 
-
-.db-sidebar-link-active
-.db-sidebar-icon {
+.db-sidebar-link-active .db-sidebar-icon {
   color: #ffffff;
 
   filter:
     drop-shadow(
-      0
-      2px
-      4px
-      rgba(0, 0, 0, 0.15)
+      0 2px 4px rgba(0, 0, 0, 0.15)
     );
 }
-
 
 /* =========================================================
    DISPUTE NOTIFICATION
@@ -465,14 +394,9 @@
 
   margin-left: auto;
 
-  padding:
-    0
-    7px;
+  padding: 0 7px;
 
-  border:
-    2px
-    solid
-    rgba(255, 255, 255, 0.94);
+  border: 2px solid rgba(255, 255, 255, 0.94);
 
   border-radius: 999px;
 
@@ -486,10 +410,7 @@
   color: #ffffff;
 
   box-shadow:
-    0
-    6px
-    13px
-    rgba(220, 38, 38, 0.32);
+    0 6px 13px rgba(220, 38, 38, 0.32);
 
   font-size: 8px;
   font-weight: 800;
@@ -499,19 +420,9 @@
   white-space: nowrap;
 
   animation:
-    dbNotificationAppear
-    0.3s
-    ease
-    both,
-
-    dbNotificationPulse
-    2.4s
-    ease-in-out
-    infinite;
+    dbNotificationAppear 0.3s ease both,
+    dbNotificationPulse 2.4s ease-in-out infinite;
 }
-
-
-/* Notification dot */
 
 .db-dispute-notification-dot {
   width: 5px;
@@ -524,13 +435,7 @@
   background: #ffffff;
 }
 
-
-/* =========================================================
-   NOTIFICATION ANIMATIONS
-========================================================= */
-
 @keyframes dbNotificationAppear {
-
   from {
     opacity: 0;
 
@@ -539,7 +444,6 @@
       scale(0.78);
   }
 
-
   to {
     opacity: 1;
 
@@ -547,51 +451,25 @@
       translateX(0)
       scale(1);
   }
-
 }
-
 
 @keyframes dbNotificationPulse {
-
   0%,
   100% {
-
     box-shadow:
-      0
-      6px
-      13px
-      rgba(220, 38, 38, 0.32),
-
-      0
-      0
-      0
-      0
-      rgba(239, 68, 68, 0);
-
+      0 6px 13px rgba(220, 38, 38, 0.32),
+      0 0 0 0 rgba(239, 68, 68, 0);
   }
-
 
   50% {
-
     box-shadow:
-      0
-      6px
-      13px
-      rgba(220, 38, 38, 0.32),
-
-      0
-      0
-      0
-      5px
-      rgba(239, 68, 68, 0.1);
-
+      0 6px 13px rgba(220, 38, 38, 0.32),
+      0 0 0 5px rgba(239, 68, 68, 0.1);
   }
-
 }
 
-
 /* =========================================================
-   SIDEBAR FOOTER
+   FOOTER
 ========================================================= */
 
 .db-sidebar-footer {
@@ -608,14 +486,9 @@
 
   margin-top: 17px;
 
-  padding:
-    13px
-    14px;
+  padding: 13px 14px;
 
-  border:
-    1px
-    solid
-    rgba(148, 163, 184, 0.16);
+  border: 1px solid rgba(148, 163, 184, 0.16);
 
   border-radius: 13px;
 
@@ -623,17 +496,8 @@
     rgba(255, 255, 255, 0.04);
 
   box-shadow:
-    inset
-    0
-    1px
-    0
-    rgba(255, 255, 255, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
-
-
-/* =========================================================
-   FOOTER STATUS DOT
-========================================================= */
 
 .db-sidebar-footer-dot {
   width: 7px;
@@ -646,17 +510,8 @@
   background: #22c55e;
 
   box-shadow:
-    0
-    0
-    0
-    4px
-    rgba(34, 197, 94, 0.09);
+    0 0 0 4px rgba(34, 197, 94, 0.09);
 }
-
-
-/* =========================================================
-   FOOTER TEXT
-========================================================= */
 
 .db-sidebar-footer-copy {
   display: flex;
@@ -665,7 +520,6 @@
 
   flex-direction: column;
 }
-
 
 .db-sidebar-footer-copy strong {
   overflow: hidden;
@@ -680,7 +534,6 @@
   white-space: nowrap;
 }
 
-
 .db-sidebar-footer-copy span {
   margin-top: 3px;
 
@@ -690,44 +543,42 @@
   font-weight: 600;
 }
 
-
 /* =========================================================
    TABLET
 ========================================================= */
 
 @media (max-width: 1050px) {
-
   .db-sidebar {
     width: 224px;
-  }
+    min-width: 224px;
+    max-width: 224px;
 
+    flex-basis: 224px;
+  }
 
   .db-sidebar-logo-full {
     width: 140px;
+    max-width: 140px;
   }
-
 }
 
-
 /* =========================================================
-   COLLAPSED SIDEBAR
+   COLLAPSED
 ========================================================= */
 
 @media (max-width: 900px) {
-
   .db-sidebar {
     width: 84px;
+    min-width: 84px;
+    max-width: 84px;
+
+    flex-basis: 84px;
 
     padding:
       18px
       10px
       16px;
   }
-
-
-  /* =======================================================
-     LOGO
-  ======================================================= */
 
   .db-sidebar-brand {
     min-height: 54px;
@@ -741,20 +592,15 @@
       8px;
   }
 
-
-  /* Hide full horizontal logo */
-
   .db-sidebar-logo-full {
     display: none;
   }
-
-
-  /* Show shield only */
 
   .db-sidebar-logo-shield {
     display: block;
 
     width: 43px;
+    max-width: 43px;
     height: auto;
 
     object-fit: contain;
@@ -762,22 +608,12 @@
     background: transparent !important;
   }
 
-
-  /* =======================================================
-     SEPARATOR
-  ======================================================= */
-
   .db-sidebar-separator {
     margin:
       14px
       3px
       19px;
   }
-
-
-  /* =======================================================
-     NAVIGATION
-  ======================================================= */
 
   .db-sidebar-link {
     justify-content: center;
@@ -789,21 +625,14 @@
       8px;
   }
 
-
   .db-sidebar-label {
     display: none;
   }
-
 
   .db-sidebar-link::before {
     top: 9px;
     bottom: 9px;
   }
-
-
-  /* =======================================================
-     NOTIFICATION
-  ======================================================= */
 
   .db-dispute-notification {
     position: absolute;
@@ -820,29 +649,19 @@
     border-width: 2px;
   }
 
-
   .db-dispute-notification-dot {
     display: none;
   }
 
-
-  .db-dispute-notification
-  > span:last-child {
+  .db-dispute-notification > span:last-child {
     font-size: 0;
   }
 
-
-  .db-dispute-notification
-  > span:last-child::before {
+  .db-dispute-notification > span:last-child::before {
     content: "!";
 
     font-size: 10px;
   }
-
-
-  /* =======================================================
-     FOOTER
-  ======================================================= */
 
   .db-sidebar-footer {
     justify-content: center;
@@ -852,30 +671,29 @@
       8px;
   }
 
-
   .db-sidebar-footer-copy {
     display: none;
   }
-
 }
-
 
 /* =========================================================
    MOBILE
 ========================================================= */
 
 @media (max-width: 520px) {
-
   .db-sidebar {
     width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+
+    flex-basis: 70px;
 
     padding-right: 8px;
     padding-left: 8px;
   }
 
-
   .db-sidebar-logo-shield {
     width: 38px;
+    max-width: 38px;
   }
-
 }

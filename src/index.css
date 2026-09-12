@@ -1,27 +1,23 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 
 /* =========================================================
-   BIOSECURE ENTERPRISE DESIGN SYSTEM
+   BIOSYNC SENTINEL DESIGN SYSTEM
 ========================================================= */
 
 :root {
   color-scheme: light;
 
-  /* Main surfaces */
-  --bs-bg: #f4f7fb;
-  --bs-bg-deep: #eaf0f8;
+  --bs-bg: #f3f7fc;
+  --bs-bg-deep: #e8f0fa;
+
   --bs-surface: #ffffff;
-  --bs-surface-soft: #f8fafc;
-  --bs-surface-muted: #f1f5f9;
+  --bs-surface-soft: #f8fbff;
+  --bs-surface-muted: #f1f6fb;
 
-  /* Sidebar */
-  --bs-sidebar: #08111f;
-  --bs-sidebar-secondary: #0d1b2f;
-  --bs-sidebar-hover: #132743;
-  --bs-sidebar-text: #c9d5e6;
-  --bs-sidebar-muted: #8190a6;
+  --bs-sidebar: #071426;
+  --bs-sidebar-secondary: #0b1e34;
+  --bs-sidebar-hover: #102b49;
 
-  /* Brand */
   --bs-primary: #2563eb;
   --bs-primary-hover: #1d4ed8;
   --bs-primary-light: #60a5fa;
@@ -31,18 +27,15 @@
   --bs-accent-light: #67e8f9;
   --bs-accent-soft: #ecfeff;
 
-  /* Typography */
   --bs-text: #0f172a;
-  --bs-text-secondary: #475569;
+  --bs-text-secondary: #526077;
   --bs-text-muted: #94a3b8;
   --bs-text-inverse: #ffffff;
 
-  /* Borders */
-  --bs-border: #dce6f2;
-  --bs-border-soft: #e9eff6;
-  --bs-border-strong: #c7d5e5;
+  --bs-border: #dce7f4;
+  --bs-border-soft: #eaf0f6;
+  --bs-border-strong: #c8d8e9;
 
-  /* Statuses */
   --bs-success: #16a34a;
   --bs-success-soft: #dcfce7;
 
@@ -58,7 +51,6 @@
   --bs-purple: #7c3aed;
   --bs-purple-soft: #ede9fe;
 
-  /* Typography families */
   --bs-font-body:
     "Inter",
     -apple-system,
@@ -76,52 +68,47 @@
     "Space Grotesk",
     sans-serif;
 
-  /* Sizing */
-  --bs-radius-xs: 6px;
-  --bs-radius-sm: 8px;
-  --bs-radius-md: 12px;
-  --bs-radius-lg: 16px;
-  --bs-radius-xl: 20px;
+  --bs-radius-xs: 7px;
+  --bs-radius-sm: 10px;
+  --bs-radius-md: 14px;
+  --bs-radius-lg: 18px;
+  --bs-radius-xl: 24px;
 
-  /* Shadows */
   --bs-shadow-xs:
-    0 1px 2px rgba(15, 23, 42, 0.04);
+    0 2px 7px rgba(15, 23, 42, 0.035);
 
   --bs-shadow-sm:
-    0 3px 10px rgba(15, 23, 42, 0.06);
+    0 6px 18px rgba(15, 23, 42, 0.055);
 
   --bs-shadow-md:
-    0 10px 28px rgba(15, 23, 42, 0.08);
+    0 14px 38px rgba(15, 23, 42, 0.075);
 
   --bs-shadow-lg:
-    0 20px 45px rgba(15, 23, 42, 0.12);
+    0 24px 65px rgba(15, 23, 42, 0.13);
 
   --bs-shadow-primary:
-    0 10px 24px rgba(37, 99, 235, 0.2);
+    0 14px 30px rgba(37, 99, 235, 0.2);
 
-  /* Transitions */
   --bs-transition-fast:
     150ms cubic-bezier(0.4, 0, 0.2, 1);
 
   --bs-transition:
     220ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /*
-    Compatibility variables.
-
-    Existing pages already use these variable names,
-    so they are connected to the new design system.
-  */
+  /* EXISTING COMPATIBILITY */
 
   --bg-primary: var(--bs-bg);
 
   --color-primary: var(--bs-primary);
   --color-secondary: var(--bs-primary-light);
   --color-accent: var(--bs-accent);
+
   --color-surface: var(--bs-surface);
   --color-border: var(--bs-border);
+
   --color-text: var(--bs-text);
   --color-muted: var(--bs-text-secondary);
+
   --color-success: var(--bs-success);
   --color-error: var(--bs-danger);
 
@@ -135,8 +122,9 @@
   --shadow-sm: var(--bs-shadow-sm);
   --shadow-md: var(--bs-shadow-md);
   --shadow-lg: var(--bs-shadow-lg);
+
   --shadow-glow:
-    0 0 24px rgba(37, 99, 235, 0.16);
+    0 0 30px rgba(37, 99, 235, 0.13);
 
   --db-primary: var(--bs-primary);
   --db-primary-light: var(--bs-primary-light);
@@ -145,11 +133,11 @@
   --db-text: var(--bs-text);
   --db-text-soft: var(--bs-text-secondary);
   --db-border: var(--bs-border);
-  --db-glow: rgba(37, 99, 235, 0.16);
+  --db-glow: rgba(37, 99, 235, 0.13);
 }
 
 /* =========================================================
-   GLOBAL RESET
+   RESET
 ========================================================= */
 
 *,
@@ -168,13 +156,25 @@ body {
   min-width: 320px;
   min-height: 100%;
   margin: 0;
+
   overflow-x: hidden;
-  background: var(--bs-bg);
+
+  background:
+    radial-gradient(
+      circle at 90% -10%,
+      rgba(37, 99, 235, 0.08),
+      transparent 30%
+    ),
+    #f3f7fc;
+
   color: var(--bs-text);
+
   font-family: var(--bs-font-body);
   font-size: 14px;
   line-height: 1.5;
+
   text-rendering: optimizeLegibility;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -206,18 +206,18 @@ button:not(:disabled) {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.55;
+}
+
+img,
+svg {
+  display: block;
 }
 
 input,
 textarea,
 select {
   color: var(--bs-text);
-}
-
-img,
-svg {
-  display: block;
 }
 
 /* =========================================================
@@ -236,32 +236,36 @@ h6 {
 
 ::selection {
   background: rgba(37, 99, 235, 0.18);
-  color: var(--bs-text);
+  color: #0f172a;
 }
 
 /* =========================================================
-   ACCESSIBILITY
+   FOCUS
 ========================================================= */
 
 :focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.25);
+  outline: 3px solid rgba(37, 99, 235, 0.22);
   outline-offset: 2px;
 }
 
 /* =========================================================
-   SHARED SURFACE UTILITIES
+   GLASS
 ========================================================= */
 
 .glass-panel {
-  border: 1px solid rgba(220, 230, 242, 0.75);
-  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(220, 231, 244, 0.78);
+
+  background:
+    rgba(255, 255, 255, 0.87);
+
   box-shadow: var(--bs-shadow-sm);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 /* =========================================================
-   GLOBAL ANIMATIONS
+   ANIMATIONS
 ========================================================= */
 
 @keyframes bsFadeIn {
@@ -277,7 +281,7 @@ h6 {
 @keyframes bsSlideUp {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
 
   to {
@@ -289,7 +293,7 @@ h6 {
 @keyframes bsPulse {
   0%,
   100% {
-    opacity: 0.7;
+    opacity: 0.75;
   }
 
   50% {
@@ -313,16 +317,17 @@ h6 {
 ::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background: #b9c7d8;
+
+  background: #b8c8da;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8fa3ba;
+  background: #91a6bd;
   background-clip: padding-box;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #b9c7d8 transparent;
+  scrollbar-color: #b8c8da transparent;
 }
