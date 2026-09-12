@@ -1,899 +1,1319 @@
-.sd-page {
+/* =========================================================
+   BIOSYNC SENTINEL
+   STUDENT DISPUTES
+========================================================= */
+
+.student-disputes-page {
   display: flex;
+  width: 100%;
+  min-width: 0;
   flex-direction: column;
-  gap: 24px;
-  animation: sdFadeIn 0.35s ease;
+  gap: 20px;
+  animation:
+    studentDpEnter
+    0.4s ease both;
 }
 
-@keyframes sdFadeIn {
+.student-disputes-page *,
+.student-disputes-page *::before,
+.student-disputes-page *::after {
+  box-sizing: border-box;
+}
+
+@keyframes studentDpEnter {
   from {
     opacity: 0;
-    transform: translateY(5px);
+    transform:
+      translateY(7px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform:
+      translateY(0);
   }
 }
 
-.sd-page-header {
+/* =========================================================
+   CARDS
+========================================================= */
+
+.student-disputes-page .sd-card {
+  border:
+    1px solid #dce7f4;
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #fbfdff
+    );
+  box-shadow:
+    0 8px 26px
+    rgba(15, 23, 42, 0.05);
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.student-disputes-page .sd-page-header {
+  position: relative;
   display: flex;
-  align-items: flex-start;
+  min-height: 235px;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 30px;
+  overflow: hidden;
+  padding: 32px 36px;
+  border:
+    1px solid
+    rgba(56, 189, 248, 0.28);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 90% 5%,
+      rgba(56, 189, 248, 0.18),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 75% 100%,
+      rgba(37, 99, 235, 0.15),
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      #061221,
+      #0a1e35 56%,
+      #0b3150
+    );
+  box-shadow:
+    0 20px 48px
+    rgba(2, 8, 20, 0.22);
 }
 
-.sd-page-header h1 {
-  margin: 0 0 7px;
-  color: var(--db-text);
-  font-family: "Sora", "Poppins", sans-serif;
-  font-size: 30px;
+.student-disputes-page .sd-page-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.44;
+  background-image:
+    linear-gradient(
+      rgba(56, 189, 248, 0.09) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(56, 189, 248, 0.09) 1px,
+      transparent 1px
+    );
+  background-size: 38px 38px;
+  mask-image:
+    linear-gradient(
+      90deg,
+      #000 0%,
+      rgba(0, 0, 0, 0.8) 60%,
+      transparent 100%
+    );
+  pointer-events: none;
 }
 
-.sd-page-header p {
-  margin: 0;
-  color: var(--db-text-soft);
-  font-size: 14px;
+.student-disputes-page .sd-page-header > * {
+  position: relative;
+  z-index: 1;
 }
 
-.sd-card {
-  border: 1px solid var(--db-border);
-  border-radius: 17px;
-  background: var(--db-white);
-  box-shadow: var(--shadow-sm);
+.sd-header-copy {
+  flex: 1;
+  min-width: 0;
 }
 
-.sd-btn {
+.sd-header-eyebrow {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 7px;
-  padding: 9px 14px;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.sd-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.sd-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.sd-btn-primary {
-  border-color: var(--db-primary);
-  background: var(--db-primary);
-  color: #ffffff;
-}
-
-.sd-btn-secondary {
-  border-color: var(--db-border);
-  background: var(--db-white);
-  color: var(--db-text-soft);
-}
-
-.sd-btn-danger-outline {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.06);
-  color: #dc2626;
-}
-
-.sd-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(
-    5,
-    minmax(145px, 1fr)
-  );
-  gap: 16px;
-}
-
-.sd-summary-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 20px;
-}
-
-.sd-summary-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 43px;
-  height: 43px;
-  flex-shrink: 0;
-  border-radius: 13px;
-}
-
-.sd-summary-blue {
-  color: #268cff;
-  background: rgba(38, 140, 255, 0.11);
-}
-
-.sd-summary-yellow {
-  color: #b77900;
-  background: rgba(245, 185, 11, 0.16);
-}
-
-.sd-summary-purple {
-  color: #7c3aed;
-  background: rgba(124, 58, 237, 0.11);
-}
-
-.sd-summary-green {
-  color: #059669;
-  background: rgba(16, 185, 129, 0.11);
-}
-
-.sd-summary-red {
-  color: #dc2626;
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.sd-summary-card > div:last-child {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.sd-summary-card span {
-  color: var(--db-text-soft);
-  font-size: 11px;
-  font-weight: 700;
+  margin-bottom: 14px;
+  padding: 7px 11px;
+  border:
+    1px solid
+    rgba(103, 232, 249, 0.24);
+  border-radius: 999px;
+  background:
+    rgba(6, 182, 212, 0.09);
+  color: #67e8f9;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.45px;
   text-transform: uppercase;
 }
 
-.sd-summary-card strong {
-  color: var(--db-text);
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 24px;
+.student-disputes-page .sd-page-header h1 {
+  margin: 0;
+  color: #ffffff;
+  font-family:
+    var(
+      --bs-font-heading,
+      "Poppins",
+      sans-serif
+    );
+  font-size:
+    clamp(31px, 3vw, 42px);
+  font-weight: 760;
+  letter-spacing: -1.2px;
 }
 
-.sd-filter-card {
+.student-disputes-page .sd-page-header p {
+  max-width: 620px;
+  margin: 10px 0 0;
+  color: #b5c8dc;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.sd-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.sd-header-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border:
+    1px solid
+    rgba(148, 163, 184, 0.17);
+  border-radius: 9px;
+  background:
+    rgba(255, 255, 255, 0.055);
+  color: #dbeafe;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.sd-header-meta svg {
+  color: #67e8f9;
+}
+
+.sd-header-action {
+  display: flex;
+  min-width: 190px;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.sd-hero-count {
+  display: flex;
+  width: 130px;
+  height: 130px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border:
+    1px solid
+    rgba(103, 232, 249, 0.18);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(56, 189, 248, 0.13),
+      rgba(8, 26, 46, 0.7)
+    );
+  box-shadow:
+    0 0 35px
+    rgba(56, 189, 248, 0.13);
+}
+
+.sd-hero-count strong {
+  color: #ffffff;
+  font-size: 29px;
+}
+
+.sd-hero-count span {
+  margin-top: 4px;
+  color: #8fb1cf;
+  font-size: 7.5px;
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.student-disputes-page .sd-btn {
+  display: inline-flex;
+  min-height: 37px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 8.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.student-disputes-page .sd-btn:hover:not(:disabled) {
+  transform:
+    translateY(-1px);
+}
+
+.student-disputes-page .sd-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.student-disputes-page .sd-btn-primary {
+  border:
+    1px solid #38bdf8;
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+  color: #ffffff;
+  box-shadow:
+    0 7px 18px
+    rgba(37, 99, 235, 0.25);
+}
+
+.student-disputes-page .sd-submit-button {
+  min-width: 175px;
+}
+
+.student-disputes-page .sd-page-header .sd-btn-primary {
+  border-color:
+    rgba(103, 232, 249, 0.3);
+}
+
+.student-disputes-page .sd-btn-secondary {
+  border:
+    1px solid #dce7f4;
+  background: #ffffff;
+  color: #64748b;
+}
+
+.student-disputes-page .sd-btn-danger-outline {
+  border:
+    1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.student-disputes-page .sd-summary-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 15px;
-  padding: 18px;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.sd-search-box {
+.student-disputes-page .sd-summary-card {
+  display: flex;
+  min-height: 112px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.student-disputes-page .sd-summary-card:hover {
+  transform:
+    translateY(-4px);
+  border-color: #bfdbfe;
+  box-shadow:
+    0 14px 32px
+    rgba(37, 99, 235, 0.09);
+}
+
+.student-disputes-page .sd-summary-icon {
+  display: grid;
+  width: 41px;
+  height: 41px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 11px;
+}
+
+.student-disputes-page .sd-summary-blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.student-disputes-page .sd-summary-yellow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.student-disputes-page .sd-summary-purple {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.student-disputes-page .sd-summary-green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.student-disputes-page .sd-summary-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.student-disputes-page .sd-summary-card span {
+  display: block;
+  color: #64748b;
+  font-size: 7.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.student-disputes-page .sd-summary-card strong {
+  display: block;
+  margin-top: 4px;
+  color: #0f172a;
+  font-size: 23px;
+}
+
+/* =========================================================
+   FILTER
+========================================================= */
+
+.student-disputes-page .sd-filter-card {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    220px;
+  gap: 11px;
+  padding: 16px;
+}
+
+.student-disputes-page .sd-search-box {
   position: relative;
 }
 
-.sd-search-box svg {
+.student-disputes-page .sd-search-box svg {
   position: absolute;
   top: 50%;
-  left: 13px;
-  color: var(--db-text-soft);
-  transform: translateY(-50%);
+  left: 12px;
+  color: #94a3b8;
+  transform:
+    translateY(-50%);
 }
 
-.sd-search-box input,
-.sd-filter-card select {
+.student-disputes-page .sd-search-box input,
+.student-disputes-page .sd-filter-card select {
   width: 100%;
-  height: 42px;
-  border: 1px solid var(--db-border);
-  border-radius: 10px;
-  background: rgba(248, 251, 255, 0.72);
-  color: var(--db-text);
-  font-size: 12px;
+  height: 40px;
+  border:
+    1px solid #dce7f4;
+  border-radius: 9px;
   outline: none;
-  box-sizing: border-box;
+  background: #f8fbff;
+  color: #334155;
+  font-family: inherit;
+  font-size: 9px;
 }
 
-.sd-search-box input {
-  padding: 0 13px 0 42px;
+.student-disputes-page .sd-search-box input {
+  padding:
+    0 12px 0 38px;
 }
 
-.sd-filter-card select {
-  padding: 0 11px;
+.student-disputes-page .sd-filter-card select {
+  padding:
+    0 10px;
 }
 
-.sd-search-box input:focus,
-.sd-filter-card select:focus {
-  border-color: var(--db-primary);
-  box-shadow: 0 0 0 3px var(--db-glow);
+.student-disputes-page .sd-search-box input:focus,
+.student-disputes-page .sd-filter-card select:focus {
+  border-color: #60a5fa;
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.07);
 }
 
-.sd-table-card {
+/* =========================================================
+   TABLE
+========================================================= */
+
+.student-disputes-page .sd-table-card {
   overflow: hidden;
 }
 
-.sd-table-header {
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--db-border);
+.student-disputes-page .sd-table-header {
+  padding:
+    17px 20px;
+  border-bottom:
+    1px solid #e7edf5;
 }
 
-.sd-table-header h2 {
-  margin: 0 0 4px;
-  color: var(--db-text);
-  font-size: 15px;
+.student-disputes-page .sd-table-header > div > span {
+  color: #2563eb;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
 }
 
-.sd-table-header p {
-  margin: 0;
-  color: var(--db-text-soft);
-  font-size: 11px;
+.student-disputes-page .sd-table-header h2 {
+  margin: 4px 0 0;
+  color: #172033;
+  font-size: 14px;
 }
 
-.sd-table-scroll {
+.student-disputes-page .sd-table-header p {
+  margin: 4px 0 0;
+  color: #94a3b8;
+  font-size: 8px;
+}
+
+.student-disputes-page .sd-table-scroll {
   overflow-x: auto;
 }
 
-.sd-table {
+.student-disputes-page .sd-table {
   width: 100%;
-  min-width: 1050px;
+  min-width: 1080px;
   border-collapse: collapse;
 }
 
-.sd-table th {
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--db-border);
-  background: rgba(86, 182, 255, 0.06);
-  color: var(--db-text-soft);
-  font-size: 10.5px;
-  font-weight: 800;
+.student-disputes-page .sd-table th {
+  padding:
+    11px 13px;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 7.3px;
+  font-weight: 850;
+  letter-spacing: 0.45px;
   text-align: left;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
-.sd-table td {
-  padding: 14px 15px;
-  border-bottom: 1px solid var(--db-border);
-  color: var(--db-text);
-  font-size: 12px;
+.student-disputes-page .sd-table td {
+  padding:
+    12px 13px;
+  border-top:
+    1px solid #edf2f7;
+  color: #475569;
+  font-size: 8.8px;
   vertical-align: middle;
 }
 
-.sd-table tbody tr:hover {
-  background: rgba(86, 182, 255, 0.04);
+.student-disputes-page .sd-table tbody tr:hover {
+  background: #f8fbff;
 }
 
-.sd-date-cell,
-.sd-reason-cell {
+/* CELLS */
+
+.student-disputes-page .sd-date-cell,
+.student-disputes-page .sd-reason-cell {
   display: flex;
-  max-width: 280px;
+  max-width: 250px;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
-.sd-date-cell strong,
-.sd-reason-cell strong {
-  color: var(--db-text);
-  font-size: 12px;
+.student-disputes-page .sd-date-cell strong,
+.student-disputes-page .sd-reason-cell strong {
+  color: #334155;
+  font-size: 9px;
 }
 
-.sd-date-cell small,
-.sd-reason-cell small {
+.student-disputes-page .sd-date-cell small,
+.student-disputes-page .sd-reason-cell small {
   overflow: hidden;
-  color: var(--db-text-soft);
-  font-size: 10px;
+  color: #94a3b8;
+  font-size: 7px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sd-attendance-status,
-.sd-requested-status {
+.student-disputes-page .sd-attendance-status,
+.student-disputes-page .sd-requested-status {
   display: inline-flex;
-  padding: 5px 9px;
+  padding:
+    5px 8px;
   border-radius: 999px;
-  background: rgba(38, 140, 255, 0.09);
-  color: #1d6fc1;
-  font-size: 10.5px;
-  font-weight: 700;
+  font-size: 7.5px;
+  font-weight: 800;
   text-transform: capitalize;
 }
 
-.sd-requested-status {
-  background: rgba(124, 58, 237, 0.1);
-  color: #6d28d9;
+.student-disputes-page .sd-attendance-status {
+  background: #eff6ff;
+  color: #2563eb;
 }
 
-.sd-status {
+.student-disputes-page .sd-requested-status {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.student-disputes-page .sd-status {
   display: inline-flex;
-  padding: 5px 10px;
+  padding:
+    5px 9px;
   border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 700;
+  font-size: 7.5px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
-.sd-status-pending {
-  color: #b45309;
+.student-disputes-page .sd-status-pending {
   background: #fef3c7;
+  color: #b45309;
 }
 
-.sd-status-under_review {
-  color: #6d28d9;
+.student-disputes-page .sd-status-under_review {
   background: #ede9fe;
+  color: #6d28d9;
 }
 
-.sd-status-awaiting_information {
-  color: #1d4ed8;
+.student-disputes-page .sd-status-awaiting_information {
   background: #dbeafe;
+  color: #1d4ed8;
 }
 
-.sd-status-approved {
-  color: #15803d;
+.student-disputes-page .sd-status-approved {
   background: #dcfce7;
+  color: #15803d;
 }
 
-.sd-status-rejected {
-  color: #b91c1c;
+.student-disputes-page .sd-status-rejected {
   background: #fee2e2;
+  color: #b91c1c;
 }
 
-.sd-status-cancelled,
-.sd-status-closed {
-  color: #475569;
+.student-disputes-page .sd-status-cancelled,
+.student-disputes-page .sd-status-closed {
   background: #e2e8f0;
+  color: #475569;
 }
 
-.sd-row-actions {
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.student-disputes-page .sd-row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.student-disputes-page .sd-view-button,
+.student-disputes-page .sd-edit-button {
+  display: inline-flex;
+  min-height: 31px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border:
+    1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-family: inherit;
+  font-size: 7.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.student-disputes-page .sd-view-button {
+  padding:
+    0 9px;
+}
+
+.student-disputes-page .sd-edit-button {
+  width: 31px;
+}
+
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+.student-disputes-page .sd-pagination {
+  display: flex;
+  align-items: center;
+  justify-content:
+    space-between;
+  gap: 12px;
+  padding:
+    14px 20px;
+  border-top:
+    1px solid #e7edf5;
+  color: #64748b;
+  font-size: 8px;
+}
+
+.student-disputes-page .sd-pagination > div {
   display: flex;
   gap: 7px;
 }
 
-.sd-view-button,
-.sd-edit-button {
+.student-disputes-page .sd-pagination button {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 7px 10px;
-  border: 1px solid var(--db-border);
-  border-radius: 8px;
-  background: var(--db-white);
-  color: var(--db-text-soft);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.sd-view-button:hover,
-.sd-edit-button:hover {
-  border-color: var(--db-primary);
-  color: var(--db-primary);
-}
-
-.sd-edit-button {
-  width: 32px;
-  padding: 0;
-}
-
-.sd-empty-cell {
-  height: 230px;
-  color: var(--db-text-soft);
-  text-align: center;
-}
-
-.sd-empty-cell h3 {
-  margin: 8px 0 5px;
-  color: var(--db-text);
-}
-
-.sd-empty-cell p {
-  margin: 0;
-}
-
-.sd-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px 20px;
-  color: var(--db-text-soft);
-  font-size: 11px;
-}
-
-.sd-pagination > div {
-  display: flex;
-  gap: 8px;
-}
-
-.sd-pagination button {
-  display: inline-flex;
+  min-height: 32px;
   align-items: center;
   gap: 5px;
-  padding: 8px 11px;
-  border: 1px solid var(--db-border);
+  padding:
+    0 9px;
+  border:
+    1px solid #dce7f4;
   border-radius: 8px;
-  background: var(--db-white);
-  color: var(--db-text);
-  font-size: 11px;
-  font-weight: 700;
+  background: #ffffff;
+  color: #334155;
+  font-family: inherit;
+  font-size: 7.5px;
+  font-weight: 750;
   cursor: pointer;
 }
 
-.sd-pagination button:disabled {
-  opacity: 0.45;
+.student-disputes-page .sd-pagination button:disabled {
   cursor: not-allowed;
+  opacity: 0.45;
 }
 
-/* Modal */
+/* =========================================================
+   MODAL
+========================================================= */
 
-.sd-modal-overlay {
+.student-disputes-page .sd-modal-overlay {
   position: fixed;
   z-index: 9999;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 22px;
-  background: rgba(18, 32, 52, 0.46);
-  backdrop-filter: blur(4px);
+  padding: 24px;
+  background:
+    rgba(2, 8, 23, 0.68);
+  backdrop-filter: blur(7px);
 }
 
-.sd-modal {
+.student-disputes-page .sd-modal {
   display: flex;
-  width: min(760px, 100%);
+  width:
+    min(
+      780px,
+      calc(100vw - 40px)
+    );
   max-height: 92vh;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--db-border);
-  border-radius: 20px;
-  background: var(--db-white);
-  box-shadow: 0 25px 70px rgba(24, 63, 98, 0.22);
+  border:
+    1px solid
+    rgba(96, 165, 250, 0.32);
+  border-radius: 21px;
+  background: #ffffff;
+  box-shadow:
+    0 30px 90px
+    rgba(2, 8, 23, 0.35);
 }
 
-.sd-details-modal {
-  width: min(850px, 100%);
+.student-disputes-page .sd-details-modal {
+  width:
+    min(
+      850px,
+      calc(100vw - 40px)
+    );
 }
 
-.sd-modal-header {
+/* HEADER */
+
+.student-disputes-page .sd-modal-header {
+  position: relative;
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 21px 24px;
-  border-bottom: 1px solid var(--db-border);
+  justify-content:
+    space-between;
+  gap: 20px;
+  overflow: hidden;
+  padding:
+    20px 23px;
+  border-bottom:
+    1px solid
+    rgba(96, 165, 250, 0.16);
+  background:
+    radial-gradient(
+      circle at 90% 0,
+      rgba(56, 189, 248, 0.13),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #071426,
+      #0b2945
+    );
 }
 
-.sd-modal-header h2 {
-  margin: 0 0 5px;
-  color: var(--db-text);
-  font-size: 19px;
+.student-disputes-page .sd-modal-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #67e8f9;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
-.sd-modal-header p {
+.student-disputes-page .sd-modal-header h2 {
   margin: 0;
-  color: var(--db-text-soft);
-  font-size: 12px;
+  color: #ffffff;
+  font-size: 18px;
 }
 
-.sd-modal-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 35px;
-  height: 35px;
-  border: 1px solid var(--db-border);
+.student-disputes-page .sd-modal-header p {
+  margin: 5px 0 0;
+  color: #9fb6ce;
+  font-size: 9px;
+}
+
+.student-disputes-page .sd-modal-close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  place-items: center;
+  border:
+    1px solid
+    rgba(148, 163, 184, 0.22);
   border-radius: 9px;
-  background: transparent;
-  color: var(--db-text-soft);
+  background:
+    rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
   cursor: pointer;
 }
 
-.sd-modal-content {
+.student-disputes-page .sd-modal-content {
   overflow-y: auto;
-  padding: 22px 24px;
+  padding:
+    20px 23px;
 }
 
-.sd-form-grid {
+/* =========================================================
+   FORM
+========================================================= */
+
+.student-disputes-page .sd-form-grid {
   display: grid;
-  grid-template-columns: repeat(
-    2,
-    minmax(0, 1fr)
-  );
-  gap: 15px;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.sd-form-group {
+.student-disputes-page .sd-form-group {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  margin-bottom: 17px;
+  margin-bottom: 15px;
 }
 
-.sd-form-group label {
-  color: var(--db-text);
-  font-size: 12px;
-  font-weight: 700;
+.student-disputes-page .sd-form-group label {
+  color: #334155;
+  font-size: 9px;
+  font-weight: 800;
 }
 
-.sd-form-group label span {
-  color: var(--db-text-soft);
+.student-disputes-page .sd-form-group label span {
+  color: #94a3b8;
   font-weight: 500;
 }
 
-.sd-form-group select,
-.sd-form-group input,
-.sd-form-group textarea {
+.student-disputes-page .sd-form-group select,
+.student-disputes-page .sd-form-group input,
+.student-disputes-page .sd-form-group textarea {
   width: 100%;
-  padding: 10px 11px;
-  border: 1px solid var(--db-border);
+  padding:
+    10px 11px;
+  border:
+    1px solid #dce7f4;
   border-radius: 9px;
-  background: var(--db-white);
-  color: var(--db-text);
-  font-family: inherit;
-  font-size: 12px;
   outline: none;
-  box-sizing: border-box;
+  background: #f8fbff;
+  color: #334155;
+  font-family: inherit;
+  font-size: 9px;
+}
+
+.student-disputes-page .sd-form-group textarea {
+  min-height: 105px;
   resize: vertical;
 }
 
-.sd-form-group select:focus,
-.sd-form-group input:focus,
-.sd-form-group textarea:focus {
-  border-color: var(--db-primary);
-  box-shadow: 0 0 0 3px var(--db-glow);
+.student-disputes-page .sd-form-group select:focus,
+.student-disputes-page .sd-form-group input:focus,
+.student-disputes-page .sd-form-group textarea:focus {
+  border-color: #60a5fa;
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.07);
 }
 
-.sd-form-group small {
-  color: var(--db-text-soft);
-  font-size: 10.5px;
+.student-disputes-page .sd-form-group small {
+  color: #94a3b8;
+  font-size: 7.5px;
+  line-height: 1.5;
 }
 
-.sd-input-icon {
+.student-disputes-page .sd-input-icon {
   position: relative;
 }
 
-.sd-input-icon > svg {
+.student-disputes-page .sd-input-icon > svg {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  color: var(--db-text-soft);
+  top: 11px;
+  left: 11px;
+  color: #94a3b8;
+  pointer-events: none;
 }
 
-.sd-input-icon textarea {
-  padding-left: 39px;
+.student-disputes-page .sd-input-icon textarea,
+.student-disputes-page .sd-input-single input {
+  padding-left: 38px;
 }
 
-.sd-input-single input {
-  padding-left: 39px;
-}
+/* =========================================================
+   ATTENDANCE PREVIEW
+========================================================= */
 
-.sd-attendance-preview {
+.student-disputes-page .sd-attendance-preview {
   display: grid;
-  grid-template-columns: repeat(
-    4,
-    minmax(120px, 1fr)
-  );
-  gap: 10px;
-  margin-bottom: 19px;
-  padding: 13px;
-  border: 1px solid rgba(86, 182, 255, 0.25);
+  grid-template-columns:
+    repeat(4, minmax(100px, 1fr));
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border:
+    1px solid #bfdbfe;
   border-radius: 11px;
-  background: rgba(86, 182, 255, 0.055);
+  background: #eff6ff;
 }
 
-.sd-attendance-preview > div {
+.student-disputes-page .sd-attendance-preview > div {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
-.sd-attendance-preview svg {
+.student-disputes-page .sd-attendance-preview svg {
   flex-shrink: 0;
-  color: var(--db-primary);
+  color: #2563eb;
 }
 
-.sd-attendance-preview span {
+.student-disputes-page .sd-attendance-preview span {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 2px;
 }
 
-.sd-attendance-preview small {
-  color: var(--db-text-soft);
-  font-size: 9px;
+.student-disputes-page .sd-attendance-preview small {
+  color: #64748b;
+  font-size: 7px;
   text-transform: uppercase;
 }
 
-.sd-attendance-preview strong {
+.student-disputes-page .sd-attendance-preview strong {
   overflow: hidden;
-  color: var(--db-text);
-  font-size: 11px;
+  color: #334155;
+  font-size: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-transform: capitalize;
 }
 
-.sd-warning-text {
-  color: #b45309 !important;
-}
+/* NOTICE */
 
-.sd-form-notice {
+.student-disputes-page .sd-form-notice {
   display: flex;
-  gap: 10px;
-  padding: 13px;
-  border: 1px solid rgba(245, 158, 11, 0.22);
+  align-items: flex-start;
+  gap: 9px;
+  padding: 12px;
+  border:
+    1px solid #fde68a;
   border-radius: 10px;
-  background: rgba(245, 158, 11, 0.07);
+  background: #fffbeb;
   color: #92400e;
 }
 
-.sd-form-notice svg {
-  flex-shrink: 0;
-}
-
-.sd-form-notice p {
+.student-disputes-page .sd-form-notice p {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.55;
+  font-size: 8px;
+  line-height: 1.5;
 }
 
-.sd-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 9px;
-  padding: 16px 24px 20px;
-  border-top: 1px solid var(--db-border);
-}
+/* =========================================================
+   DETAILS
+========================================================= */
 
-.sd-details-banner {
+.student-disputes-page .sd-details-banner {
   display: grid;
-  grid-template-columns: repeat(
-    2,
-    minmax(0, 1fr)
-  );
-  gap: 12px;
-  margin-bottom: 24px;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
-.sd-details-banner > div {
-  display: flex;
-  min-height: 64px;
-  flex-direction: column;
-  justify-content: center;
-  gap: 7px;
-  padding: 13px;
-  border: 1px solid var(--db-border);
+.student-disputes-page .sd-details-banner > div {
+  padding: 12px;
+  border:
+    1px solid #e3ebf4;
   border-radius: 10px;
-  background: rgba(86, 182, 255, 0.035);
+  background: #fbfdff;
 }
 
-.sd-details-banner span,
-.sd-details-grid span {
-  color: var(--db-text-soft);
-  font-size: 10px;
-  font-weight: 700;
+.student-disputes-page .sd-details-banner span,
+.student-disputes-page .sd-details-grid span {
+  display: block;
+  color: #94a3b8;
+  font-size: 7.5px;
+  font-weight: 800;
   text-transform: uppercase;
 }
 
-.sd-details-banner strong {
-  color: var(--db-text);
-  font-size: 12px;
+.student-disputes-page .sd-details-banner strong {
+  display: block;
+  margin-top: 5px;
+  color: #334155;
+  font-size: 9px;
 }
 
-.sd-details-section {
-  margin-bottom: 26px;
+.student-disputes-page .sd-details-section {
+  margin-bottom: 21px;
 }
 
-.sd-details-section h3 {
-  margin: 0 0 13px;
-  padding-bottom: 9px;
-  border-bottom: 2px solid var(--db-glow);
-  color: var(--db-text);
-  font-size: 13px;
+.student-disputes-page .sd-details-section h3 {
+  margin:
+    0 0 11px;
+  padding-bottom: 8px;
+  border-bottom:
+    1px solid #e7edf5;
+  color: #172033;
+  font-size: 11px;
 }
 
-.sd-details-grid {
+.student-disputes-page .sd-details-grid {
   display: grid;
-  grid-template-columns: repeat(
-    2,
-    minmax(0, 1fr)
-  );
-  gap: 12px;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 9px;
 }
 
-.sd-details-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--db-border);
-  border-radius: 9px;
+.student-disputes-page .sd-details-grid > div {
+  padding: 11px;
+  border:
+    1px solid #e3ebf4;
+  border-radius: 10px;
+  background: #fbfdff;
 }
 
-.sd-details-grid strong {
-  color: var(--db-text);
-  font-size: 12px;
+.student-disputes-page .sd-details-grid strong {
+  display: block;
+  margin-top: 5px;
+  color: #334155;
+  font-size: 9px;
   text-transform: capitalize;
 }
 
-.sd-reason-box,
-.sd-admin-response {
-  padding: 14px;
-  border: 1px solid var(--db-border);
+.student-disputes-page .sd-reason-box,
+.student-disputes-page .sd-admin-response {
+  padding: 12px;
+  border:
+    1px solid #e3ebf4;
   border-radius: 10px;
-  background: rgba(86, 182, 255, 0.025);
+  background: #f8fafc;
 }
 
-.sd-reason-box strong {
-  color: var(--db-text);
-  font-size: 12px;
+.student-disputes-page .sd-reason-box strong {
+  color: #334155;
+  font-size: 9px;
 }
 
-.sd-reason-box p {
-  margin: 7px 0 0;
-  color: var(--db-text-soft);
-  font-size: 12px;
-  line-height: 1.6;
+.student-disputes-page .sd-reason-box p {
+  margin:
+    6px 0 0;
+  color: #64748b;
+  font-size: 8px;
+  line-height: 1.55;
 }
 
-.sd-evidence-link {
+.student-disputes-page .sd-admin-response {
+  color: #475569;
+  font-size: 8.5px;
+  line-height: 1.55;
+}
+
+.student-disputes-page .sd-evidence-link {
   display: inline-flex;
-  margin-top: 10px;
-  color: var(--db-primary);
-  font-size: 11px;
-  font-weight: 700;
+  margin-top: 9px;
+  color: #2563eb;
+  font-size: 8px;
+  font-weight: 800;
 }
 
-.sd-admin-response {
-  color: var(--db-text-soft);
-  font-size: 12px;
-  line-height: 1.6;
+/* =========================================================
+   TIMELINE
+========================================================= */
+
+.student-disputes-page .sd-timeline {
+  padding-left: 7px;
 }
 
-.sd-timeline {
-  position: relative;
-  padding-left: 9px;
-}
-
-.sd-timeline-item {
+.student-disputes-page .sd-timeline-item {
   position: relative;
   display: flex;
-  gap: 12px;
-  padding-bottom: 20px;
+  gap: 11px;
+  padding-bottom: 18px;
 }
 
-.sd-timeline-item::before {
+.student-disputes-page .sd-timeline-item::before {
+  content: "";
   position: absolute;
-  top: 14px;
+  top: 13px;
   bottom: -2px;
   left: 5px;
   width: 2px;
-  content: "";
-  background: var(--db-border);
+  background: #dce7f4;
 }
 
-.sd-timeline-item:last-child::before {
+.student-disputes-page .sd-timeline-item:last-child::before {
   display: none;
 }
 
-.sd-timeline-item > span {
+.student-disputes-page .sd-timeline-item > span {
   position: relative;
   z-index: 1;
   width: 12px;
   height: 12px;
   flex-shrink: 0;
   margin-top: 2px;
-  border: 2px solid #cbd5e1;
+  border:
+    2px solid #cbd5e1;
   border-radius: 50%;
   background: #ffffff;
 }
 
-.sd-timeline-complete > span {
-  border-color: #10b981;
-  background: #10b981;
+.student-disputes-page .sd-timeline-complete > span {
+  border-color: #2563eb;
+  background: #2563eb;
+  box-shadow:
+    0 0 0 4px
+    rgba(37, 99, 235, 0.09);
 }
 
-.sd-timeline-item > div {
+.student-disputes-page .sd-timeline-item strong {
+  display: block;
+  color: #334155;
+  font-size: 9px;
+}
+
+.student-disputes-page .sd-timeline-item small {
+  display: block;
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 7.5px;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.student-disputes-page .sd-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding:
+    15px 23px 18px;
+  border-top:
+    1px solid #e7edf5;
+  background: #fbfdff;
+}
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.student-disputes-page .sd-empty-cell {
+  height: 220px;
+  color: #94a3b8 !important;
+  text-align: center;
+}
+
+.student-disputes-page .sd-empty-cell svg {
+  color: #2563eb;
+}
+
+.student-disputes-page .sd-empty-cell h3 {
+  margin:
+    9px 0 4px;
+  color: #334155;
+  font-size: 10px;
+}
+
+.student-disputes-page .sd-empty-cell p {
+  margin: 0;
+  font-size: 8px;
+}
+
+/* =========================================================
+   LOADING / ERROR
+========================================================= */
+
+.student-disputes-page .sd-loading-card {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 10px;
+  padding: 25px;
 }
 
-.sd-timeline-item strong {
-  color: var(--db-text);
-  font-size: 12px;
+.student-disputes-page .sd-skeleton {
+  height: 55px;
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      90deg,
+      #eef3f8 25%,
+      #f8fafc 50%,
+      #eef3f8 75%
+    );
+  background-size: 200% 100%;
+  animation:
+    studentDpSkeleton
+    1.3s infinite;
 }
 
-.sd-timeline-item small {
-  color: var(--db-text-soft);
-  font-size: 10.5px;
+@keyframes studentDpSkeleton {
+  from {
+    background-position:
+      200% 0;
+  }
+
+  to {
+    background-position:
+      -200% 0;
+  }
 }
 
-.sd-error-state {
+.student-disputes-page .sd-error-state {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 26px;
+  gap: 15px;
+  padding: 20px;
 }
 
-.sd-error-state > svg {
-  color: #ef4444;
+.student-disputes-page .sd-error-state > svg {
+  color: #dc2626;
 }
 
-.sd-error-state > div {
+.student-disputes-page .sd-error-state > div {
   flex: 1;
 }
 
-.sd-error-state h2 {
-  margin: 0 0 5px;
-  color: var(--db-text);
-}
-
-.sd-error-state p {
+.student-disputes-page .sd-error-state h2 {
   margin: 0;
-  color: var(--db-text-soft);
+  color: #172033;
+  font-size: 14px;
 }
 
-.sd-loading-card {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  padding: 25px;
-  border: 1px solid var(--db-border);
-  border-radius: 17px;
-  background: var(--db-white);
+.student-disputes-page .sd-error-state p {
+  margin:
+    4px 0 0;
+  color: #64748b;
+  font-size: 9px;
 }
 
-.sd-skeleton {
-  height: 58px;
-  border-radius: 10px;
-  background: #edf4fa;
-}
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 
-@media (max-width: 1200px) {
-  .sd-summary-grid {
-    grid-template-columns: repeat(
-      3,
-      minmax(150px, 1fr)
-    );
+@media (max-width: 1050px) {
+  .student-disputes-page .sd-summary-grid {
+    grid-template-columns:
+      repeat(3, 1fr);
   }
 
-  .sd-attendance-preview {
-    grid-template-columns: repeat(
-      2,
-      minmax(120px, 1fr)
-    );
+  .student-disputes-page .sd-attendance-preview {
+    grid-template-columns:
+      repeat(2, 1fr);
   }
 }
 
 @media (max-width: 750px) {
-  .sd-page-header,
-  .sd-pagination {
+  .student-disputes-page .sd-page-header {
     align-items: flex-start;
     flex-direction: column;
+    padding: 27px 23px;
   }
 
-  .sd-filter-card,
-  .sd-form-grid,
-  .sd-summary-grid,
-  .sd-details-grid,
-  .sd-details-banner {
+  .sd-header-action {
+    width: 100%;
+  }
+
+  .student-disputes-page .sd-submit-button {
+    width: 100%;
+  }
+
+  .student-disputes-page .sd-summary-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .student-disputes-page .sd-filter-card,
+  .student-disputes-page .sd-form-grid,
+  .student-disputes-page .sd-details-grid,
+  .student-disputes-page .sd-details-banner {
     grid-template-columns: 1fr;
   }
 
-  .sd-modal-overlay {
+  .student-disputes-page .sd-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .student-disputes-page .sd-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-disputes-page .sd-attendance-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .student-disputes-page .sd-modal-overlay {
     align-items: flex-end;
     padding: 0;
   }
 
-  .sd-modal {
-    max-height: 95vh;
-    border-radius: 20px 20px 0 0;
+  .student-disputes-page .sd-modal {
+    width: 100%;
+    max-height: 94vh;
+    border-radius:
+      20px 20px 0 0;
   }
 
-  .sd-modal-footer {
+  .student-disputes-page .sd-modal-footer {
     flex-direction: column;
   }
 
-  .sd-modal-footer .sd-btn {
+  .student-disputes-page .sd-modal-footer .sd-btn {
     width: 100%;
   }
 }

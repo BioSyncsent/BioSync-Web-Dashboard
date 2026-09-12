@@ -1,114 +1,50 @@
 import {
   AlertCircle,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
   Clock3,
   Eye,
+  Filter,
   MessageSquareWarning,
   RefreshCw,
   Search,
-  ShieldAlert,
-  X,
+  ShieldCheck,
+  Trash2,
   XCircle,
 } from "lucide-react";
 
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
 
-import Swal from "sweetalert2";
+import toast, {
+  Toaster,
+} from "react-hot-toast";
 
-import { useAuth } from "../../contexts/AuthContext";
+import {
+  useAuth,
+} from "../../contexts/AuthContext";
 
-import { useFirestoreSubscription } from "../../hooks/useFirestoreSubscription";
+import {
+  useFirestoreSubscription,
+} from "../../hooks/useFirestoreSubscription";
 
 import DisputeDetailsModal from "../../components/DisputeDetailsModal";
 
 import {
-  reviewDispute,
+  deleteDisputeByAdmin,
   subscribeToDisputesManagement,
 } from "../../services/disputeService";
 
 import "./Disputes.css";
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
-
-function dateToInputValue(date) {
-  if (!date) return "";
-
-  const localDate = new Date(
-    date.getTime() -
-      date.getTimezoneOffset() * 60_000
-  );
-
-  return localDate
-    .toISOString()
-    .slice(0, 10);
-}
-
-function compareValues(first, second) {
-  if (first == null && second == null) {
-    return 0;
-  }
-
-  if (first == null) return 1;
-  if (second == null) return -1;
-
-  if (
-    first instanceof Date &&
-    second instanceof Date
-  ) {
-    return (
-      first.getTime() -
-      second.getTime()
-    );
-  }
-
-  return String(first).localeCompare(
-    String(second),
-    undefined,
-    {
-      sensitivity: "base",
-      numeric: true,
-    }
-  );
-}
-
-function getStatusLabel(status) {
-  const labels = {
-    pending: "Pending",
-    under_review: "Under Review",
-    awaiting_information:
-      "Awaiting Information",
-    approved: "Approved",
-    rejected: "Rejected",
-    closed: "Closed",
-  };
-
-  return labels[status] || "Pending";
-}
-
-function DisputeStatusBadge({ status }) {
-  return (
-    <span
-      className={`dp-status dp-status-${status}`}
-    >
-      {getStatusLabel(status)}
-    </span>
-  );
-}
 
 function SummaryCard({
   icon: Icon,
   label,
   value,
   tone,
+  helper,
 }) {
   return (
     <div className="dp-card dp-summary-card">
@@ -120,14 +56,103 @@ function SummaryCard({
 
       <div>
         <span>{label}</span>
-        <strong>{value}</strong>
+
+        <strong>
+          {value}
+        </strong>
+
+        {helper && (
+          <small>
+            {helper}
+          </small>
+        )}
       </div>
     </div>
   );
 }
 
+
+function StatusBadge({
+  status,
+}) {
+  const labels = {
+    pending:
+      "Pending",
+
+    approved:
+      "Approved",
+
+    rejected:
+      "Rejected",
+
+    cancelled:
+      "Cancelled",
+
+    under_review:
+      "Under Review",
+
+    awaiting_information:
+      "Awaiting Information",
+
+    closed:
+      "Closed",
+  };
+
+  return (
+    <span
+      className={`dp-status dp-status-${status}`}
+    >
+      {labels[status] ||
+        status}
+    </span>
+  );
+}
+
+
+function formatDate(
+  value
+) {
+  if (!value) {
+    return "N/A";
+  }
+
+  try {
+    const date =
+      value instanceof Date
+        ? value
+        : typeof value?.toDate ===
+            "function"
+          ? value.toDate()
+          : new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "N/A";
+    }
+
+    return date.toLocaleString(
+      "en-MY",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+  } catch {
+    return "N/A";
+  }
+}
+
+
 function Disputes() {
-  const { user } = useAuth();
+  const {
+    user,
+  } = useAuth();
 
   const subscription =
     useFirestoreSubscription(
@@ -136,352 +161,270 @@ function Disputes() {
     );
 
   const disputes =
-    subscription.data || [];
+    subscription.data ||
+    [];
 
-  const [searchTerm, setSearchTerm] =
-    useState("");
+  const [
+    search,
+    setSearch,
+  ] = useState("");
 
-  const [statusFilter, setStatusFilter] =
-    useState("all");
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("all");
 
-  const [courseFilter, setCourseFilter] =
-    useState("all");
+  const [
+    departmentFilter,
+    setDepartmentFilter,
+  ] = useState("all");
 
-  const [dateFrom, setDateFrom] =
-    useState("");
-
-  const [dateTo, setDateTo] =
-    useState("");
-
-  const [sortConfig, setSortConfig] =
-    useState({
-      key: "submittedAt",
-      direction: "desc",
-    });
-
-  const [page, setPage] = useState(1);
-
-  const [pageSize, setPageSize] =
-    useState(10);
+  const [
+    sortBy,
+    setSortBy,
+  ] = useState("newest");
 
   const [
     selectedDispute,
     setSelectedDispute,
   ] = useState(null);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [
+    deletingId,
+    setDeletingId,
+  ] = useState("");
 
-  const courses = useMemo(() => {
-    return Array.from(
-      new Set(
-        disputes
-          .map(
-            (dispute) =>
-              dispute.course
-          )
-          .filter(
-            (course) =>
-              course &&
-              course !== "N/A"
-          )
-      )
-    ).sort();
-  }, [disputes]);
 
-  const filteredDisputes = useMemo(() => {
-    const query = searchTerm
-      .trim()
-      .toLowerCase();
+  /* =======================================================
+     DEPARTMENTS
+  ======================================================= */
 
-    return disputes.filter((dispute) => {
-      const searchableText = [
-        dispute.id,
-        dispute.studentName,
-        dispute.studentId,
-        dispute.email,
-        dispute.reason,
-        dispute.attendanceId,
-        dispute.course,
-        dispute.department,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch =
-        !query ||
-        searchableText.includes(query);
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        dispute.status === statusFilter;
-
-      const matchesCourse =
-        courseFilter === "all" ||
-        dispute.course === courseFilter;
-
-      let matchesFrom = true;
-      let matchesTo = true;
-
-      if (dispute.submittedAt) {
-        const submittedDate =
-          dateToInputValue(
-            dispute.submittedAt
-          );
-
-        if (dateFrom) {
-          matchesFrom =
-            submittedDate >= dateFrom;
-        }
-
-        if (dateTo) {
-          matchesTo =
-            submittedDate <= dateTo;
-        }
-      } else if (dateFrom || dateTo) {
-        matchesFrom = false;
-        matchesTo = false;
-      }
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesCourse &&
-        matchesFrom &&
-        matchesTo
-      );
-    });
-  }, [
-    disputes,
-    searchTerm,
-    statusFilter,
-    courseFilter,
-    dateFrom,
-    dateTo,
-  ]);
-
-  const sortedDisputes = useMemo(() => {
-    return [...filteredDisputes].sort(
-      (first, second) => {
-        const comparison = compareValues(
-          first[sortConfig.key],
-          second[sortConfig.key]
-        );
-
-        return sortConfig.direction ===
-          "asc"
-          ? comparison
-          : -comparison;
-      }
-    );
-  }, [filteredDisputes, sortConfig]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      sortedDisputes.length / pageSize
-    )
-  );
-
-  const paginatedDisputes =
+  const departments =
     useMemo(() => {
-      const start =
-        (page - 1) * pageSize;
-
-      return sortedDisputes.slice(
-        start,
-        start + pageSize
-      );
+      return Array.from(
+        new Set(
+          disputes
+            .map(
+              (item) =>
+                item.department
+            )
+            .filter(Boolean)
+        )
+      ).sort();
     }, [
-      sortedDisputes,
-      page,
-      pageSize,
+      disputes,
     ]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [
-    searchTerm,
-    statusFilter,
-    courseFilter,
-    dateFrom,
-    dateTo,
-    pageSize,
-  ]);
 
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+  /* =======================================================
+     FILTER
+  ======================================================= */
 
-  const summary = useMemo(() => {
-    return disputes.reduce(
-      (result, dispute) => {
-        result.total += 1;
+  const filtered =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
-        if (
-          dispute.status === "pending"
-        ) {
-          result.pending += 1;
-        } else if (
-          dispute.status ===
-          "under_review"
-        ) {
-          result.underReview += 1;
-        } else if (
-          dispute.status ===
-          "approved"
-        ) {
-          result.approved += 1;
-        } else if (
-          dispute.status ===
-          "rejected"
-        ) {
-          result.rejected += 1;
+      let result =
+        disputes.filter(
+          (dispute) => {
+            const searchable =
+              [
+                dispute.studentName,
+                dispute.studentId,
+                dispute.email,
+                dispute.department,
+                dispute.course,
+                dispute.reason,
+                dispute.description,
+                dispute.id,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+
+            const matchesSearch =
+              !query ||
+              searchable.includes(
+                query
+              );
+
+            const matchesStatus =
+              statusFilter ===
+                "all" ||
+              dispute.status ===
+                statusFilter;
+
+            const matchesDepartment =
+              departmentFilter ===
+                "all" ||
+              dispute.department ===
+                departmentFilter;
+
+            return (
+              matchesSearch &&
+              matchesStatus &&
+              matchesDepartment
+            );
+          }
+        );
+
+      result = [
+        ...result,
+      ];
+
+      result.sort(
+        (
+          first,
+          second
+        ) => {
+          const firstTime =
+            first.submittedAt
+              ?.getTime?.() ||
+            0;
+
+          const secondTime =
+            second.submittedAt
+              ?.getTime?.() ||
+            0;
+
+          if (
+            sortBy ===
+            "oldest"
+          ) {
+            return (
+              firstTime -
+              secondTime
+            );
+          }
+
+          return (
+            secondTime -
+            firstTime
+          );
         }
+      );
 
-        return result;
-      },
+      return result;
+    }, [
+      disputes,
+      search,
+      statusFilter,
+      departmentFilter,
+      sortBy,
+    ]);
 
-      {
-        total: 0,
-        pending: 0,
-        underReview: 0,
-        approved: 0,
-        rejected: 0,
-      }
+
+  /* =======================================================
+     SUMMARY
+  ======================================================= */
+
+  const summary =
+    useMemo(
+      () => ({
+        total:
+          disputes.length,
+
+        pending:
+          disputes.filter(
+            (item) =>
+              item.status ===
+              "pending"
+          ).length,
+
+        approved:
+          disputes.filter(
+            (item) =>
+              item.status ===
+              "approved"
+          ).length,
+
+        rejected:
+          disputes.filter(
+            (item) =>
+              item.status ===
+              "rejected"
+          ).length,
+
+        cancelled:
+          disputes.filter(
+            (item) =>
+              item.status ===
+              "cancelled"
+          ).length,
+      }),
+      [
+        disputes,
+      ]
     );
-  }, [disputes]);
 
-  function toggleSort(key) {
-    setSortConfig((previous) => ({
-      key,
 
-      direction:
-        previous.key === key &&
-        previous.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
-  }
+  /* =======================================================
+     DELETE
+  ======================================================= */
 
-  function renderSortIcon(key) {
-    if (sortConfig.key !== key) {
-      return <ArrowUpDown size={13} />;
-    }
+  async function handleDelete(
+    dispute
+  ) {
+    const confirmed =
+      window.confirm(
+        `Delete dispute from ${dispute.studentName || "this student"}?\n\nThis removes the dispute record permanently. The deletion will still be recorded in Audit Logs.`
+      );
 
-    return sortConfig.direction === "asc"
-      ? <ArrowUp size={13} />
-      : <ArrowDown size={13} />;
-  }
-
-  function clearFilters() {
-    setSearchTerm("");
-    setStatusFilter("all");
-    setCourseFilter("all");
-    setDateFrom("");
-    setDateTo("");
-  }
-
-  async function handleReviewAction({
-    status,
-    adminComment,
-    correctedAttendanceStatus,
-  }) {
-    if (!selectedDispute) return;
-
-    const actionLabel =
-      getStatusLabel(status);
-
-    const result = await Swal.fire({
-      icon:
-        status === "approved"
-          ? "question"
-          : status === "rejected"
-            ? "warning"
-            : "info",
-
-      title: `${actionLabel} dispute?`,
-
-      text:
-        status === "approved"
-          ? "The related attendance record may also be corrected."
-          : "The dispute status and admin comment will be saved.",
-
-      showCancelButton: true,
-
-      confirmButtonText:
-        actionLabel,
-
-      cancelButtonText: "Cancel",
-
-      confirmButtonColor:
-        status === "rejected"
-          ? "#ef4444"
-          : "#268cff",
-    });
-
-    if (!result.isConfirmed) {
+    if (!confirmed) {
       return;
     }
 
-    setSaving(true);
+    setDeletingId(
+      dispute.id
+    );
 
     try {
-      await reviewDispute({
-        disputeId:
-          selectedDispute.id,
+      await deleteDisputeByAdmin(
+        dispute,
+        user
+      );
 
-        attendanceId:
-          selectedDispute.attendanceId,
+      if (
+        selectedDispute?.id ===
+        dispute.id
+      ) {
+        setSelectedDispute(
+          null
+        );
+      }
 
-        status,
-
-        adminComment,
-
-        correctedAttendanceStatus,
-
-        adminUser: user,
-      });
-
-      setSelectedDispute(null);
-
-      await Swal.fire({
-        icon: "success",
-
-        title: "Dispute updated",
-
-        text:
-          "The dispute decision was saved successfully.",
-
-        timer: 1600,
-
-        showConfirmButton: false,
-      });
+      toast.success(
+        "Dispute deleted successfully"
+      );
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Delete dispute error:",
+        error
+      );
 
-      Swal.fire({
-        icon: "error",
-
-        title: "Unable to update dispute",
-
-        text:
-          error.message ||
-          "The dispute could not be updated.",
-      });
+      toast.error(
+        error?.message ||
+          "Unable to delete dispute."
+      );
     } finally {
-      setSaving(false);
+      setDeletingId("");
     }
   }
 
-  if (subscription.loading) {
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
+  if (
+    subscription.loading
+  ) {
     return (
       <div className="dp-page">
         <div className="dp-loading-card">
-          <div className="dp-skeleton" />
           <div className="dp-skeleton" />
           <div className="dp-skeleton" />
           <div className="dp-skeleton" />
@@ -490,11 +433,20 @@ function Disputes() {
     );
   }
 
-  if (subscription.error) {
+
+  /* =======================================================
+     ERROR
+  ======================================================= */
+
+  if (
+    subscription.error
+  ) {
     return (
       <div className="dp-page">
         <div className="dp-card dp-error-state">
-          <AlertCircle size={34} />
+          <AlertCircle
+            size={34}
+          />
 
           <div>
             <h2>
@@ -502,17 +454,23 @@ function Disputes() {
             </h2>
 
             <p>
-              {subscription.error.message ||
-                "Check the Firestore connection and try again."}
+              {subscription.error
+                .message ||
+                "Unable to load dispute records."}
             </p>
           </div>
 
           <button
             type="button"
             className="dp-btn dp-btn-primary"
-            onClick={subscription.retry}
+            onClick={
+              subscription.retry
+            }
           >
-            <RefreshCw size={16} />
+            <RefreshCw
+              size={16}
+            />
+
             Retry
           </button>
         </div>
@@ -520,95 +478,205 @@ function Disputes() {
     );
   }
 
-  const firstVisible =
-    sortedDisputes.length === 0
-      ? 0
-      : (page - 1) * pageSize + 1;
-
-  const lastVisible = Math.min(
-    page * pageSize,
-    sortedDisputes.length
-  );
 
   return (
     <div className="dp-page">
-      <div className="dp-page-header">
-        <div>
+      <Toaster position="top-right" />
+
+      {/* ===================================================
+          HERO
+      =================================================== */}
+
+      <section className="dp-admin-hero">
+        <div className="dp-admin-grid" />
+
+        <div className="dp-admin-copy">
+          <span className="dp-admin-eyebrow">
+            <ShieldCheck
+              size={14}
+            />
+
+            Administrator Oversight
+          </span>
+
           <h1>
-            Dispute Management
+            Attendance Disputes
           </h1>
 
           <p>
-            Review and resolve student
-            attendance disputes.
+            Monitor disputes across BioSync,
+            review teacher decisions and manage
+            obsolete dispute records.
           </p>
+
+          <div className="dp-admin-meta">
+            <span>
+              <MessageSquareWarning
+                size={13}
+              />
+
+              {
+                summary.total
+              }{" "}
+              total records
+            </span>
+
+            <span>
+              <Clock3
+                size={13}
+              />
+
+              {
+                summary.pending
+              }{" "}
+              awaiting review
+            </span>
+
+            <span className="dp-admin-live">
+              <i />
+
+              Live Firestore sync
+            </span>
+          </div>
         </div>
 
-        <div className="dp-live-badge">
-          <span />
-          Live updates
+        <div className="dp-admin-hero-icon">
+          <MessageSquareWarning
+            size={40}
+          />
+
+          <strong>
+            {
+              summary.pending
+            }
+          </strong>
+
+          <span>
+            Pending
+          </span>
         </div>
-      </div>
+      </section>
+
+
+      {/* ===================================================
+          SUMMARY
+      =================================================== */}
 
       <div className="dp-summary-grid">
         <SummaryCard
-          icon={MessageSquareWarning}
-          label="Total Disputes"
-          value={summary.total}
+          icon={
+            MessageSquareWarning
+          }
+          label="Total"
+          value={
+            summary.total
+          }
+          helper="All disputes"
           tone="blue"
         />
 
         <SummaryCard
           icon={Clock3}
           label="Pending"
-          value={summary.pending}
+          value={
+            summary.pending
+          }
+          helper="Needs teacher review"
           tone="yellow"
-        />
-
-        <SummaryCard
-          icon={ShieldAlert}
-          label="Under Review"
-          value={summary.underReview}
-          tone="purple"
         />
 
         <SummaryCard
           icon={CheckCircle}
           label="Approved"
-          value={summary.approved}
+          value={
+            summary.approved
+          }
+          helper="Accepted requests"
           tone="green"
         />
 
         <SummaryCard
           icon={XCircle}
           label="Rejected"
-          value={summary.rejected}
+          value={
+            summary.rejected
+          }
+          helper="Rejected requests"
           tone="red"
+        />
+
+        <SummaryCard
+          icon={AlertCircle}
+          label="Cancelled"
+          value={
+            summary.cancelled
+          }
+          helper="Cancelled by students"
+          tone="purple"
         />
       </div>
 
+
+      {/* ===================================================
+          FILTERS
+      =================================================== */}
+
       <div className="dp-card dp-filter-card">
+        <div className="dp-filter-heading">
+          <div>
+            <Filter
+              size={17}
+            />
+
+            <div>
+              <strong>
+                Find Disputes
+              </strong>
+
+              <span>
+                Search and filter dispute records.
+              </span>
+            </div>
+          </div>
+
+          <span>
+            {filtered.length} result
+            {filtered.length ===
+            1
+              ? ""
+              : "s"}
+          </span>
+        </div>
+
         <div className="dp-search-box">
           <Search size={18} />
 
           <input
-            value={searchTerm}
-            onChange={(event) =>
-              setSearchTerm(
+            value={search}
+            onChange={(
+              event
+            ) =>
+              setSearch(
                 event.target.value
               )
             }
-            placeholder="Search student, ID, email, reason, dispute ID or attendance ID..."
+            placeholder="Search student, ID, course, department, reason or dispute ID..."
           />
         </div>
 
         <div className="dp-filter-grid">
           <div className="dp-filter-group">
-            <label>Status</label>
+            <label>
+              Status
+            </label>
 
             <select
-              value={statusFilter}
-              onChange={(event) =>
+              value={
+                statusFilter
+              }
+              onChange={(
+                event
+              ) =>
                 setStatusFilter(
                   event.target.value
                 )
@@ -638,193 +706,148 @@ function Disputes() {
                 Rejected
               </option>
 
+              <option value="cancelled">
+                Cancelled
+              </option>
+
               <option value="closed">
                 Closed
               </option>
             </select>
           </div>
 
+
           <div className="dp-filter-group">
-            <label>Course</label>
+            <label>
+              Department
+            </label>
 
             <select
-              value={courseFilter}
-              onChange={(event) =>
-                setCourseFilter(
+              value={
+                departmentFilter
+              }
+              onChange={(
+                event
+              ) =>
+                setDepartmentFilter(
                   event.target.value
                 )
               }
             >
               <option value="all">
-                All Courses
+                All Departments
               </option>
 
-              {courses.map((course) => (
-                <option
-                  key={course}
-                  value={course}
-                >
-                  {course}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="dp-filter-group">
-            <label>From</label>
-
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(event) =>
-                setDateFrom(
-                  event.target.value
-                )
-              }
-            />
-          </div>
-
-          <div className="dp-filter-group">
-            <label>To</label>
-
-            <input
-              type="date"
-              value={dateTo}
-              min={dateFrom || undefined}
-              onChange={(event) =>
-                setDateTo(
-                  event.target.value
-                )
-              }
-            />
-          </div>
-        </div>
-
-        <div className="dp-filter-footer">
-          <span>
-            {filteredDisputes.length} of{" "}
-            {disputes.length} disputes
-          </span>
-
-          <button
-            type="button"
-            className="dp-btn dp-btn-secondary"
-            onClick={clearFilters}
-          >
-            <X size={15} />
-            Clear Filters
-          </button>
-        </div>
-      </div>
-
-      <div className="dp-card dp-table-card">
-        <div className="dp-table-header">
-          <div>
-            <h2>
-              Dispute Records
-            </h2>
-
-            <p>
-              Showing {firstVisible}–
-              {lastVisible} of{" "}
-              {sortedDisputes.length}
-            </p>
-          </div>
-
-          <div className="dp-page-size">
-            <label htmlFor="disputePageSize">
-              Rows
-            </label>
-
-            <select
-              id="disputePageSize"
-              value={pageSize}
-              onChange={(event) =>
-                setPageSize(
-                  Number(
-                    event.target.value
-                  )
-                )
-              }
-            >
-              {PAGE_SIZE_OPTIONS.map(
-                (size) => (
+              {departments.map(
+                (department) => (
                   <option
-                    key={size}
-                    value={size}
+                    key={
+                      department
+                    }
+                    value={
+                      department
+                    }
                   >
-                    {size}
+                    {department}
                   </option>
                 )
               )}
             </select>
           </div>
+
+
+          <div className="dp-filter-group">
+            <label>
+              Sort
+            </label>
+
+            <select
+              value={sortBy}
+              onChange={(
+                event
+              ) =>
+                setSortBy(
+                  event.target.value
+                )
+              }
+            >
+              <option value="newest">
+                Newest First
+              </option>
+
+              <option value="oldest">
+                Oldest First
+              </option>
+            </select>
+          </div>
         </div>
+      </div>
+
+
+      {/* ===================================================
+          TABLE
+      =================================================== */}
+
+      <div className="dp-card dp-table-card">
+        <div className="dp-table-header">
+          <div>
+            <span className="dp-table-eyebrow">
+              Administrative Records
+            </span>
+
+            <h2>
+              All Disputes
+            </h2>
+
+            <p>
+              Teachers approve or reject.
+              Administrators oversee and can
+              remove obsolete records.
+            </p>
+          </div>
+        </div>
+
 
         <div className="dp-table-scroll">
           <table className="dp-table">
             <thead>
               <tr>
                 <th>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleSort(
-                        "studentName"
-                      )
-                    }
-                  >
-                    Student
-                    {renderSortIcon(
-                      "studentName"
-                    )}
-                  </button>
-                </th>
-
-                <th>Attendance</th>
-
-                <th>Reason</th>
-
-                <th>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleSort(
-                        "submittedAt"
-                      )
-                    }
-                  >
-                    Submitted
-                    {renderSortIcon(
-                      "submittedAt"
-                    )}
-                  </button>
+                  Student
                 </th>
 
                 <th>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleSort("status")
-                    }
-                  >
-                    Status
-                    {renderSortIcon(
-                      "status"
-                    )}
-                  </button>
+                  Department
                 </th>
 
-                <th>Action</th>
+                <th>
+                  Attendance
+                </th>
+
+                <th>
+                  Reason
+                </th>
+
+                <th>
+                  Submitted
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Actions
+                </th>
               </tr>
             </thead>
 
             <tbody>
-              {paginatedDisputes.length ===
+              {filtered.length ===
               0 ? (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="7"
                     className="dp-empty-cell"
                   >
                     <MessageSquareWarning
@@ -832,21 +855,29 @@ function Disputes() {
                     />
 
                     <p>
-                      No dispute records match
-                      the selected filters.
+                      No disputes found.
                     </p>
                   </td>
                 </tr>
               ) : (
-                paginatedDisputes.map(
-                  (dispute) => (
-                    <tr key={dispute.id}>
+                filtered.map(
+                  (
+                    dispute
+                  ) => (
+                    <tr
+                      key={
+                        dispute.id
+                      }
+                    >
                       <td>
                         <div className="dp-student-cell">
                           <span>
                             {dispute.studentName
-                              .charAt(0)
-                              .toUpperCase()}
+                              ?.charAt(
+                                0
+                              )
+                              .toUpperCase() ||
+                              "S"}
                           </span>
 
                           <div>
@@ -859,67 +890,56 @@ function Disputes() {
                             <small>
                               {
                                 dispute.studentId
-                              }{" "}
-                              · {dispute.course}
+                              }
                             </small>
                           </div>
                         </div>
                       </td>
 
                       <td>
+                        <span className="dp-department-badge">
+                          {dispute.department ||
+                            "N/A"}
+                        </span>
+                      </td>
+
+                      <td>
                         <div className="dp-attendance-cell">
                           <strong>
-                            {dispute.attendance
-                              ?.status ||
-                              "Not linked"}
+                            {
+                              dispute.originalStatus
+                            }
                           </strong>
 
                           <small>
-                            {dispute.attendance
-                              ?.timestamp
-                              ? dispute.attendance.timestamp.toLocaleDateString(
-                                  "en-MY"
-                                )
-                              : dispute.attendanceId ||
-                                "No attendance ID"}
+                            Requested:{" "}
+                            {
+                              dispute.requestedStatus
+                            }
                           </small>
                         </div>
                       </td>
 
                       <td>
                         <span className="dp-reason-cell">
-                          {dispute.reason}
+                          {
+                            dispute.reason
+                          }
                         </span>
                       </td>
 
                       <td>
                         <div className="dp-date-cell">
                           <strong>
-                            {dispute.submittedAt
-                              ? dispute.submittedAt.toLocaleDateString(
-                                  "en-MY"
-                                )
-                              : "N/A"}
+                            {formatDate(
+                              dispute.submittedAt
+                            )}
                           </strong>
-
-                          <small>
-                            {dispute.submittedAt
-                              ? dispute.submittedAt.toLocaleTimeString(
-                                  "en-MY",
-                                  {
-                                    hour:
-                                      "2-digit",
-                                    minute:
-                                      "2-digit",
-                                  }
-                                )
-                              : ""}
-                          </small>
                         </div>
                       </td>
 
                       <td>
-                        <DisputeStatusBadge
+                        <StatusBadge
                           status={
                             dispute.status
                           }
@@ -927,18 +947,54 @@ function Disputes() {
                       </td>
 
                       <td>
-                        <button
-                          type="button"
-                          className="dp-view-button"
-                          onClick={() =>
-                            setSelectedDispute(
-                              dispute
-                            )
-                          }
-                        >
-                          <Eye size={15} />
-                          Review
-                        </button>
+                        <div className="dp-action-group">
+                          <button
+                            type="button"
+                            className="dp-view-button"
+                            onClick={() =>
+                              setSelectedDispute(
+                                dispute
+                              )
+                            }
+                          >
+                            <Eye
+                              size={15}
+                            />
+
+                            View
+                          </button>
+
+                          <button
+                            type="button"
+                            className="dp-delete-button"
+                            disabled={
+                              deletingId ===
+                              dispute.id
+                            }
+                            onClick={() =>
+                              handleDelete(
+                                dispute
+                              )
+                            }
+                          >
+                            {deletingId ===
+                            dispute.id ? (
+                              <RefreshCw
+                                size={15}
+                                className="dp-spin"
+                              />
+                            ) : (
+                              <Trash2
+                                size={15}
+                              />
+                            )}
+
+                            {deletingId ===
+                            dispute.id
+                              ? "Deleting"
+                              : "Delete"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -947,60 +1003,23 @@ function Disputes() {
             </tbody>
           </table>
         </div>
-
-        <div className="dp-pagination">
-          <span>
-            Page {page} of {totalPages}
-          </span>
-
-          <div>
-            <button
-              type="button"
-              disabled={page === 1}
-              onClick={() =>
-                setPage((current) =>
-                  Math.max(
-                    1,
-                    current - 1
-                  )
-                )
-              }
-            >
-              <ChevronLeft size={16} />
-              Previous
-            </button>
-
-            <button
-              type="button"
-              disabled={
-                page === totalPages
-              }
-              onClick={() =>
-                setPage((current) =>
-                  Math.min(
-                    totalPages,
-                    current + 1
-                  )
-                )
-              }
-            >
-              Next
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
       </div>
+
+
+      {/* ===================================================
+          DETAILS
+      =================================================== */}
 
       {selectedDispute && (
         <DisputeDetailsModal
-          dispute={selectedDispute}
-          saving={saving}
-          onClose={() =>
-            !saving &&
-            setSelectedDispute(null)
+          dispute={
+            selectedDispute
           }
-          onSubmit={
-            handleReviewAction
+          readOnly
+          onClose={() =>
+            setSelectedDispute(
+              null
+            )
           }
         />
       )}

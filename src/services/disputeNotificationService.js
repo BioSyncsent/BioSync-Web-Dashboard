@@ -5,56 +5,73 @@ import {
   where,
 } from "firebase/firestore";
 
-import { db } from "../firebase/firebase";
+import {
+  db,
+} from "../firebase/firebase";
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function toSafeDate(value) {
+function toSafeDate(
+  value
+) {
   if (!value) {
     return null;
   }
 
-  if (value instanceof Date) {
+  if (
+    value instanceof
+    Date
+  ) {
     return value;
   }
 
   if (
-    typeof value?.toDate === "function"
+    typeof value?.toDate ===
+    "function"
   ) {
     return value.toDate();
   }
 
-  const convertedDate = new Date(value);
+  const date =
+    new Date(value);
 
   return Number.isNaN(
-    convertedDate.getTime()
+    date.getTime()
   )
     ? null
-    : convertedDate;
+    : date;
 }
 
-function toMilliseconds(value) {
-  const date = toSafeDate(value);
-
-  return date
-    ? date.getTime()
-    : 0;
+function toMilliseconds(
+  value
+) {
+  return (
+    toSafeDate(
+      value
+    )?.getTime?.() ||
+    0
+  );
 }
 
-function normalizeStatus(value) {
-  return String(value || "")
+function normalizeStatus(
+  value
+) {
+  return String(
+    value || ""
+  )
     .trim()
     .toLowerCase()
-    .replace(/[\s-]+/g, "_");
+    .replace(
+      /[\s-]+/g,
+      "_"
+    );
 }
 
 /* =========================================================
-   ADMIN NOTIFICATION
-
-   Counts disputes submitted after the admin last clicked
-   the Disputes sidebar link.
+   ADMIN
+   NEW STUDENT DISPUTE NOTIFICATIONS
 ========================================================= */
 
 export function subscribeToAdminDisputeNotificationCount(
@@ -62,67 +79,156 @@ export function subscribeToAdminDisputeNotificationCount(
   onData,
   onError
 ) {
-  const safeLastSeenAt =
-    Number(lastSeenAt) || 0;
+  const safeLastSeen =
+    Number(
+      lastSeenAt
+    ) ||
+    0;
 
   return onSnapshot(
-    collection(db, "disputes"),
+    collection(
+      db,
+      "disputes"
+    ),
 
     (snapshot) => {
-      const count = snapshot.docs.filter(
-        (disputeDocument) => {
-          const data =
-            disputeDocument.data();
+      const count =
+        snapshot.docs.filter(
+          (document) => {
+            const data =
+              document.data();
 
-          const submittedTime =
-            toMilliseconds(
-              data.submittedAt ??
-                data.createdAt ??
-                data.timestamp
+            const submittedAt =
+              toMilliseconds(
+                data.submittedAt ??
+                  data.createdAt
+              );
+
+            /*
+              Admin is notified about every
+              NEW dispute submission.
+
+              We intentionally do not require
+              status === pending because the
+              teacher may review it before the
+              administrator opens the page.
+            */
+
+            return (
+              submittedAt >
+              safeLastSeen
             );
-
-          const status =
-            normalizeStatus(data.status);
-
-          if (!submittedTime) {
-            return false;
           }
+        ).length;
 
-          if (status === "cancelled") {
-            return false;
-          }
-
-          return (
-            submittedTime >
-            safeLastSeenAt
-          );
-        }
-      ).length;
-
-      console.log(
-        "Admin new dispute count:",
+      onData(
         count
       );
-
-      onData(count);
     },
 
     (error) => {
       console.error(
-        "Unable to load admin dispute notifications:",
+        "Admin dispute notification error:",
         error
       );
 
-      onError?.(error);
+      onError?.(
+        error
+      );
     }
   );
 }
 
 /* =========================================================
-   STUDENT NOTIFICATION
+   TEACHER
+   NEW SAME-DEPARTMENT DISPUTES
+========================================================= */
 
-   Counts disputes that received an admin response after
-   the student last clicked the Disputes sidebar link.
+export function subscribeToTeacherDisputeNotificationCount(
+  department,
+  lastSeenAt,
+  onData,
+  onError
+) {
+  if (
+    !department
+  ) {
+    onData(0);
+
+    return () => {};
+  }
+
+  const disputeQuery =
+    query(
+      collection(
+        db,
+        "disputes"
+      ),
+
+      where(
+        "department",
+        "==",
+        department
+      )
+    );
+
+  const safeLastSeen =
+    Number(
+      lastSeenAt
+    ) ||
+    0;
+
+  return onSnapshot(
+    disputeQuery,
+
+    (snapshot) => {
+      const count =
+        snapshot.docs.filter(
+          (document) => {
+            const data =
+              document.data();
+
+            const submittedAt =
+              toMilliseconds(
+                data.submittedAt ??
+                  data.createdAt
+              );
+
+            const status =
+              normalizeStatus(
+                data.status
+              );
+
+            return (
+              submittedAt >
+                safeLastSeen &&
+              status ===
+                "pending"
+            );
+          }
+        ).length;
+
+      onData(
+        count
+      );
+    },
+
+    (error) => {
+      console.error(
+        "Teacher dispute notification error:",
+        error
+      );
+
+      onError?.(
+        error
+      );
+    }
+  );
+}
+
+/* =========================================================
+   STUDENT
+   NEW TEACHER RESPONSE
 ========================================================= */
 
 export function subscribeToStudentResponseNotificationCount(
@@ -131,70 +237,82 @@ export function subscribeToStudentResponseNotificationCount(
   onData,
   onError
 ) {
-  if (!studentUid) {
+  if (
+    !studentUid
+  ) {
     onData(0);
+
     return () => {};
   }
 
-  const safeLastSeenAt =
-    Number(lastSeenAt) || 0;
+  const studentQuery =
+    query(
+      collection(
+        db,
+        "disputes"
+      ),
 
-  const studentDisputeQuery = query(
-    collection(db, "disputes"),
-    where("userId", "==", studentUid)
-  );
+      where(
+        "userId",
+        "==",
+        studentUid
+      )
+    );
+
+  const safeLastSeen =
+    Number(
+      lastSeenAt
+    ) ||
+    0;
 
   return onSnapshot(
-    studentDisputeQuery,
+    studentQuery,
 
     (snapshot) => {
-      const count = snapshot.docs.filter(
-        (disputeDocument) => {
-          const data =
-            disputeDocument.data();
+      const count =
+        snapshot.docs.filter(
+          (document) => {
+            const data =
+              document.data();
 
-          const responseTime =
-            toMilliseconds(
-              data.reviewedAt ??
-                data.resolvedAt
+            const responseTime =
+              toMilliseconds(
+                data.reviewedAt ??
+                  data.resolvedAt
+              );
+
+            const status =
+              normalizeStatus(
+                data.status
+              );
+
+            return (
+              responseTime >
+                safeLastSeen &&
+              [
+                "approved",
+                "rejected",
+              ].includes(
+                status
+              )
             );
-
-          const status =
-            normalizeStatus(data.status);
-
-          if (!responseTime) {
-            return false;
           }
+        ).length;
 
-          if (
-            status === "pending" ||
-            status === "cancelled"
-          ) {
-            return false;
-          }
-
-          return (
-            responseTime >
-            safeLastSeenAt
-          );
-        }
-      ).length;
-
-      console.log(
-        "Student new response count:",
+      onData(
         count
       );
-
-      onData(count);
     },
 
     (error) => {
       console.error(
-        "Unable to load student response notifications:",
+        "Student dispute response notification error:",
         error
       );
 
-      onError?.(error);
+      onError?.(
+        error
+      );
     }
   );
 }

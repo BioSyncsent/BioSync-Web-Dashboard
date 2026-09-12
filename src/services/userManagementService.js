@@ -26,20 +26,47 @@ function clean(value) {
   return String(value || "").trim();
 }
 
+function normalizeDepartment(value) {
+  const department = clean(value);
+
+  const normalized = department
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  if (
+    normalized === "cid" ||
+    normalized === "computer information" ||
+    normalized === "computer information department"
+  ) {
+    return "CID";
+  }
+
+  return department;
+}
+
 function getTime(value) {
   if (!value) return 0;
 
-  if (typeof value?.toMillis === "function") {
+  if (
+    typeof value?.toMillis ===
+    "function"
+  ) {
     return value.toMillis();
   }
 
-  if (typeof value?.toDate === "function") {
+  if (
+    typeof value?.toDate ===
+    "function"
+  ) {
     return value.toDate().getTime();
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  return Number.isNaN(date.getTime())
+  return Number.isNaN(
+    date.getTime()
+  )
     ? 0
     : date.getTime();
 }
@@ -52,54 +79,108 @@ export function subscribeToManagedUsers(
   onData,
   onError
 ) {
-  const usersRef = collection(
-    db,
-    "users"
-  );
-
   return onSnapshot(
-    usersRef,
+    collection(
+      db,
+      "users"
+    ),
+
     (snapshot) => {
-      const users = snapshot.docs
-        .map((userDoc) => ({
-          id: userDoc.id,
-          uid: userDoc.id,
-          ...userDoc.data(),
-        }))
-        .sort(
-          (a, b) =>
-            getTime(b.createdAt) -
-            getTime(a.createdAt)
-        );
+      const users =
+        snapshot.docs
+          .map(
+            (userDoc) => ({
+              id:
+                userDoc.id,
+
+              uid:
+                userDoc.id,
+
+              ...userDoc.data(),
+            })
+          )
+          .sort(
+            (
+              a,
+              b
+            ) =>
+              getTime(
+                b.createdAt
+              ) -
+              getTime(
+                a.createdAt
+              )
+          );
 
       onData(users);
     },
+
     (error) => {
       console.error(
         "User Management subscription error:",
         error
       );
 
-      if (onError) {
-        onError(error);
-      }
+      onError?.(error);
+    }
+  );
+}
+
+/* =========================================================
+   REAL-TIME AUTH PROFILE LIST
+========================================================= */
+
+export function subscribeToManagedAuthProfiles(
+  onData,
+  onError
+) {
+  return onSnapshot(
+    collection(
+      db,
+      "authProfile"
+    ),
+
+    (snapshot) => {
+      const profiles = {};
+
+      snapshot.docs.forEach(
+        (document) => {
+          profiles[
+            document.id
+          ] = {
+            id:
+              document.id,
+
+            ...document.data(),
+          };
+        }
+      );
+
+      onData(profiles);
+    },
+
+    (error) => {
+      console.warn(
+        "Auth profile subscription unavailable:",
+        error
+      );
+
+      onError?.(error);
     }
   );
 }
 
 /* =========================================================
    CREATE USER
-
-   Secondary Auth is used so the currently logged-in
-   administrator is NOT replaced by the new user.
 ========================================================= */
 
 export async function createManagedUser(
   formData
 ) {
-  const role = clean(
-    formData.role
-  ).toLowerCase();
+  const role =
+    clean(
+      formData.role
+    ).toLowerCase();
 
   if (
     role !== "student" &&
@@ -110,13 +191,21 @@ export async function createManagedUser(
     );
   }
 
-  const email = clean(
-    formData.email
-  ).toLowerCase();
+  const email =
+    clean(
+      formData.email
+    ).toLowerCase();
 
-  const password = String(
-    formData.password || ""
-  );
+  const password =
+    String(
+      formData.password ||
+        ""
+    );
+
+  const department =
+    normalizeDepartment(
+      formData.department
+    );
 
   if (!email) {
     throw new Error(
@@ -124,20 +213,27 @@ export async function createManagedUser(
     );
   }
 
-  if (password.length < 8) {
+  if (
+    password.length < 8
+  ) {
     throw new Error(
       "Temporary password must contain at least 8 characters."
     );
   }
 
-  let createdFirebaseUser = null;
-  let firestoreCreated = false;
+  if (!department) {
+    throw new Error(
+      "Department is required for Student and Teacher accounts."
+    );
+  }
+
+  let createdFirebaseUser =
+    null;
+
+  let firestoreCreated =
+    false;
 
   try {
-    /* -------------------------------------------------------
-       CREATE FIREBASE AUTH ACCOUNT
-    ------------------------------------------------------- */
-
     const credential =
       await createUserWithEmailAndPassword(
         secondaryAuth,
@@ -151,65 +247,58 @@ export async function createManagedUser(
     const uid =
       createdFirebaseUser.uid;
 
-    /* -------------------------------------------------------
-       BASE FIRESTORE PROFILE
-    ------------------------------------------------------- */
-
     const userDocument = {
       active: true,
-      createdAt: serverTimestamp(),
+
+      createdAt:
+        serverTimestamp(),
+
       email,
-      firstName: clean(
-        formData.firstName
-      ),
-      lastName: clean(
-        formData.lastName
-      ),
+
+      firstName:
+        clean(
+          formData.firstName
+        ),
+
+      lastName:
+        clean(
+          formData.lastName
+        ),
+
       role,
+
+      department,
     };
 
-    /* -------------------------------------------------------
-       STUDENT FIELDS
-    ------------------------------------------------------- */
+    if (
+      clean(
+        formData.phoneNum
+      )
+    ) {
+      userDocument.phoneNum =
+        clean(
+          formData.phoneNum
+        );
+    }
 
-    if (role === "student") {
+    if (
+      role === "student"
+    ) {
       userDocument.studentId =
-        clean(formData.studentId);
+        clean(
+          formData.studentId
+        );
 
       userDocument.course =
-        clean(formData.course);
-
-      userDocument.department =
-        clean(formData.department);
+        clean(
+          formData.course
+        );
 
       userDocument.intake =
-        clean(formData.intake);
-
-      if (clean(formData.phoneNum)) {
-        userDocument.phoneNum =
-          clean(formData.phoneNum);
-      }
+        clean(
+          formData.intake
+        );
     }
-
-    /* -------------------------------------------------------
-       TEACHER OPTIONAL FIELDS
-    ------------------------------------------------------- */
-
-    if (role === "teacher") {
-      if (clean(formData.department)) {
-        userDocument.department =
-          clean(formData.department);
-      }
-
-      if (clean(formData.phoneNum)) {
-        userDocument.phoneNum =
-          clean(formData.phoneNum);
-      }
-    }
-
-    /* -------------------------------------------------------
-       CREATE USERS/{UID}
-    ------------------------------------------------------- */
 
     await setDoc(
       doc(
@@ -220,25 +309,55 @@ export async function createManagedUser(
       userDocument
     );
 
-    firestoreCreated = true;
+    await setDoc(
+      doc(
+        db,
+        "authProfile",
+        uid
+      ),
+      {
+        userId: uid,
+
+        rfidStatus:
+          "pending",
+
+        faceStatus:
+          "pending",
+
+        fingerprintStatus:
+          "pending",
+
+        registrationStatus:
+          "pending",
+
+        createdAt:
+          serverTimestamp(),
+
+        updatedAt:
+          serverTimestamp(),
+      },
+      {
+        merge: true,
+      }
+    );
+
+    firestoreCreated =
+      true;
 
     return {
       uid,
       email,
       role,
+
       firstName:
         userDocument.firstName,
+
       lastName:
         userDocument.lastName,
+
+      department,
     };
   } catch (error) {
-    /*
-      If Authentication succeeded but Firestore failed,
-      remove the newly created Authentication account.
-
-      This prevents orphan Firebase Auth users.
-    */
-
     if (
       createdFirebaseUser &&
       !firestoreCreated
@@ -247,7 +366,9 @@ export async function createManagedUser(
         await deleteUser(
           createdFirebaseUser
         );
-      } catch (rollbackError) {
+      } catch (
+        rollbackError
+      ) {
         console.error(
           "Unable to rollback Firebase Auth user:",
           rollbackError
@@ -257,11 +378,6 @@ export async function createManagedUser(
 
     throw error;
   } finally {
-    /*
-      Always sign out SECONDARY Auth only.
-      Primary admin Auth remains logged in.
-    */
-
     try {
       await signOut(
         secondaryAuth
@@ -276,7 +392,80 @@ export async function createManagedUser(
 }
 
 /* =========================================================
-   ACTIVATE / DEACTIVATE USER
+   UPDATE SAFE USER PROFILE FIELDS
+========================================================= */
+
+export async function updateManagedUserProfile(
+  userId,
+  values
+) {
+  if (!userId) {
+    throw new Error(
+      "User ID is required."
+    );
+  }
+
+  const role =
+    clean(
+      values.role
+    ).toLowerCase();
+
+  const payload = {
+    firstName:
+      clean(
+        values.firstName
+      ),
+
+    lastName:
+      clean(
+        values.lastName
+      ),
+
+    department:
+      normalizeDepartment(
+        values.department
+      ),
+
+    phoneNum:
+      clean(
+        values.phoneNum
+      ),
+
+    updatedAt:
+      serverTimestamp(),
+  };
+
+  if (
+    role === "student"
+  ) {
+    payload.studentId =
+      clean(
+        values.studentId
+      );
+
+    payload.course =
+      clean(
+        values.course
+      );
+
+    payload.intake =
+      clean(
+        values.intake
+      );
+  }
+
+  await updateDoc(
+    doc(
+      db,
+      "users",
+      userId
+    ),
+    payload
+  );
+}
+
+/* =========================================================
+   ACTIVATE / DEACTIVATE
 ========================================================= */
 
 export async function updateManagedUserStatus(
@@ -296,7 +485,11 @@ export async function updateManagedUserStatus(
       userId
     ),
     {
-      active: Boolean(active),
+      active:
+        Boolean(active),
+
+      updatedAt:
+        serverTimestamp(),
     }
   );
 }

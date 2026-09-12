@@ -4,6 +4,10 @@ import {
   useState,
 } from "react";
 
+import {
+  sendPasswordResetEmail,
+} from "firebase/auth";
+
 import toast, {
   Toaster,
 } from "react-hot-toast";
@@ -24,10 +28,13 @@ import {
   KeyRound,
   LoaderCircle,
   Mail,
+  Pencil,
   Phone,
   Plus,
   Power,
   PowerOff,
+  Radio,
+  Save,
   ScanFace,
   Search,
   ShieldCheck,
@@ -39,15 +46,35 @@ import {
 } from "lucide-react";
 
 import {
+  auth,
+} from "../../firebase/firebase";
+
+import {
   createManagedUser,
+  subscribeToManagedAuthProfiles,
   subscribeToManagedUsers,
+  updateManagedUserProfile,
   updateManagedUserStatus,
 } from "../../services/userManagementService";
 
 import "./UserManagement.css";
 
+
 /* =========================================================
-   DEFAULT FORM
+   DEPARTMENTS
+========================================================= */
+
+const DEPARTMENT_OPTIONS = [
+  {
+    value: "CID",
+    label:
+      "Computer Information Department (CID)",
+  },
+];
+
+
+/* =========================================================
+   EMPTY FORM
 ========================================================= */
 
 const EMPTY_FORM = {
@@ -63,6 +90,7 @@ const EMPTY_FORM = {
   phoneNum: "",
 };
 
+
 /* =========================================================
    HELPERS
 ========================================================= */
@@ -76,8 +104,12 @@ function getFullName(user) {
     .join(" ")
     .trim();
 
-  return name || "Unnamed User";
+  return (
+    name ||
+    "Unnamed User"
+  );
 }
+
 
 function getInitials(user) {
   return getFullName(user)
@@ -90,10 +122,12 @@ function getInitials(user) {
     .toUpperCase();
 }
 
+
 function capitalize(value) {
-  const text = String(
-    value || ""
-  ).trim();
+  const text =
+    String(
+      value || ""
+    ).trim();
 
   if (!text) {
     return "Unknown";
@@ -105,6 +139,7 @@ function capitalize(value) {
   );
 }
 
+
 function formatDate(value) {
   if (!value) {
     return "Not available";
@@ -112,7 +147,8 @@ function formatDate(value) {
 
   try {
     const date =
-      typeof value?.toDate === "function"
+      typeof value?.toDate ===
+      "function"
         ? value.toDate()
         : new Date(value);
 
@@ -137,47 +173,37 @@ function formatDate(value) {
   }
 }
 
-function hasFaceBiometric(user) {
-  return Boolean(
-    user?.faceRegistered ||
-      user?.faceTemplate ||
-      user?.faceEncoding ||
-      user?.biometrics?.face ||
-      user?.biometric?.face
-  );
-}
-
-function hasFingerprintBiometric(
-  user
-) {
-  return Boolean(
-    user?.fingerprintRegistered ||
-      user?.fingerprintTemplate ||
-      user?.fingerprintEncoding ||
-      user?.biometrics?.fingerprint ||
-      user?.biometric?.fingerprint
-  );
-}
 
 function generateEmailAddress(
   firstName,
   lastName
 ) {
-  const first = String(
-    firstName || ""
-  )
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+  const first =
+    String(
+      firstName || ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]/g,
+        ""
+      );
 
-  const last = String(
-    lastName || ""
-  )
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+  const last =
+    String(
+      lastName || ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]/g,
+        ""
+      );
 
-  if (!first && !last) {
+  if (
+    !first &&
+    !last
+  ) {
     return "";
   }
 
@@ -190,6 +216,7 @@ function generateEmailAddress(
 
   return `${username}@biosync.net`;
 }
+
 
 function generateTemporaryPassword() {
   const uppercase =
@@ -210,9 +237,9 @@ function generateTemporaryPassword() {
     numbers +
     symbols;
 
-  const randomCharacter = (
+  function randomCharacter(
     characters
-  ) => {
+  ) {
     const values =
       new Uint32Array(1);
 
@@ -224,13 +251,21 @@ function generateTemporaryPassword() {
       values[0] %
         characters.length
     ];
-  };
+  }
 
   let password =
-    randomCharacter(uppercase) +
-    randomCharacter(lowercase) +
-    randomCharacter(numbers) +
-    randomCharacter(symbols);
+    randomCharacter(
+      uppercase
+    ) +
+    randomCharacter(
+      lowercase
+    ) +
+    randomCharacter(
+      numbers
+    ) +
+    randomCharacter(
+      symbols
+    );
 
   while (
     password.length < 12
@@ -241,19 +276,25 @@ function generateTemporaryPassword() {
 
   return password
     .split("")
-    .sort(() => Math.random() - 0.5)
+    .sort(
+      () =>
+        Math.random() -
+        0.5
+    )
     .join("");
 }
 
+
 function readableError(error) {
   const code =
-    error?.code || "";
+    error?.code ||
+    "";
 
   if (
     code ===
     "auth/email-already-in-use"
   ) {
-    return "This email is already registered in Firebase Authentication.";
+    return "This email is already registered.";
   }
 
   if (
@@ -272,9 +313,11 @@ function readableError(error) {
 
   if (
     code ===
-    "permission-denied"
+      "permission-denied" ||
+    code ===
+      "firestore/permission-denied"
   ) {
-    return "Firestore permission denied. Make sure your latest Firestore rules were published.";
+    return "Firestore permission denied.";
   }
 
   return (
@@ -283,8 +326,74 @@ function readableError(error) {
   );
 }
 
+
 /* =========================================================
-   USER MANAGEMENT
+   BIOMETRIC ENROLLMENT HELPERS
+========================================================= */
+
+function getEnrollmentStatus(
+  profile,
+  type
+) {
+  const value =
+    String(
+      profile?.[
+        `${type}Status`
+      ] ||
+        profile?.[
+          type
+        ]?.status ||
+        profile?.biometrics?.[
+          type
+        ]?.status ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
+
+  return [
+    "enrolled",
+    "registered",
+    "complete",
+    "completed",
+    "active",
+  ].includes(value);
+}
+
+
+function getEnrollmentProgress(
+  profile
+) {
+  const enrolled =
+    [
+      "rfid",
+      "face",
+      "fingerprint",
+    ].filter(
+      (type) =>
+        getEnrollmentStatus(
+          profile,
+          type
+        )
+    ).length;
+
+  return {
+    enrolled,
+
+    percentage:
+      Math.round(
+        (
+          enrolled /
+          3
+        ) *
+          100
+      ),
+  };
+}
+
+
+/* =========================================================
+   COMPONENT
 ========================================================= */
 
 function UserManagement() {
@@ -292,6 +401,11 @@ function UserManagement() {
     users,
     setUsers,
   ] = useState([]);
+
+  const [
+    authProfiles,
+    setAuthProfiles,
+  ] = useState({});
 
   const [
     loading,
@@ -317,6 +431,16 @@ function UserManagement() {
     statusFilter,
     setStatusFilter,
   ] = useState("all");
+
+  const [
+    enrollmentFilter,
+    setEnrollmentFilter,
+  ] = useState("all");
+
+  const [
+    sortBy,
+    setSortBy,
+  ] = useState("newest");
 
   const [
     createOpen,
@@ -355,6 +479,22 @@ function UserManagement() {
     setStatusChangingId,
   ] = useState("");
 
+  const [
+    editUser,
+    setEditUser,
+  ] = useState(null);
+
+  const [
+    editForm,
+    setEditForm,
+  ] = useState(null);
+
+  const [
+    editing,
+    setEditing,
+  ] = useState(false);
+
+
   /* =======================================================
      USERS LISTENER
   ======================================================= */
@@ -367,8 +507,12 @@ function UserManagement() {
           setLoading(false);
           setLoadError("");
         },
+
         (error) => {
-          console.error(error);
+          console.error(
+            "User subscription error:",
+            error
+          );
 
           setLoadError(
             "Unable to load users from Firestore."
@@ -382,21 +526,65 @@ function UserManagement() {
       unsubscribe();
   }, []);
 
+
   /* =======================================================
-     ESC CLOSE
+     AUTH PROFILE LISTENER
   ======================================================= */
 
   useEffect(() => {
-    function handleKeyDown(event) {
+    const unsubscribe =
+      subscribeToManagedAuthProfiles(
+        (profiles) => {
+          setAuthProfiles(
+            profiles
+          );
+        },
+
+        (error) => {
+          console.warn(
+            "Auth profile listener error:",
+            error
+          );
+
+          setAuthProfiles(
+            {}
+          );
+        }
+      );
+
+    return () =>
+      unsubscribe();
+  }, []);
+
+
+  /* =======================================================
+     ESC KEY
+  ======================================================= */
+
+  useEffect(() => {
+    function handleKeyDown(
+      event
+    ) {
       if (
-        event.key !== "Escape"
+        event.key !==
+        "Escape"
       ) {
         return;
       }
 
       setCreateOpen(false);
-      setSelectedUser(null);
-      setCreatedCredentials(null);
+
+      setSelectedUser(
+        null
+      );
+
+      setCreatedCredentials(
+        null
+      );
+
+      setEditUser(null);
+
+      setEditForm(null);
     }
 
     window.addEventListener(
@@ -411,37 +599,64 @@ function UserManagement() {
       );
   }, []);
 
+
   /* =======================================================
      SUMMARY
   ======================================================= */
 
-  const summary = useMemo(
-    () => ({
-      total: users.length,
-
-      students:
+  const summary =
+    useMemo(() => {
+      const pendingEnrollment =
         users.filter(
-          (item) =>
-            item.role === "student"
-        ).length,
+          (item) => {
+            if (
+              item.role ===
+              "admin"
+            ) {
+              return false;
+            }
 
-      teachers:
-        users.filter(
-          (item) =>
-            item.role === "teacher"
-        ).length,
+            const profile =
+              authProfiles[
+                item.id
+              ] || {};
 
-      inactive:
-        users.filter(
-          (item) =>
-            item.active === false
-        ).length,
-    }),
-    [users]
-  );
+            return (
+              getEnrollmentProgress(
+                profile
+              ).enrolled < 3
+            );
+          }
+        ).length;
+
+      return {
+        total:
+          users.length,
+
+        students:
+          users.filter(
+            (item) =>
+              item.role ===
+              "student"
+          ).length,
+
+        teachers:
+          users.filter(
+            (item) =>
+              item.role ===
+              "teacher"
+          ).length,
+
+        pendingEnrollment,
+      };
+    }, [
+      users,
+      authProfiles,
+    ]);
+
 
   /* =======================================================
-     FILTER USERS
+     FILTERED USERS
   ======================================================= */
 
   const filteredUsers =
@@ -451,68 +666,142 @@ function UserManagement() {
           .trim()
           .toLowerCase();
 
-      return users.filter(
-        (item) => {
-          const fullName =
-            getFullName(item)
-              .toLowerCase();
+      let result =
+        users.filter(
+          (item) => {
+            const profile =
+              authProfiles[
+                item.id
+              ] || {};
 
-          const email =
-            String(
-              item.email || ""
-            ).toLowerCase();
+            const progress =
+              getEnrollmentProgress(
+                profile
+              );
 
-          const studentId =
-            String(
-              item.studentId ||
-                ""
-            ).toLowerCase();
+            const searchable =
+              [
+                getFullName(
+                  item
+                ),
+                item.email,
+                item.studentId,
+                item.department,
+                item.course,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
 
-          const matchesSearch =
-            !searchText ||
-            fullName.includes(
-              searchText
-            ) ||
-            email.includes(
-              searchText
-            ) ||
-            studentId.includes(
-              searchText
+            const matchesSearch =
+              !searchText ||
+              searchable.includes(
+                searchText
+              );
+
+            const matchesRole =
+              roleFilter ===
+                "all" ||
+              item.role ===
+                roleFilter;
+
+            const matchesStatus =
+              statusFilter ===
+                "all" ||
+              (
+                statusFilter ===
+                  "active" &&
+                item.active !==
+                  false
+              ) ||
+              (
+                statusFilter ===
+                  "inactive" &&
+                item.active ===
+                  false
+              );
+
+            const matchesEnrollment =
+              enrollmentFilter ===
+                "all" ||
+              (
+                enrollmentFilter ===
+                  "complete" &&
+                progress.enrolled ===
+                  3
+              ) ||
+              (
+                enrollmentFilter ===
+                  "pending" &&
+                progress.enrolled <
+                  3
+              );
+
+            return (
+              matchesSearch &&
+              matchesRole &&
+              matchesStatus &&
+              matchesEnrollment
             );
+          }
+        );
 
-          const matchesRole =
-            roleFilter === "all" ||
-            item.role ===
-              roleFilter;
+      result = [
+        ...result,
+      ];
 
-          const matchesStatus =
-            statusFilter ===
-              "all" ||
-            (statusFilter ===
-              "active" &&
-              item.active !==
-                false) ||
-            (statusFilter ===
-              "inactive" &&
-              item.active ===
-                false);
+      if (
+        sortBy === "name"
+      ) {
+        result.sort(
+          (a, b) =>
+            getFullName(
+              a
+            ).localeCompare(
+              getFullName(
+                b
+              )
+            )
+        );
+      }
 
-          return (
-            matchesSearch &&
-            matchesRole &&
-            matchesStatus
-          );
-        }
-      );
+      if (
+        sortBy ===
+        "name-desc"
+      ) {
+        result.sort(
+          (a, b) =>
+            getFullName(
+              b
+            ).localeCompare(
+              getFullName(
+                a
+              )
+            )
+        );
+      }
+
+      if (
+        sortBy ===
+        "oldest"
+      ) {
+        result.reverse();
+      }
+
+      return result;
     }, [
       users,
+      authProfiles,
       search,
       roleFilter,
       statusFilter,
+      enrollmentFilter,
+      sortBy,
     ]);
 
+
   /* =======================================================
-     FORM
+     CREATE FORM
   ======================================================= */
 
   function handleFieldChange(
@@ -521,36 +810,50 @@ function UserManagement() {
     const {
       name,
       value,
-    } = event.target;
+    } =
+      event.target;
 
     setForm(
       (current) => ({
         ...current,
-        [name]: value,
+
+        [name]:
+          value,
       })
     );
   }
 
-  function changeRole(role) {
+
+  function changeRole(
+    role
+  ) {
     setForm(
       (current) => ({
         ...EMPTY_FORM,
+
         firstName:
           current.firstName,
+
         lastName:
           current.lastName,
+
         email:
           current.email,
+
         password:
           current.password,
+
         department:
           current.department,
+
         phoneNum:
           current.phoneNum,
+
         role,
       })
     );
   }
+
 
   function handleGenerateEmail() {
     const generated =
@@ -561,7 +864,7 @@ function UserManagement() {
 
     if (!generated) {
       toast.error(
-        "Enter the first name before generating an email."
+        "Enter a first name before generating an email."
       );
 
       return;
@@ -570,10 +873,13 @@ function UserManagement() {
     setForm(
       (current) => ({
         ...current,
-        email: generated,
+
+        email:
+          generated,
       })
     );
   }
+
 
   function handleGeneratePassword() {
     const generated =
@@ -582,16 +888,21 @@ function UserManagement() {
     setForm(
       (current) => ({
         ...current,
-        password: generated,
+
+        password:
+          generated,
       })
     );
 
-    setShowPassword(true);
+    setShowPassword(
+      true
+    );
 
     toast.success(
       "Temporary password generated"
     );
   }
+
 
   function validateForm() {
     if (
@@ -607,13 +918,21 @@ function UserManagement() {
     }
 
     if (
-      form.password.length < 8
+      form.password.length <
+      8
     ) {
       return "Temporary password must contain at least 8 characters.";
     }
 
     if (
-      form.role === "student"
+      !form.department.trim()
+    ) {
+      return "Department is required.";
+    }
+
+    if (
+      form.role ===
+      "student"
     ) {
       if (
         !form.studentId.trim()
@@ -621,23 +940,22 @@ function UserManagement() {
         return "Student ID is required.";
       }
 
-      if (!form.course.trim()) {
+      if (
+        !form.course.trim()
+      ) {
         return "Course is required.";
       }
 
       if (
-        !form.department.trim()
+        !form.intake.trim()
       ) {
-        return "Department is required.";
-      }
-
-      if (!form.intake.trim()) {
         return "Student intake is required.";
       }
     }
 
     return "";
   }
+
 
   async function handleCreateUser(
     event
@@ -647,7 +965,9 @@ function UserManagement() {
     const validationError =
       validateForm();
 
-    if (validationError) {
+    if (
+      validationError
+    ) {
       toast.error(
         validationError
       );
@@ -665,8 +985,10 @@ function UserManagement() {
 
       setCreatedCredentials({
         ...result,
+
         password:
           form.password,
+
         fullName:
           [
             form.firstName,
@@ -682,7 +1004,9 @@ function UserManagement() {
         EMPTY_FORM
       );
 
-      setShowPassword(false);
+      setShowPassword(
+        false
+      );
 
       toast.success(
         "User account created successfully"
@@ -694,25 +1018,29 @@ function UserManagement() {
       );
 
       toast.error(
-        readableError(error)
+        readableError(
+          error
+        )
       );
     } finally {
       setCreating(false);
     }
   }
 
+
   /* =======================================================
-     STATUS
+     ACTIVATE / DEACTIVATE
   ======================================================= */
 
   async function handleStatusChange(
     targetUser
   ) {
     if (
-      targetUser.role === "admin"
+      targetUser.role ===
+      "admin"
     ) {
       toast.error(
-        "Administrator accounts are protected from User Management."
+        "Administrator accounts are protected."
       );
 
       return;
@@ -757,18 +1085,181 @@ function UserManagement() {
           : "User deactivated"
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        error
+      );
 
       toast.error(
-        readableError(error)
+        readableError(
+          error
+        )
       );
     } finally {
-      setStatusChangingId("");
+      setStatusChangingId(
+        ""
+      );
     }
   }
 
+
   /* =======================================================
-     COPY
+     EDIT USER
+  ======================================================= */
+
+  function openEditUser(
+    targetUser
+  ) {
+    setEditUser(
+      targetUser
+    );
+
+    setEditForm({
+      role:
+        targetUser.role,
+
+      firstName:
+        targetUser.firstName ||
+        "",
+
+      lastName:
+        targetUser.lastName ||
+        "",
+
+      studentId:
+        targetUser.studentId ||
+        "",
+
+      course:
+        targetUser.course ||
+        "",
+
+      intake:
+        targetUser.intake ||
+        "",
+
+      department:
+        targetUser.department ||
+        "",
+
+      phoneNum:
+        targetUser.phoneNum ||
+        "",
+    });
+  }
+
+
+  async function saveEditedUser(
+    event
+  ) {
+    event.preventDefault();
+
+    if (
+      !editUser ||
+      !editForm
+    ) {
+      return;
+    }
+
+    if (
+      !editForm.firstName.trim()
+    ) {
+      toast.error(
+        "First name is required"
+      );
+
+      return;
+    }
+
+    if (
+      !editForm.department.trim()
+    ) {
+      toast.error(
+        "Department is required"
+      );
+
+      return;
+    }
+
+    setEditing(true);
+
+    try {
+      await updateManagedUserProfile(
+        editUser.id,
+        editForm
+      );
+
+      toast.success(
+        "User profile updated"
+      );
+
+      setEditUser(null);
+
+      setEditForm(null);
+    } catch (error) {
+      console.error(
+        error
+      );
+
+      toast.error(
+        readableError(
+          error
+        )
+      );
+    } finally {
+      setEditing(false);
+    }
+  }
+
+
+  /* =======================================================
+     PASSWORD RESET
+  ======================================================= */
+
+  async function resetUserPassword(
+    targetUser
+  ) {
+    if (
+      !targetUser?.email
+    ) {
+      toast.error(
+        "This user has no email address"
+      );
+
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Send a password reset email to ${targetUser.email}?`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(
+        auth,
+        targetUser.email
+      );
+
+      toast.success(
+        `Password reset email sent to ${targetUser.email}`
+      );
+    } catch (error) {
+      console.error(
+        error
+      );
+
+      toast.error(
+        "Unable to send password reset email"
+      );
+    }
+  }
+
+
+  /* =======================================================
+     COPY TEXT
   ======================================================= */
 
   async function copyText(
@@ -790,6 +1281,7 @@ function UserManagement() {
     }
   }
 
+
   /* =======================================================
      UI
   ======================================================= */
@@ -798,12 +1290,15 @@ function UserManagement() {
     <div className="um-page">
       <Toaster position="top-right" />
 
-      {/* PAGE HEADER */}
+      {/* HEADER */}
 
       <header className="um-page-header">
         <div>
           <div className="um-eyebrow">
-            <UsersRound size={15} />
+            <UsersRound
+              size={15}
+            />
+
             Administration
           </div>
 
@@ -812,10 +1307,10 @@ function UserManagement() {
           </h1>
 
           <p>
-            Create and manage
-            BioSync student and
-            teacher accounts from
-            one secure workspace.
+            Create, monitor and manage
+            BioSync student and teacher
+            identities, account access
+            and biometric enrollment.
           </p>
         </div>
 
@@ -823,20 +1318,28 @@ function UserManagement() {
           type="button"
           className="um-create-button"
           onClick={() =>
-            setCreateOpen(true)
+            setCreateOpen(
+              true
+            )
           }
         >
-          <UserPlus size={17} />
+          <UserPlus
+            size={17}
+          />
+
           Create User
         </button>
       </header>
+
 
       {/* SUMMARY */}
 
       <section className="um-summary-grid">
         <div className="um-summary-card">
           <div className="um-summary-icon blue">
-            <UsersRound size={21} />
+            <UsersRound
+              size={21}
+            />
           </div>
 
           <div>
@@ -852,7 +1355,9 @@ function UserManagement() {
 
         <div className="um-summary-card">
           <div className="um-summary-icon cyan">
-            <GraduationCap size={21} />
+            <GraduationCap
+              size={21}
+            />
           </div>
 
           <div>
@@ -868,7 +1373,9 @@ function UserManagement() {
 
         <div className="um-summary-card">
           <div className="um-summary-icon purple">
-            <BriefcaseBusiness size={21} />
+            <BriefcaseBusiness
+              size={21}
+            />
           </div>
 
           <div>
@@ -884,44 +1391,57 @@ function UserManagement() {
 
         <div className="um-summary-card">
           <div className="um-summary-icon red">
-            <CircleOff size={21} />
+            <Fingerprint
+              size={21}
+            />
           </div>
 
           <div>
             <span>
-              Inactive
+              Pending Enrollment
             </span>
 
             <strong>
-              {summary.inactive}
+              {
+                summary.pendingEnrollment
+              }
             </strong>
           </div>
         </div>
       </section>
 
-      {/* USERS CARD */}
+
+      {/* USERS */}
 
       <section className="um-users-card">
         <div className="um-toolbar">
           <div className="um-search">
-            <Search size={17} />
+            <Search
+              size={17}
+            />
 
             <input
               type="text"
               value={search}
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 setSearch(
                   event.target.value
                 )
               }
-              placeholder="Search name, email or student ID..."
+              placeholder="Search name, email, student ID, course or department..."
             />
           </div>
 
           <div className="um-filters">
             <select
-              value={roleFilter}
-              onChange={(event) =>
+              value={
+                roleFilter
+              }
+              onChange={(
+                event
+              ) =>
                 setRoleFilter(
                   event.target.value
                 )
@@ -945,8 +1465,12 @@ function UserManagement() {
             </select>
 
             <select
-              value={statusFilter}
-              onChange={(event) =>
+              value={
+                statusFilter
+              }
+              onChange={(
+                event
+              ) =>
                 setStatusFilter(
                   event.target.value
                 )
@@ -964,6 +1488,58 @@ function UserManagement() {
                 Inactive
               </option>
             </select>
+
+            <select
+              value={
+                enrollmentFilter
+              }
+              onChange={(
+                event
+              ) =>
+                setEnrollmentFilter(
+                  event.target.value
+                )
+              }
+            >
+              <option value="all">
+                All Enrollment
+              </option>
+
+              <option value="complete">
+                Fully Enrolled
+              </option>
+
+              <option value="pending">
+                Pending Enrollment
+              </option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(
+                event
+              ) =>
+                setSortBy(
+                  event.target.value
+                )
+              }
+            >
+              <option value="newest">
+                Newest
+              </option>
+
+              <option value="oldest">
+                Oldest
+              </option>
+
+              <option value="name">
+                Name A-Z
+              </option>
+
+              <option value="name-desc">
+                Name Z-A
+              </option>
+            </select>
           </div>
         </div>
 
@@ -978,10 +1554,11 @@ function UserManagement() {
           </span>
 
           <small>
-            Firebase Authentication
-            + Firestore profiles
+            Firebase Authentication ·
+            Firestore · BioSync Enrollment
           </small>
         </div>
+
 
         {loading ? (
           <div className="um-state">
@@ -996,7 +1573,9 @@ function UserManagement() {
           </div>
         ) : loadError ? (
           <div className="um-state error">
-            <CircleOff size={28} />
+            <CircleOff
+              size={28}
+            />
 
             <strong>
               {loadError}
@@ -1007,13 +1586,37 @@ function UserManagement() {
             <table className="um-table">
               <thead>
                 <tr>
-                  <th>User</th>
-                  <th>ID</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>Biometrics</th>
-                  <th>Actions</th>
+                  <th>
+                    User
+                  </th>
+
+                  <th>
+                    ID
+                  </th>
+
+                  <th>
+                    Department
+                  </th>
+
+                  <th>
+                    Role
+                  </th>
+
+                  <th>
+                    Status
+                  </th>
+
+                  <th>
+                    Created
+                  </th>
+
+                  <th>
+                    Enrollment
+                  </th>
+
+                  <th>
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -1024,18 +1627,22 @@ function UserManagement() {
                       item.active !==
                       false;
 
-                    const face =
-                      hasFaceBiometric(
-                        item
-                      );
+                    const profile =
+                      authProfiles[
+                        item.id
+                      ] || {};
 
-                    const fingerprint =
-                      hasFingerprintBiometric(
-                        item
+                    const progress =
+                      getEnrollmentProgress(
+                        profile
                       );
 
                     return (
-                      <tr key={item.id}>
+                      <tr
+                        key={
+                          item.id
+                        }
+                      >
                         <td>
                           <div className="um-user-cell">
                             <div className="um-avatar">
@@ -1067,8 +1674,18 @@ function UserManagement() {
                         </td>
 
                         <td>
+                          <strong>
+                            {item.department ||
+                              "—"}
+                          </strong>
+                        </td>
+
+                        <td>
                           <span
-                            className={`um-role-badge ${item.role || "unknown"}`}
+                            className={`um-role-badge ${
+                              item.role ||
+                              "unknown"
+                            }`}
                           >
                             {capitalize(
                               item.role
@@ -1099,41 +1716,85 @@ function UserManagement() {
                         </td>
 
                         <td>
-                          <div className="um-biometric-mini">
-                            <span
-                              className={
-                                face
-                                  ? "ready"
-                                  : ""
-                              }
-                              title={
-                                face
-                                  ? "Face registered"
-                                  : "Face not detected"
-                              }
-                            >
-                              <ScanFace
-                                size={15}
+                          {item.role ===
+                          "admin" ? (
+                            <span className="um-protected">
+                              <ShieldCheck
+                                size={13}
                               />
-                            </span>
 
-                            <span
-                              className={
-                                fingerprint
-                                  ? "ready"
-                                  : ""
-                              }
-                              title={
-                                fingerprint
-                                  ? "Fingerprint registered"
-                                  : "Fingerprint not detected"
-                              }
-                            >
-                              <Fingerprint
-                                size={15}
-                              />
+                              Protected
                             </span>
-                          </div>
+                          ) : (
+                            <div className="um-enrollment-cell">
+                              <div className="um-enrollment-icons">
+                                <span
+                                  className={
+                                    getEnrollmentStatus(
+                                      profile,
+                                      "rfid"
+                                    )
+                                      ? "ready"
+                                      : ""
+                                  }
+                                  title="RFID"
+                                >
+                                  <Radio
+                                    size={13}
+                                  />
+                                </span>
+
+                                <span
+                                  className={
+                                    getEnrollmentStatus(
+                                      profile,
+                                      "face"
+                                    )
+                                      ? "ready"
+                                      : ""
+                                  }
+                                  title="Face"
+                                >
+                                  <ScanFace
+                                    size={13}
+                                  />
+                                </span>
+
+                                <span
+                                  className={
+                                    getEnrollmentStatus(
+                                      profile,
+                                      "fingerprint"
+                                    )
+                                      ? "ready"
+                                      : ""
+                                  }
+                                  title="Fingerprint"
+                                >
+                                  <Fingerprint
+                                    size={13}
+                                  />
+                                </span>
+                              </div>
+
+                              <div className="um-progress">
+                                <div>
+                                  <span
+                                    style={{
+                                      width: `${progress.percentage}%`,
+                                    }}
+                                  />
+                                </div>
+
+                                <small>
+                                  {
+                                    progress.percentage
+                                  }
+                                  %
+                                </small>
+                              </div>
+                            </div>
+                          )}
                         </td>
 
                         <td>
@@ -1153,6 +1814,25 @@ function UserManagement() {
 
                               View
                             </button>
+
+                            {item.role !==
+                              "admin" && (
+                              <button
+                                type="button"
+                                className="um-action-button"
+                                onClick={() =>
+                                  openEditUser(
+                                    item
+                                  )
+                                }
+                              >
+                                <Pencil
+                                  size={14}
+                                />
+
+                                Edit
+                              </button>
+                            )}
 
                             {item.role ===
                             "admin" ? (
@@ -1213,7 +1893,7 @@ function UserManagement() {
                   0 && (
                   <tr>
                     <td
-                      colSpan="7"
+                      colSpan="8"
                       className="um-empty-cell"
                     >
                       <UsersRound
@@ -1237,9 +1917,8 @@ function UserManagement() {
         )}
       </section>
 
-      {/* ===================================================
-          CREATE USER MODAL
-      =================================================== */}
+
+      {/* CREATE USER MODAL */}
 
       {createOpen && (
         <div className="um-modal-backdrop">
@@ -1258,9 +1937,8 @@ function UserManagement() {
                   </h2>
 
                   <p>
-                    Create a new
-                    Student or Teacher
-                    account.
+                    Create a new Student or
+                    Teacher account.
                   </p>
                 </div>
               </div>
@@ -1274,9 +1952,12 @@ function UserManagement() {
                   )
                 }
               >
-                <X size={18} />
+                <X
+                  size={18}
+                />
               </button>
             </div>
+
 
             <form
               onSubmit={
@@ -1304,9 +1985,9 @@ function UserManagement() {
 
                   <span>
                     Student
+
                     <small>
-                      Attendance
-                      participant
+                      Attendance participant
                     </small>
                   </span>
                 </button>
@@ -1331,12 +2012,14 @@ function UserManagement() {
 
                   <span>
                     Teacher
+
                     <small>
                       Teaching staff
                     </small>
                   </span>
                 </button>
               </div>
+
 
               <div className="um-form-grid">
                 <label className="um-field">
@@ -1362,6 +2045,7 @@ function UserManagement() {
                   </div>
                 </label>
 
+
                 <label className="um-field">
                   <span>
                     Last Name
@@ -1380,10 +2064,11 @@ function UserManagement() {
                       onChange={
                         handleFieldChange
                       }
-                      placeholder="e.g. Iskandar"
+                      placeholder="e.g. Ali"
                     />
                   </div>
                 </label>
+
 
                 <label className="um-field um-span-2">
                   <span>
@@ -1405,7 +2090,7 @@ function UserManagement() {
                         onChange={
                           handleFieldChange
                         }
-                        placeholder="student@biosync.net"
+                        placeholder="user@biosync.net"
                       />
                     </div>
 
@@ -1423,6 +2108,7 @@ function UserManagement() {
                     </button>
                   </div>
                 </label>
+
 
                 <label className="um-field um-span-2">
                   <span>
@@ -1488,13 +2174,12 @@ function UserManagement() {
                   </div>
 
                   <small className="um-field-help">
-                    Password is used
-                    only for Firebase
-                    Authentication and
-                    is not stored in
-                    Firestore.
+                    Password is stored only
+                    in Firebase
+                    Authentication.
                   </small>
                 </label>
+
 
                 {form.role ===
                   "student" && (
@@ -1570,13 +2255,10 @@ function UserManagement() {
                   </>
                 )}
 
+
                 <label className="um-field">
                   <span>
-                    Department
-                    {form.role ===
-                    "student"
-                      ? " *"
-                      : ""}
+                    Department *
                   </span>
 
                   <div className="um-input">
@@ -1584,7 +2266,7 @@ function UserManagement() {
                       size={16}
                     />
 
-                    <input
+                    <select
                       name="department"
                       value={
                         form.department
@@ -1592,10 +2274,33 @@ function UserManagement() {
                       onChange={
                         handleFieldChange
                       }
-                      placeholder="Computer Information"
-                    />
+                    >
+                      <option value="">
+                        Select department
+                      </option>
+
+                      {DEPARTMENT_OPTIONS.map(
+                        (
+                          department
+                        ) => (
+                          <option
+                            key={
+                              department.value
+                            }
+                            value={
+                              department.value
+                            }
+                          >
+                            {
+                              department.label
+                            }
+                          </option>
+                        )
+                      )}
+                    </select>
                   </div>
                 </label>
+
 
                 <label className="um-field">
                   <span>
@@ -1621,19 +2326,21 @@ function UserManagement() {
                 </label>
               </div>
 
+
               <div className="um-security-note">
                 <ShieldCheck
                   size={17}
                 />
 
                 <p>
-                  Only Student and
-                  Teacher accounts can
-                  be created here.
-                  Administrator account
-                  creation is blocked.
+                  Students and teachers must
+                  belong to a department.
+                  Teachers can only access
+                  students in the same
+                  department.
                 </p>
               </div>
+
 
               <div className="um-modal-actions">
                 <button
@@ -1683,15 +2390,16 @@ function UserManagement() {
         </div>
       )}
 
-      {/* ===================================================
-          CREATED CREDENTIALS
-      =================================================== */}
+
+      {/* CREATED ACCOUNT */}
 
       {createdCredentials && (
         <div className="um-modal-backdrop">
           <div className="um-modal um-success-modal">
             <div className="um-success-icon">
-              <Check size={28} />
+              <Check
+                size={28}
+              />
             </div>
 
             <h2>
@@ -1703,8 +2411,7 @@ function UserManagement() {
               {capitalize(
                 createdCredentials.role
               )}{" "}
-              account is ready to log
-              in to BioSync.
+              account is ready.
             </p>
 
             <div className="um-credential-box">
@@ -1716,6 +2423,17 @@ function UserManagement() {
                 {
                   createdCredentials.fullName
                 }
+              </strong>
+            </div>
+
+            <div className="um-credential-box">
+              <span>
+                Department
+              </span>
+
+              <strong>
+                {createdCredentials.department ||
+                  "Not available"}
               </strong>
             </div>
 
@@ -1775,20 +2493,6 @@ function UserManagement() {
               </div>
             </div>
 
-            <div className="um-warning-note">
-              <KeyRound
-                size={16}
-              />
-
-              <span>
-                Save or share the
-                temporary password now.
-                BioSync does not store
-                this password in
-                Firestore.
-              </span>
-            </div>
-
             <button
               type="button"
               className="um-button primary full"
@@ -1804,9 +2508,8 @@ function UserManagement() {
         </div>
       )}
 
-      {/* ===================================================
-          USER DETAILS
-      =================================================== */}
+
+      {/* USER DETAILS */}
 
       {selectedUser && (
         <div className="um-modal-backdrop">
@@ -1825,8 +2528,7 @@ function UserManagement() {
                   </h2>
 
                   <p>
-                    BioSync account
-                    information
+                    BioSync account information
                   </p>
                 </div>
               </div>
@@ -1840,9 +2542,12 @@ function UserManagement() {
                   )
                 }
               >
-                <X size={18} />
+                <X
+                  size={18}
+                />
               </button>
             </div>
+
 
             <div className="um-detail-profile">
               <div className="um-detail-avatar">
@@ -1859,7 +2564,9 @@ function UserManagement() {
                 </h3>
 
                 <p>
-                  {selectedUser.email}
+                  {
+                    selectedUser.email
+                  }
                 </p>
 
                 <div className="um-detail-badges">
@@ -1889,6 +2596,7 @@ function UserManagement() {
                 </div>
               </div>
             </div>
+
 
             <div className="um-detail-grid">
               <div>
@@ -1983,65 +2691,136 @@ function UserManagement() {
               </div>
             </div>
 
-            <div className="um-biometric-section">
-              <h4>
-                Biometric Enrollment
-              </h4>
 
-              <div>
-                <div>
-                  <ScanFace
-                    size={20}
-                  />
+            {selectedUser.role !==
+              "admin" && (
+              <div className="um-biometric-section">
+                <h4>
+                  Biometric Enrollment
+                </h4>
 
-                  <span>
-                    Face Recognition
-                  </span>
+                {(() => {
+                  const profile =
+                    authProfiles[
+                      selectedUser.id
+                    ] || {};
 
-                  <strong
-                    className={
-                      hasFaceBiometric(
-                        selectedUser
-                      )
-                        ? "ready"
-                        : ""
-                    }
-                  >
-                    {hasFaceBiometric(
-                      selectedUser
-                    )
-                      ? "Registered"
-                      : "Not configured"}
-                  </strong>
-                </div>
+                  const progress =
+                    getEnrollmentProgress(
+                      profile
+                    );
 
-                <div>
-                  <Fingerprint
-                    size={20}
-                  />
+                  return (
+                    <>
+                      <div>
+                        <div>
+                          <Radio
+                            size={20}
+                          />
 
-                  <span>
-                    Fingerprint
-                  </span>
+                          <span>
+                            RFID
+                          </span>
 
-                  <strong
-                    className={
-                      hasFingerprintBiometric(
-                        selectedUser
-                      )
-                        ? "ready"
-                        : ""
-                    }
-                  >
-                    {hasFingerprintBiometric(
-                      selectedUser
-                    )
-                      ? "Registered"
-                      : "Not configured"}
-                  </strong>
-                </div>
+                          <strong
+                            className={
+                              getEnrollmentStatus(
+                                profile,
+                                "rfid"
+                              )
+                                ? "ready"
+                                : ""
+                            }
+                          >
+                            {getEnrollmentStatus(
+                              profile,
+                              "rfid"
+                            )
+                              ? "Enrolled"
+                              : "Pending"}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <ScanFace
+                            size={20}
+                          />
+
+                          <span>
+                            Face Recognition
+                          </span>
+
+                          <strong
+                            className={
+                              getEnrollmentStatus(
+                                profile,
+                                "face"
+                              )
+                                ? "ready"
+                                : ""
+                            }
+                          >
+                            {getEnrollmentStatus(
+                              profile,
+                              "face"
+                            )
+                              ? "Enrolled"
+                              : "Pending"}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <Fingerprint
+                            size={20}
+                          />
+
+                          <span>
+                            Fingerprint
+                          </span>
+
+                          <strong
+                            className={
+                              getEnrollmentStatus(
+                                profile,
+                                "fingerprint"
+                              )
+                                ? "ready"
+                                : ""
+                            }
+                          >
+                            {getEnrollmentStatus(
+                              profile,
+                              "fingerprint"
+                            )
+                              ? "Enrolled"
+                              : "Pending"}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="um-progress um-detail-progress">
+                        <div>
+                          <span
+                            style={{
+                              width: `${progress.percentage}%`,
+                            }}
+                          />
+                        </div>
+
+                        <small>
+                          Overall enrollment:{" "}
+                          {
+                            progress.percentage
+                          }
+                          %
+                        </small>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
-            </div>
+            )}
+
 
             <div className="um-modal-actions">
               <button
@@ -2058,43 +2837,452 @@ function UserManagement() {
 
               {selectedUser.role !==
                 "admin" && (
-                <button
-                  type="button"
-                  className={`um-button ${
-                    selectedUser.active !==
+                <>
+                  <button
+                    type="button"
+                    className="um-button secondary"
+                    onClick={() =>
+                      resetUserPassword(
+                        selectedUser
+                      )
+                    }
+                  >
+                    <KeyRound
+                      size={15}
+                    />
+
+                    Reset Password
+                  </button>
+
+                  <button
+                    type="button"
+                    className="um-button primary"
+                    onClick={() => {
+                      openEditUser(
+                        selectedUser
+                      );
+
+                      setSelectedUser(
+                        null
+                      );
+                    }}
+                  >
+                    <Pencil
+                      size={15}
+                    />
+
+                    Edit User
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`um-button ${
+                      selectedUser.active !==
+                      false
+                        ? "danger"
+                        : "success"
+                    }`}
+                    onClick={() => {
+                      handleStatusChange(
+                        selectedUser
+                      );
+
+                      setSelectedUser(
+                        null
+                      );
+                    }}
+                  >
+                    {selectedUser.active !==
+                    false ? (
+                      <PowerOff
+                        size={15}
+                      />
+                    ) : (
+                      <Power
+                        size={15}
+                      />
+                    )}
+
+                    {selectedUser.active !==
                     false
-                      ? "danger"
-                      : "success"
-                  }`}
-                  onClick={() => {
-                    handleStatusChange(
-                      selectedUser
-                    );
-
-                    setSelectedUser(
-                      null
-                    );
-                  }}
-                >
-                  {selectedUser.active !==
-                  false ? (
-                    <PowerOff
-                      size={15}
-                    />
-                  ) : (
-                    <Power
-                      size={15}
-                    />
-                  )}
-
-                  {selectedUser.active !==
-                  false
-                    ? "Deactivate User"
-                    : "Activate User"}
-                </button>
+                      ? "Deactivate"
+                      : "Activate"}
+                  </button>
+                </>
               )}
             </div>
           </div>
+        </div>
+      )}
+
+
+      {/* EDIT USER */}
+
+      {editUser &&
+        editForm && (
+        <div className="um-modal-backdrop">
+          <form
+            className="um-modal um-edit-modal"
+            onSubmit={
+              saveEditedUser
+            }
+          >
+            <div className="um-modal-header">
+              <div>
+                <div className="um-modal-icon">
+                  <Pencil
+                    size={18}
+                  />
+                </div>
+
+                <div>
+                  <h2>
+                    Edit User
+                  </h2>
+
+                  <p>
+                    Update safe BioSync profile information.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="um-close-button"
+                onClick={() => {
+                  setEditUser(
+                    null
+                  );
+
+                  setEditForm(
+                    null
+                  );
+                }}
+              >
+                <X
+                  size={18}
+                />
+              </button>
+            </div>
+
+
+            <div className="um-form-grid">
+              <label className="um-field">
+                <span>
+                  First Name
+                </span>
+
+                <div className="um-input">
+                  <UserRound
+                    size={15}
+                  />
+
+                  <input
+                    value={
+                      editForm.firstName
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setEditForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+
+                          firstName:
+                            event.target.value,
+                        })
+                      )
+                    }
+                  />
+                </div>
+              </label>
+
+
+              <label className="um-field">
+                <span>
+                  Last Name
+                </span>
+
+                <div className="um-input">
+                  <UserRound
+                    size={15}
+                  />
+
+                  <input
+                    value={
+                      editForm.lastName
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setEditForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+
+                          lastName:
+                            event.target.value,
+                        })
+                      )
+                    }
+                  />
+                </div>
+              </label>
+
+
+              {editForm.role ===
+                "student" && (
+                <>
+                  <label className="um-field">
+                    <span>
+                      Student ID
+                    </span>
+
+                    <div className="um-input">
+                      <Hash
+                        size={15}
+                      />
+
+                      <input
+                        value={
+                          editForm.studentId
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setEditForm(
+                            (
+                              current
+                            ) => ({
+                              ...current,
+
+                              studentId:
+                                event.target.value,
+                            })
+                          )
+                        }
+                      />
+                    </div>
+                  </label>
+
+                  <label className="um-field">
+                    <span>
+                      Intake
+                    </span>
+
+                    <div className="um-input">
+                      <CalendarDays
+                        size={15}
+                      />
+
+                      <input
+                        value={
+                          editForm.intake
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setEditForm(
+                            (
+                              current
+                            ) => ({
+                              ...current,
+
+                              intake:
+                                event.target.value,
+                            })
+                          )
+                        }
+                      />
+                    </div>
+                  </label>
+
+                  <label className="um-field um-span-2">
+                    <span>
+                      Course
+                    </span>
+
+                    <div className="um-input">
+                      <BookOpen
+                        size={15}
+                      />
+
+                      <input
+                        value={
+                          editForm.course
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setEditForm(
+                            (
+                              current
+                            ) => ({
+                              ...current,
+
+                              course:
+                                event.target.value,
+                            })
+                          )
+                        }
+                      />
+                    </div>
+                  </label>
+                </>
+              )}
+
+
+              <label className="um-field">
+                <span>
+                  Department
+                </span>
+
+                <div className="um-input">
+                  <Building2
+                    size={15}
+                  />
+
+                  <select
+                    value={
+                      editForm.department
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setEditForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+
+                          department:
+                            event.target.value,
+                        })
+                      )
+                    }
+                  >
+                    <option value="">
+                      Select department
+                    </option>
+
+                    {DEPARTMENT_OPTIONS.map(
+                      (
+                        department
+                      ) => (
+                        <option
+                          key={
+                            department.value
+                          }
+                          value={
+                            department.value
+                          }
+                        >
+                          {
+                            department.label
+                          }
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+              </label>
+
+
+              <label className="um-field">
+                <span>
+                  Phone Number
+                </span>
+
+                <div className="um-input">
+                  <Phone
+                    size={15}
+                  />
+
+                  <input
+                    value={
+                      editForm.phoneNum
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setEditForm(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+
+                          phoneNum:
+                            event.target.value,
+                        })
+                      )
+                    }
+                  />
+                </div>
+              </label>
+            </div>
+
+
+            <div className="um-security-note">
+              <ShieldCheck
+                size={16}
+              />
+
+              <p>
+                Firebase UID, login email,
+                role and biometric templates
+                cannot be changed here.
+              </p>
+            </div>
+
+
+            <div className="um-modal-actions">
+              <button
+                type="button"
+                className="um-button secondary"
+                onClick={() => {
+                  setEditUser(
+                    null
+                  );
+
+                  setEditForm(
+                    null
+                  );
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="um-button primary"
+                disabled={
+                  editing
+                }
+              >
+                {editing ? (
+                  <>
+                    <LoaderCircle
+                      size={15}
+                      className="um-spin"
+                    />
+
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save
+                      size={15}
+                    />
+
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

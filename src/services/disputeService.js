@@ -1,7 +1,9 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   query,
   serverTimestamp,
@@ -9,10 +11,13 @@ import {
   where,
 } from "firebase/firestore";
 
-import { db } from "../firebase/firebase";
+import {
+  db,
+} from "../firebase/firebase";
+
 
 /* =========================================================
-   GENERAL HELPERS
+   HELPERS
 ========================================================= */
 
 function toSafeDate(value) {
@@ -20,93 +25,133 @@ function toSafeDate(value) {
     return null;
   }
 
-  if (value instanceof Date) {
+  if (
+    value instanceof Date
+  ) {
     return value;
   }
 
-  if (typeof value?.toDate === "function") {
+  if (
+    typeof value?.toDate ===
+    "function"
+  ) {
     return value.toDate();
   }
 
-  const parsedDate = new Date(value);
+  const date =
+    new Date(value);
 
-  return Number.isNaN(parsedDate.getTime())
+  return Number.isNaN(
+    date.getTime()
+  )
     ? null
-    : parsedDate;
+    : date;
 }
 
+
 function normalizeText(value) {
-  return String(value ?? "")
+  return String(
+    value ?? ""
+  )
     .trim()
     .toLowerCase();
 }
 
-function normalizeDisputeStatus(value) {
-  const status = normalizeText(value).replace(
-    /[\s-]+/g,
-    "_"
-  );
+
+function cleanDepartment(value) {
+  return String(
+    value || ""
+  ).trim();
+}
+
+
+function normalizeDisputeStatus(
+  value
+) {
+  const status =
+    normalizeText(
+      value
+    ).replace(
+      /[\s-]+/g,
+      "_"
+    );
+
+  const allowed = [
+    "pending",
+    "under_review",
+    "awaiting_information",
+    "approved",
+    "rejected",
+    "cancelled",
+    "closed",
+  ];
 
   if (!status) {
     return "pending";
   }
 
-  if (
-    status === "under_review" ||
-    status === "reviewing"
-  ) {
-    return "under_review";
-  }
-
-  if (
-    status === "awaiting_information" ||
-    status === "awaiting_info"
-  ) {
-    return "awaiting_information";
-  }
-
-  if (status === "approved") {
-    return "approved";
-  }
-
-  if (status === "rejected") {
-    return "rejected";
-  }
-
-  if (status === "cancelled") {
-    return "cancelled";
-  }
-
-  if (status === "closed") {
-    return "closed";
-  }
-
-  return "pending";
+  return allowed.includes(
+    status
+  )
+    ? status
+    : "pending";
 }
 
-function normalizeAttendanceStatus(value) {
-  const status = normalizeText(value);
 
-  if (status.includes("present")) {
+function normalizeAttendanceStatus(
+  value
+) {
+  const status =
+    normalizeText(value);
+
+  if (
+    status.includes(
+      "missing"
+    )
+  ) {
+    return "missing";
+  }
+
+  if (
+    status.includes(
+      "present"
+    )
+  ) {
     return "present";
   }
 
-  if (status.includes("late")) {
+  if (
+    status.includes(
+      "late"
+    )
+  ) {
     return "late";
   }
 
-  if (status.includes("absent")) {
+  if (
+    status.includes(
+      "absent"
+    )
+  ) {
     return "absent";
   }
 
-  if (status.includes("excused")) {
+  if (
+    status.includes(
+      "excused"
+    )
+  ) {
     return "excused";
   }
 
   return "unknown";
 }
 
-function getUserName(user, fallback = {}) {
+
+function getUserName(
+  user,
+  fallback = {}
+) {
   const fullName = [
     user?.firstName,
     user?.lastName,
@@ -118,53 +163,73 @@ function getUserName(user, fallback = {}) {
   return (
     fullName ||
     fallback.studentName ||
-    fallback.userName ||
     fallback.name ||
+    fallback.userName ||
     "Unknown Student"
   );
 }
 
-function formatDateLabel(value) {
-  const date = toSafeDate(value);
+
+function formatDateLabel(
+  value
+) {
+  const date =
+    toSafeDate(value);
 
   if (!date) {
     return "N/A";
   }
 
-  return date.toLocaleDateString("en-MY");
+  return date.toLocaleDateString(
+    "en-MY"
+  );
 }
 
-function formatTimeLabel(value) {
-  const date = toSafeDate(value);
+
+function formatTimeLabel(
+  value
+) {
+  const date =
+    toSafeDate(value);
 
   if (!date) {
     return "N/A";
   }
 
-  return date.toLocaleTimeString("en-MY", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return date.toLocaleTimeString(
+    "en-MY",
+    {
+      hour:
+        "2-digit",
+
+      minute:
+        "2-digit",
+    }
+  );
 }
+
 
 /* =========================================================
-   RECORD NORMALIZATION
+   NORMALIZE ATTENDANCE
 ========================================================= */
 
 function normalizeAttendanceDocument(
   attendanceDocument
 ) {
-  const raw = attendanceDocument.data();
+  const raw =
+    attendanceDocument.data();
 
-  const timestamp = toSafeDate(
-    raw.timestamp ??
-      raw.date ??
-      raw.checkInTime ??
-      raw.createdAt
-  );
+  const timestamp =
+    toSafeDate(
+      raw.timestamp ??
+        raw.date ??
+        raw.checkInTime ??
+        raw.createdAt
+    );
 
   return {
-    id: attendanceDocument.id,
+    id:
+      attendanceDocument.id,
 
     userId:
       raw.userId ||
@@ -181,9 +246,10 @@ function normalizeAttendanceDocument(
       raw.studentId ||
       "N/A",
 
-    status: normalizeAttendanceStatus(
-      raw.status
-    ),
+    status:
+      normalizeAttendanceStatus(
+        raw.status
+      ),
 
     authMethod:
       raw.authMethod ||
@@ -204,8 +270,8 @@ function normalizeAttendanceDocument(
 
     location:
       raw.location ||
-      raw.terminalLocation ||
       raw.deviceLocation ||
+      raw.terminalLocation ||
       "N/A",
 
     verificationResult:
@@ -215,58 +281,87 @@ function normalizeAttendanceDocument(
 
     timestamp,
 
-    dateLabel: formatDateLabel(timestamp),
+    dateLabel:
+      formatDateLabel(
+        timestamp
+      ),
 
-    timeLabel: formatTimeLabel(timestamp),
+    timeLabel:
+      formatTimeLabel(
+        timestamp
+      ),
 
     raw,
   };
 }
 
+
+/* =========================================================
+   NORMALIZE DISPUTE
+========================================================= */
+
 function normalizeDisputeDocument(
   disputeDocument,
-  usersMap,
-  attendanceMap
+  user = null,
+  attendance = null
 ) {
-  const raw = disputeDocument.data();
+  const raw =
+    disputeDocument.data();
 
-  const userId =
-    raw.userId ||
-    raw.uid ||
-    "";
+  const submittedAt =
+    toSafeDate(
+      raw.submittedAt ??
+        raw.createdAt ??
+        raw.timestamp
+    );
 
-  const attendanceId =
-    raw.attendanceId ||
-    raw.attendanceRecordId ||
-    "";
+  const reviewedAt =
+    toSafeDate(
+      raw.reviewedAt
+    );
 
-  const user = usersMap[userId] || null;
-
-  const attendance =
-    attendanceMap[attendanceId] || null;
-
-  const submittedAt = toSafeDate(
-    raw.submittedAt ??
-      raw.createdAt ??
-      raw.timestamp
-  );
-
-  const reviewedAt = toSafeDate(
-    raw.reviewedAt
-  );
-
-  const resolvedAt = toSafeDate(
-    raw.resolvedAt ??
-      raw.updatedAt
-  );
+  const resolvedAt =
+    toSafeDate(
+      raw.resolvedAt ??
+        raw.updatedAt
+    );
 
   return {
-    id: disputeDocument.id,
+    id:
+      disputeDocument.id,
 
-    userId,
-    attendanceId,
+    userId:
+      raw.userId ||
+      raw.uid ||
+      "",
 
-    studentName: getUserName(user, raw),
+    attendanceId:
+      raw.attendanceId ||
+      raw.attendanceRecordId ||
+      "",
+
+    issueType:
+      raw.issueType ||
+      "",
+
+    attendanceDate:
+      raw.attendanceDate ||
+      "",
+
+    requestedTime:
+      raw.requestedTime ||
+      "",
+
+    missingAttendance:
+      Boolean(
+        raw.missingAttendance
+      ),
+
+    studentName:
+      getUserName(
+        user,
+        raw
+      ),
 
     studentId:
       user?.studentId ||
@@ -284,9 +379,11 @@ function normalizeDisputeDocument(
       "N/A",
 
     department:
-      user?.department ||
-      raw.department ||
-      "N/A",
+      cleanDepartment(
+        raw.department ||
+          user?.department ||
+          ""
+      ),
 
     reason:
       raw.reason ||
@@ -298,10 +395,12 @@ function normalizeDisputeDocument(
       "",
 
     originalStatus:
-      normalizeAttendanceStatus(
-        raw.originalStatus ||
-          attendance?.status
-      ),
+      raw.missingAttendance
+        ? "missing"
+        : normalizeAttendanceStatus(
+            raw.originalStatus ||
+              attendance?.status
+          ),
 
     requestedStatus:
       normalizeAttendanceStatus(
@@ -309,13 +408,16 @@ function normalizeDisputeDocument(
           raw.requestedCorrection
       ),
 
-    status: normalizeDisputeStatus(
-      raw.status
-    ),
+    status:
+      normalizeDisputeStatus(
+        raw.status
+      ),
 
-    priority: normalizeText(
-      raw.priority || "normal"
-    ),
+    priority:
+      normalizeText(
+        raw.priority ||
+          "normal"
+      ),
 
     evidenceUrl:
       raw.evidenceUrl ||
@@ -329,6 +431,8 @@ function normalizeDisputeDocument(
 
     teacherComment:
       raw.teacherComment ||
+      raw.adminComment ||
+      raw.reviewComment ||
       "",
 
     teacherRecommendation:
@@ -343,39 +447,44 @@ function normalizeDisputeDocument(
       raw.reviewedBy ||
       null,
 
-    cancelledAt: toSafeDate(
-      raw.cancelledAt
-    ),
+    cancelledAt:
+      toSafeDate(
+        raw.cancelledAt
+      ),
 
-    attendance: attendance
-      ? {
-          ...attendance,
-          originalStatus:
-            attendance.status,
-        }
-      : null,
+    attendance,
 
     raw,
   };
 }
 
+
 /* =========================================================
-   ADMIN: REAL-TIME DISPUTE MANAGEMENT
+   ADMIN - ALL DISPUTES
 ========================================================= */
 
 export function subscribeToDisputesManagement(
   onData,
   onError
 ) {
-  let disputeDocuments = [];
+  let disputeDocuments =
+    [];
+
   let usersMap = {};
+
   let attendanceMap = {};
 
-  let disputesReady = false;
-  let usersReady = false;
-  let attendanceReady = false;
+  let disputesReady =
+    false;
 
-  function emitDisputes() {
+  let usersReady =
+    false;
+
+  let attendanceReady =
+    false;
+
+
+  function emit() {
     if (
       !disputesReady ||
       !usersReady ||
@@ -384,70 +493,125 @@ export function subscribeToDisputesManagement(
       return;
     }
 
-    const disputes = disputeDocuments
-      .map((disputeDocument) =>
-        normalizeDisputeDocument(
-          disputeDocument,
-          usersMap,
-          attendanceMap
+    const disputes =
+      disputeDocuments
+        .map(
+          (
+            disputeDocument
+          ) => {
+            const raw =
+              disputeDocument.data();
+
+            const userId =
+              raw.userId ||
+              raw.uid ||
+              "";
+
+            const attendanceId =
+              raw.attendanceId ||
+              raw.attendanceRecordId ||
+              "";
+
+            return normalizeDisputeDocument(
+              disputeDocument,
+
+              usersMap[
+                userId
+              ] ||
+                null,
+
+              attendanceMap[
+                attendanceId
+              ] ||
+                null
+            );
+          }
         )
-      )
-      .sort((first, second) => {
-        const firstTime =
-          first.submittedAt?.getTime?.() ||
-          0;
-
-        const secondTime =
-          second.submittedAt?.getTime?.() ||
-          0;
-
-        return secondTime - firstTime;
-      });
+        .sort(
+          (
+            first,
+            second
+          ) =>
+            (
+              second.submittedAt
+                ?.getTime?.() ||
+              0
+            ) -
+            (
+              first.submittedAt
+                ?.getTime?.() ||
+              0
+            )
+        );
 
     onData(disputes);
   }
 
-  const unsubscribeUsers = onSnapshot(
-    collection(db, "users"),
 
-    (snapshot) => {
-      const nextUsersMap = {};
+  const unsubscribeUsers =
+    onSnapshot(
+      collection(
+        db,
+        "users"
+      ),
 
-      snapshot.docs.forEach(
-        (userDocument) => {
-          nextUsersMap[userDocument.id] = {
-            id: userDocument.id,
-            ...userDocument.data(),
-          };
-        }
-      );
+      (snapshot) => {
+        const nextUsers =
+          {};
 
-      usersMap = nextUsersMap;
-      usersReady = true;
+        snapshot.docs.forEach(
+          (
+            userDocument
+          ) => {
+            nextUsers[
+              userDocument.id
+            ] = {
+              id:
+                userDocument.id,
 
-      emitDisputes();
-    },
+              ...userDocument.data(),
+            };
+          }
+        );
 
-    (error) => {
-      console.error(
-        "Unable to subscribe to users:",
-        error
-      );
+        usersMap =
+          nextUsers;
 
-      onError?.(error);
-    }
-  );
+        usersReady =
+          true;
+
+        emit();
+      },
+
+      (error) => {
+        console.error(
+          "Unable to load dispute users:",
+          error
+        );
+
+        onError?.(
+          error
+        );
+      }
+    );
+
 
   const unsubscribeAttendance =
     onSnapshot(
-      collection(db, "attendance"),
+      collection(
+        db,
+        "attendance"
+      ),
 
       (snapshot) => {
-        const nextAttendanceMap = {};
+        const nextAttendance =
+          {};
 
         snapshot.docs.forEach(
-          (attendanceDocument) => {
-            nextAttendanceMap[
+          (
+            attendanceDocument
+          ) => {
+            nextAttendance[
               attendanceDocument.id
             ] =
               normalizeAttendanceDocument(
@@ -457,55 +621,248 @@ export function subscribeToDisputesManagement(
         );
 
         attendanceMap =
-          nextAttendanceMap;
+          nextAttendance;
 
-        attendanceReady = true;
+        attendanceReady =
+          true;
 
-        emitDisputes();
+        emit();
       },
 
       (error) => {
         console.error(
-          "Unable to subscribe to attendance:",
+          "Unable to load dispute attendance:",
           error
         );
 
-        onError?.(error);
+        onError?.(
+          error
+        );
       }
     );
 
+
   const unsubscribeDisputes =
     onSnapshot(
-      collection(db, "disputes"),
+      collection(
+        db,
+        "disputes"
+      ),
 
       (snapshot) => {
         disputeDocuments =
           snapshot.docs;
 
-        disputesReady = true;
+        disputesReady =
+          true;
 
-        emitDisputes();
+        emit();
       },
 
       (error) => {
         console.error(
-          "Unable to subscribe to disputes:",
+          "Unable to load disputes:",
           error
         );
 
-        onError?.(error);
+        onError?.(
+          error
+        );
       }
     );
 
+
   return () => {
     unsubscribeUsers();
+
     unsubscribeAttendance();
+
     unsubscribeDisputes();
   };
 }
 
+
 /* =========================================================
-   DASHBOARD: PENDING DISPUTE COUNT
+   TEACHER - SAME DEPARTMENT DISPUTES
+========================================================= */
+
+export function subscribeToTeacherDisputes(
+  teacher,
+  onData,
+  onError
+) {
+  if (
+    !teacher?.uid
+  ) {
+    onData([]);
+
+    return () => {};
+  }
+
+  const department =
+    cleanDepartment(
+      teacher.department
+    );
+
+  if (
+    !department
+  ) {
+    console.warn(
+      "Teacher has no department assigned."
+    );
+
+    onData([]);
+
+    return () => {};
+  }
+
+
+  const disputeQuery =
+    query(
+      collection(
+        db,
+        "disputes"
+      ),
+
+      where(
+        "department",
+        "==",
+        department
+      )
+    );
+
+
+  return onSnapshot(
+    disputeQuery,
+
+    async (
+      snapshot
+    ) => {
+      try {
+        const disputes =
+          await Promise.all(
+            snapshot.docs.map(
+              async (
+                disputeDocument
+              ) => {
+                const raw =
+                  disputeDocument.data();
+
+                let student =
+                  null;
+
+                let attendance =
+                  null;
+
+
+                if (
+                  raw.userId
+                ) {
+                  const userSnapshot =
+                    await getDoc(
+                      doc(
+                        db,
+                        "users",
+                        raw.userId
+                      )
+                    );
+
+                  if (
+                    userSnapshot.exists()
+                  ) {
+                    student = {
+                      id:
+                        userSnapshot.id,
+
+                      ...userSnapshot.data(),
+                    };
+                  }
+                }
+
+
+                if (
+                  raw.attendanceId
+                ) {
+                  const attendanceSnapshot =
+                    await getDoc(
+                      doc(
+                        db,
+                        "attendance",
+                        raw.attendanceId
+                      )
+                    );
+
+                  if (
+                    attendanceSnapshot.exists()
+                  ) {
+                    attendance =
+                      normalizeAttendanceDocument(
+                        attendanceSnapshot
+                      );
+                  }
+                }
+
+
+                return normalizeDisputeDocument(
+                  disputeDocument,
+                  student,
+                  attendance
+                );
+              }
+            )
+          );
+
+
+        disputes.sort(
+          (
+            first,
+            second
+          ) =>
+            (
+              second.submittedAt
+                ?.getTime?.() ||
+              0
+            ) -
+            (
+              first.submittedAt
+                ?.getTime?.() ||
+              0
+            )
+        );
+
+        onData(
+          disputes
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Unable to load teacher disputes:",
+          error
+        );
+
+        onError?.(
+          error
+        );
+      }
+    },
+
+    (error) => {
+      console.error(
+        "Teacher dispute subscription error:",
+        error
+      );
+
+      onError?.(
+        error
+      );
+    }
+  );
+}
+
+
+/* =========================================================
+   PENDING COUNT
 ========================================================= */
 
 export function subscribeToPendingDisputes(
@@ -513,36 +870,46 @@ export function subscribeToPendingDisputes(
   onError
 ) {
   return onSnapshot(
-    collection(db, "disputes"),
+    collection(
+      db,
+      "disputes"
+    ),
 
     (snapshot) => {
-      const pendingCount =
+      const count =
         snapshot.docs.filter(
-          (disputeDocument) => {
-            return (
-              normalizeDisputeStatus(
-                disputeDocument.data().status
-              ) === "pending"
-            );
-          }
+          (
+            document
+          ) =>
+            normalizeDisputeStatus(
+              document
+                .data()
+                .status
+            ) ===
+            "pending"
         ).length;
 
-      onData(pendingCount);
+      onData(
+        count
+      );
     },
 
     (error) => {
       console.error(
-        "Unable to subscribe to pending disputes:",
+        "Unable to load pending disputes:",
         error
       );
 
-      onError?.(error);
+      onError?.(
+        error
+      );
     }
   );
 }
 
+
 /* =========================================================
-   STUDENT: OWN ATTENDANCE RECORDS
+   STUDENT ATTENDANCE
 ========================================================= */
 
 export function subscribeToStudentAttendance(
@@ -550,49 +917,64 @@ export function subscribeToStudentAttendance(
   onData,
   onError
 ) {
-  if (!student?.uid) {
+  if (
+    !student?.uid
+  ) {
     onData([]);
+
     return () => {};
   }
 
-  const attendanceQuery = query(
-    collection(db, "attendance"),
-    where("userId", "==", student.uid)
-  );
+
+  const attendanceQuery =
+    query(
+      collection(
+        db,
+        "attendance"
+      ),
+
+      where(
+        "userId",
+        "==",
+        student.uid
+      )
+    );
+
 
   return onSnapshot(
     attendanceQuery,
 
     (snapshot) => {
-      const records = snapshot.docs
-        .map((attendanceDocument) =>
-          normalizeAttendanceDocument(
-            attendanceDocument
+      const records =
+        snapshot.docs
+          .map(
+            (
+              attendanceDocument
+            ) =>
+              normalizeAttendanceDocument(
+                attendanceDocument
+              )
           )
-        )
-        .sort((first, second) => {
-          const firstTime =
-            first.timestamp?.getTime?.() ||
-            0;
+          .sort(
+            (
+              first,
+              second
+            ) =>
+              (
+                second.timestamp
+                  ?.getTime?.() ||
+                0
+              ) -
+              (
+                first.timestamp
+                  ?.getTime?.() ||
+                0
+              )
+          );
 
-          const secondTime =
-            second.timestamp?.getTime?.() ||
-            0;
-
-          return secondTime - firstTime;
-        });
-
-      console.log(
-        "Logged-in student UID:",
-        student.uid
-      );
-
-      console.log(
-        "Student attendance records:",
+      onData(
         records
       );
-
-      onData(records);
     },
 
     (error) => {
@@ -601,13 +983,16 @@ export function subscribeToStudentAttendance(
         error
       );
 
-      onError?.(error);
+      onError?.(
+        error
+      );
     }
   );
 }
 
+
 /* =========================================================
-   STUDENT: OWN DISPUTES
+   STUDENT DISPUTES
 ========================================================= */
 
 export function subscribeToStudentDisputes(
@@ -615,18 +1000,28 @@ export function subscribeToStudentDisputes(
   onData,
   onError
 ) {
-  if (!student?.uid) {
+  if (
+    !student?.uid
+  ) {
     onData([]);
+
     return () => {};
   }
 
-  let disputeDocuments = [];
-  let attendanceMap = {};
+  let disputeDocuments =
+    [];
 
-  let disputesReady = false;
-  let attendanceReady = false;
+  let attendanceMap =
+    {};
 
-  function emitStudentDisputes() {
+  let disputesReady =
+    false;
+
+  let attendanceReady =
+    false;
+
+
+  function emit() {
     if (
       !disputesReady ||
       !attendanceReady
@@ -634,53 +1029,93 @@ export function subscribeToStudentDisputes(
       return;
     }
 
-    const usersMap = {
-      [student.uid]: student,
-    };
+    const disputes =
+      disputeDocuments
+        .map(
+          (
+            disputeDocument
+          ) => {
+            const raw =
+              disputeDocument.data();
 
-    const disputes = disputeDocuments
-      .map((disputeDocument) =>
-        normalizeDisputeDocument(
-          disputeDocument,
-          usersMap,
-          attendanceMap
+            return normalizeDisputeDocument(
+              disputeDocument,
+
+              student,
+
+              attendanceMap[
+                raw.attendanceId
+              ] ||
+                null
+            );
+          }
         )
-      )
-      .sort((first, second) => {
-        const firstTime =
-          first.submittedAt?.getTime?.() ||
-          0;
+        .sort(
+          (
+            first,
+            second
+          ) =>
+            (
+              second.submittedAt
+                ?.getTime?.() ||
+              0
+            ) -
+            (
+              first.submittedAt
+                ?.getTime?.() ||
+              0
+            )
+        );
 
-        const secondTime =
-          second.submittedAt?.getTime?.() ||
-          0;
-
-        return secondTime - firstTime;
-      });
-
-    onData(disputes);
+    onData(
+      disputes
+    );
   }
 
-  const attendanceQuery = query(
-    collection(db, "attendance"),
-    where("userId", "==", student.uid)
-  );
 
-  const disputeQuery = query(
-    collection(db, "disputes"),
-    where("userId", "==", student.uid)
-  );
+  const attendanceQuery =
+    query(
+      collection(
+        db,
+        "attendance"
+      ),
+
+      where(
+        "userId",
+        "==",
+        student.uid
+      )
+    );
+
+
+  const disputeQuery =
+    query(
+      collection(
+        db,
+        "disputes"
+      ),
+
+      where(
+        "userId",
+        "==",
+        student.uid
+      )
+    );
+
 
   const unsubscribeAttendance =
     onSnapshot(
       attendanceQuery,
 
       (snapshot) => {
-        const nextAttendanceMap = {};
+        const nextAttendance =
+          {};
 
         snapshot.docs.forEach(
-          (attendanceDocument) => {
-            nextAttendanceMap[
+          (
+            attendanceDocument
+          ) => {
+            nextAttendance[
               attendanceDocument.id
             ] =
               normalizeAttendanceDocument(
@@ -690,11 +1125,12 @@ export function subscribeToStudentDisputes(
         );
 
         attendanceMap =
-          nextAttendanceMap;
+          nextAttendance;
 
-        attendanceReady = true;
+        attendanceReady =
+          true;
 
-        emitStudentDisputes();
+        emit();
       },
 
       (error) => {
@@ -703,9 +1139,12 @@ export function subscribeToStudentDisputes(
           error
         );
 
-        onError?.(error);
+        onError?.(
+          error
+        );
       }
     );
+
 
   const unsubscribeDisputes =
     onSnapshot(
@@ -715,9 +1154,10 @@ export function subscribeToStudentDisputes(
         disputeDocuments =
           snapshot.docs;
 
-        disputesReady = true;
+        disputesReady =
+          true;
 
-        emitStudentDisputes();
+        emit();
       },
 
       (error) => {
@@ -726,15 +1166,20 @@ export function subscribeToStudentDisputes(
           error
         );
 
-        onError?.(error);
+        onError?.(
+          error
+        );
       }
     );
 
+
   return () => {
     unsubscribeAttendance();
+
     unsubscribeDisputes();
   };
 }
+
 
 /* =========================================================
    AUDIT LOG
@@ -747,9 +1192,11 @@ async function createDisputeAuditLog({
   attendanceId,
   details = {},
 }) {
-  if (!actor?.uid) {
+  if (
+    !actor?.uid
+  ) {
     console.warn(
-      "Audit log skipped because actor UID is missing."
+      "Dispute audit log skipped because actor UID is missing."
     );
 
     return;
@@ -757,11 +1204,16 @@ async function createDisputeAuditLog({
 
   try {
     await addDoc(
-      collection(db, "auditLogs"),
+      collection(
+        db,
+        "auditLogs"
+      ),
+
       {
         action,
 
-        actorId: actor.uid,
+        actorId:
+          actor.uid,
 
         actorEmail:
           actor.email ||
@@ -769,6 +1221,13 @@ async function createDisputeAuditLog({
 
         actorName:
           actor.fullName ||
+          [
+            actor.firstName,
+            actor.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .trim() ||
           actor.email ||
           "Unknown User",
 
@@ -776,7 +1235,8 @@ async function createDisputeAuditLog({
           actor.role ||
           "unknown",
 
-        targetType: "dispute",
+        targetType:
+          "dispute",
 
         targetId:
           disputeId ||
@@ -788,14 +1248,18 @@ async function createDisputeAuditLog({
 
         details,
 
-        timestamp: serverTimestamp(),
+        timestamp:
+          serverTimestamp(),
       }
     );
-  } catch (error) {
+  } catch (
+    error
+  ) {
     /*
-      The main dispute action should not fail
-      only because the audit log failed.
+      Do not fail the main dispute action
+      only because audit logging fails.
     */
+
     console.error(
       "Unable to create dispute audit log:",
       error
@@ -803,8 +1267,9 @@ async function createDisputeAuditLog({
   }
 }
 
+
 /* =========================================================
-   STUDENT: CREATE DISPUTE
+   STUDENT CREATE DISPUTE
 ========================================================= */
 
 export async function createStudentDispute(
@@ -812,58 +1277,137 @@ export async function createStudentDispute(
   student,
   existingDisputes = []
 ) {
-  if (!student?.uid) {
+  if (
+    !student?.uid
+  ) {
     throw new Error(
       "You must be logged in to submit a dispute."
     );
   }
 
-  if (!formData.attendanceId) {
+
+  const department =
+    cleanDepartment(
+      student.department
+    );
+
+
+  if (
+    !department
+  ) {
     throw new Error(
-      "Please select an attendance record."
+      "Your student account does not have a department assigned."
     );
   }
 
-  if (!formData.reason?.trim()) {
+
+  if (
+    !formData.issueType
+  ) {
     throw new Error(
-      "Please select a dispute reason."
+      "Please select the attendance issue type."
     );
   }
 
-  if (!formData.description?.trim()) {
+
+  const missingAttendance =
+    formData.issueType ===
+      "missing_record" ||
+    Boolean(
+      formData.missingAttendance
+    );
+
+
+  const needsExistingRecord =
+    [
+      "wrong_status",
+      "wrong_checkin_time",
+      "approved_absence",
+    ].includes(
+      formData.issueType
+    );
+
+
+  if (
+    needsExistingRecord &&
+    !formData.attendanceId
+  ) {
+    throw new Error(
+      "Please select the attendance record related to this dispute."
+    );
+  }
+
+
+  if (
+    missingAttendance &&
+    !formData.attendanceDate
+  ) {
+    throw new Error(
+      "Please select the attendance date."
+    );
+  }
+
+
+  if (
+    formData.issueType ===
+      "wrong_checkin_time" &&
+    !formData.requestedTime
+  ) {
+    throw new Error(
+      "Please enter the correct check-in time."
+    );
+  }
+
+
+  if (
+    !formData.description?.trim()
+  ) {
     throw new Error(
       "Please provide an explanation."
     );
   }
 
-  if (!formData.requestedStatus) {
+
+  if (
+    !formData.requestedStatus
+  ) {
     throw new Error(
       "Please select the requested attendance status."
     );
   }
 
-  const activeStatuses = [
-    "pending",
-    "under_review",
-    "awaiting_information",
-  ];
 
-  const duplicateDispute =
-    existingDisputes.some((dispute) => {
-      return (
-        dispute.attendanceId ===
-          formData.attendanceId &&
-        activeStatuses.includes(
-          dispute.status
-        )
+  if (
+    formData.attendanceId
+  ) {
+    const activeStatuses =
+      [
+        "pending",
+        "under_review",
+        "awaiting_information",
+      ];
+
+    const duplicate =
+      existingDisputes.some(
+        (
+          dispute
+        ) =>
+          dispute.attendanceId ===
+            formData.attendanceId &&
+          activeStatuses.includes(
+            dispute.status
+          )
       );
-    });
 
-  if (duplicateDispute) {
-    throw new Error(
-      "An active dispute already exists for this attendance record."
-    );
+    if (
+      duplicate
+    ) {
+      throw new Error(
+        "An active dispute already exists for this attendance record."
+      );
+    }
   }
+
 
   const studentName =
     student.fullName ||
@@ -875,112 +1419,159 @@ export async function createStudentDispute(
       .join(" ")
       .trim();
 
-  const disputeReference = await addDoc(
-    collection(db, "disputes"),
-    {
-      userId: student.uid,
 
-      studentId:
-        student.studentId ||
-        "",
+  const disputeReference =
+    await addDoc(
+      collection(
+        db,
+        "disputes"
+      ),
 
-      studentName:
-        studentName ||
-        "Unknown Student",
+      {
+        userId:
+          student.uid,
 
-      email:
-        student.email ||
-        "",
+        studentId:
+          student.studentId ||
+          "",
 
-      course:
-        student.course ||
-        "",
+        studentName:
+          studentName ||
+          "Unknown Student",
 
-      department:
-        student.department ||
-        "",
+        email:
+          student.email ||
+          "",
 
-      attendanceId:
-        formData.attendanceId,
+        course:
+          student.course ||
+          "",
 
-      originalStatus:
-        normalizeAttendanceStatus(
-          formData.originalStatus
-        ),
+        department,
 
-      requestedStatus:
-        normalizeAttendanceStatus(
-          formData.requestedStatus
-        ),
+        issueType:
+          formData.issueType,
 
-      reason:
-        formData.reason.trim(),
+        attendanceId:
+          formData.attendanceId ||
+          "",
 
-      description:
-        formData.description.trim(),
+        attendanceDate:
+          formData.attendanceDate ||
+          "",
 
-      evidenceUrl:
-        formData.evidenceUrl?.trim() ||
-        "",
+        requestedTime:
+          formData.requestedTime ||
+          "",
 
-      status: "pending",
+        missingAttendance,
 
-      priority: "normal",
+        originalStatus:
+          missingAttendance
+            ? "missing"
+            : normalizeAttendanceStatus(
+                formData.originalStatus
+              ),
 
-      adminComment: "",
+        requestedStatus:
+          normalizeAttendanceStatus(
+            formData.requestedStatus
+          ),
 
-      teacherComment: "",
+        reason:
+          formData.reason?.trim() ||
+          formData.issueType,
 
-      teacherRecommendation: "",
+        description:
+          formData.description.trim(),
 
-      reviewedBy: null,
+        evidenceUrl:
+          formData.evidenceUrl?.trim() ||
+          "",
 
-      submittedAt: serverTimestamp(),
+        status:
+          "pending",
 
-      reviewedAt: null,
+        priority:
+          "normal",
 
-      resolvedAt: null,
+        adminComment:
+          "",
 
-      cancelledAt: null,
+        teacherComment:
+          "",
 
-      createdAt: serverTimestamp(),
+        teacherRecommendation:
+          "",
 
-      updatedAt: serverTimestamp(),
-    }
-  );
+        reviewedBy:
+          null,
+
+        reviewedAt:
+          null,
+
+        resolvedAt:
+          null,
+
+        cancelledAt:
+          null,
+
+        submittedAt:
+          serverTimestamp(),
+
+        createdAt:
+          serverTimestamp(),
+
+        updatedAt:
+          serverTimestamp(),
+      }
+    );
+
 
   await createDisputeAuditLog({
-    action: "dispute_submitted",
+    action:
+      "dispute_submitted",
 
-    actor: student,
+    actor:
+      student,
 
     disputeId:
       disputeReference.id,
 
     attendanceId:
-      formData.attendanceId,
+      formData.attendanceId ||
+      null,
 
     details: {
-      originalStatus:
-        normalizeAttendanceStatus(
-          formData.originalStatus
-        ),
+      department,
+
+      issueType:
+        formData.issueType,
+
+      missingAttendance,
+
+      attendanceDate:
+        formData.attendanceDate ||
+        null,
+
+      requestedTime:
+        formData.requestedTime ||
+        null,
 
       requestedStatus:
         normalizeAttendanceStatus(
           formData.requestedStatus
         ),
-
-      reason:
-        formData.reason.trim(),
     },
   });
+
 
   return disputeReference.id;
 }
 
+
 /* =========================================================
-   STUDENT: UPDATE PENDING DISPUTE
+   STUDENT UPDATE DISPUTE
 ========================================================= */
 
 export async function updateStudentDispute(
@@ -988,46 +1579,54 @@ export async function updateStudentDispute(
   formData,
   student
 ) {
-  if (!disputeId) {
+  if (
+    !disputeId
+  ) {
     throw new Error(
       "Dispute ID is required."
     );
   }
 
-  if (!student?.uid) {
+
+  if (
+    !student?.uid
+  ) {
     throw new Error(
       "You must be logged in."
     );
   }
 
-  if (!formData.reason?.trim()) {
-    throw new Error(
-      "Please select a dispute reason."
-    );
-  }
 
-  if (!formData.description?.trim()) {
+  if (
+    !formData.description?.trim()
+  ) {
     throw new Error(
       "Please provide an explanation."
     );
   }
 
-  if (!formData.requestedStatus) {
-    throw new Error(
-      "Please select the requested attendance status."
-    );
-  }
 
   await updateDoc(
-    doc(db, "disputes", disputeId),
+    doc(
+      db,
+      "disputes",
+      disputeId
+    ),
+
     {
       requestedStatus:
         normalizeAttendanceStatus(
           formData.requestedStatus
         ),
 
+      requestedTime:
+        formData.requestedTime ||
+        "",
+
       reason:
-        formData.reason.trim(),
+        formData.reason?.trim() ||
+        formData.issueType ||
+        "Attendance dispute",
 
       description:
         formData.description.trim(),
@@ -1036,19 +1635,24 @@ export async function updateStudentDispute(
         formData.evidenceUrl?.trim() ||
         "",
 
-      updatedAt: serverTimestamp(),
+      updatedAt:
+        serverTimestamp(),
     }
   );
 
-  await createDisputeAuditLog({
-    action: "dispute_updated",
 
-    actor: student,
+  await createDisputeAuditLog({
+    action:
+      "dispute_updated",
+
+    actor:
+      student,
 
     disputeId,
 
     attendanceId:
-      formData.attendanceId,
+      formData.attendanceId ||
+      null,
 
     details: {
       requestedStatus:
@@ -1056,58 +1660,83 @@ export async function updateStudentDispute(
           formData.requestedStatus
         ),
 
-      reason:
-        formData.reason.trim(),
+      requestedTime:
+        formData.requestedTime ||
+        null,
     },
   });
 }
 
+
 /* =========================================================
-   STUDENT: CANCEL PENDING DISPUTE
+   STUDENT CANCEL DISPUTE
 ========================================================= */
 
 export async function cancelStudentDispute(
   dispute,
   student
 ) {
-  if (!dispute?.id) {
+  if (
+    !dispute?.id
+  ) {
     throw new Error(
       "Dispute ID is required."
     );
   }
 
-  if (!student?.uid) {
+
+  if (
+    !student?.uid
+  ) {
     throw new Error(
       "You must be logged in."
     );
   }
 
-  if (dispute.status !== "pending") {
+
+  if (
+    dispute.status !==
+    "pending"
+  ) {
     throw new Error(
       "Only pending disputes can be cancelled."
     );
   }
 
+
   await updateDoc(
-    doc(db, "disputes", dispute.id),
+    doc(
+      db,
+      "disputes",
+      dispute.id
+    ),
+
     {
-      status: "cancelled",
+      status:
+        "cancelled",
 
-      cancelledAt: serverTimestamp(),
+      cancelledAt:
+        serverTimestamp(),
 
-      updatedAt: serverTimestamp(),
+      updatedAt:
+        serverTimestamp(),
     }
   );
 
+
   await createDisputeAuditLog({
-    action: "dispute_cancelled",
+    action:
+      "dispute_cancelled",
 
-    actor: student,
+    actor:
+      student,
 
-    disputeId: dispute.id,
+    disputeId:
+      dispute.id,
 
     attendanceId:
-      dispute.attendanceId,
+      dispute.attendanceId ||
+      null,
 
     details: {
       previousStatus:
@@ -1116,117 +1745,145 @@ export async function cancelStudentDispute(
   });
 }
 
+
 /* =========================================================
-   ADMIN: REVIEW DISPUTE
+   TEACHER REVIEW
 ========================================================= */
 
-export async function reviewDispute({
+export async function reviewDisputeByTeacher({
   disputeId,
   attendanceId,
   status,
-  adminComment,
+  teacherComment,
   correctedAttendanceStatus,
-  adminUser,
+  teacherUser,
 }) {
-  if (!disputeId) {
+  if (
+    !disputeId
+  ) {
     throw new Error(
       "Dispute ID is required."
     );
   }
 
-  if (!adminUser?.uid) {
+
+  if (
+    !teacherUser?.uid ||
+    teacherUser?.role !==
+      "teacher"
+  ) {
     throw new Error(
-      "Administrator information is missing."
+      "Only a teacher can review this dispute."
     );
   }
 
-  const normalizedStatus =
-    normalizeDisputeStatus(status);
 
-  const allowedStatuses = [
-    "pending",
-    "under_review",
-    "awaiting_information",
-    "approved",
-    "rejected",
-    "closed",
-  ];
+  const decision =
+    normalizeDisputeStatus(
+      status
+    );
+
 
   if (
-    !allowedStatuses.includes(
-      normalizedStatus
-    )
+    decision !==
+      "approved" &&
+    decision !==
+      "rejected"
   ) {
     throw new Error(
-      "The selected dispute status is invalid."
+      "The dispute must be approved or rejected."
     );
   }
 
-  const finalStatuses = [
-    "approved",
-    "rejected",
-    "closed",
-  ];
 
-  const disputeUpdate = {
-    status: normalizedStatus,
+  let correctedStatus =
+    "";
 
-    adminComment:
-      adminComment?.trim() ||
-      "",
-
-    reviewedBy:
-      adminUser.uid,
-
-    reviewedAt: serverTimestamp(),
-
-    updatedAt: serverTimestamp(),
-  };
 
   if (
-    finalStatuses.includes(
-      normalizedStatus
-    )
+    decision ===
+    "approved"
   ) {
-    disputeUpdate.resolvedAt =
-      serverTimestamp();
-  }
-
-  await updateDoc(
-    doc(db, "disputes", disputeId),
-    disputeUpdate
-  );
-
-  if (
-    normalizedStatus === "approved" &&
-    attendanceId &&
-    correctedAttendanceStatus
-  ) {
-    const normalizedCorrection =
+    correctedStatus =
       normalizeAttendanceStatus(
         correctedAttendanceStatus
       );
 
+
     if (
-      normalizedCorrection === "unknown"
+      correctedStatus ===
+        "unknown" ||
+      correctedStatus ===
+        "missing"
     ) {
       throw new Error(
-        "The corrected attendance status is invalid."
+        "Please select a valid corrected attendance status."
       );
     }
+  }
 
+
+  await updateDoc(
+    doc(
+      db,
+      "disputes",
+      disputeId
+    ),
+
+    {
+      status:
+        decision,
+
+      teacherComment:
+        teacherComment?.trim() ||
+        "",
+
+      teacherRecommendation:
+        decision ===
+        "approved"
+          ? correctedStatus
+          : "no_change",
+
+      reviewedBy:
+        teacherUser.uid,
+
+      reviewedAt:
+        serverTimestamp(),
+
+      resolvedAt:
+        serverTimestamp(),
+
+      updatedAt:
+        serverTimestamp(),
+    }
+  );
+
+
+  /*
+    If this dispute is connected to an existing
+    attendance record, update that attendance.
+    Missing-record disputes currently do not
+    create a brand-new attendance document.
+  */
+
+  if (
+    decision ===
+      "approved" &&
+    attendanceId
+  ) {
     await updateDoc(
       doc(
         db,
         "attendance",
         attendanceId
       ),
+
       {
         status:
-          normalizedCorrection,
+          correctedStatus,
 
         updatedBy:
-          adminUser.uid,
+          teacherUser.uid,
 
         updatedAt:
           serverTimestamp(),
@@ -1240,28 +1897,147 @@ export async function reviewDispute({
     );
   }
 
+
   await createDisputeAuditLog({
     action:
-      `dispute_${normalizedStatus}`,
+      `dispute_${decision}`,
 
-    actor: adminUser,
+    actor:
+      teacherUser,
 
     disputeId,
-    attendanceId,
+
+    attendanceId:
+      attendanceId ||
+      null,
 
     details: {
-      status: normalizedStatus,
-
-      adminComment:
-        adminComment?.trim() ||
+      teacherComment:
+        teacherComment?.trim() ||
         "",
 
       correctedAttendanceStatus:
-        correctedAttendanceStatus
-          ? normalizeAttendanceStatus(
-              correctedAttendanceStatus
+        decision ===
+        "approved"
+          ? correctedStatus
+          : null,
+    },
+  });
+}
+
+
+/* =========================================================
+   ADMIN DELETE DISPUTE
+========================================================= */
+
+export async function deleteDisputeByAdmin(
+  dispute,
+  adminUser
+) {
+  if (
+    !dispute?.id
+  ) {
+    throw new Error(
+      "Dispute ID is required."
+    );
+  }
+
+
+  if (
+    !adminUser?.uid
+  ) {
+    throw new Error(
+      "Administrator information is missing."
+    );
+  }
+
+
+  if (
+    String(
+      adminUser.role ||
+        ""
+    ).toLowerCase() !==
+    "admin"
+  ) {
+    throw new Error(
+      "Only an administrator can delete disputes."
+    );
+  }
+
+
+  /*
+    Write the audit record BEFORE deleting
+    the dispute so the original dispute data
+    is still available for the audit trail.
+  */
+
+  await createDisputeAuditLog({
+    action:
+      "dispute_deleted",
+
+    actor:
+      adminUser,
+
+    disputeId:
+      dispute.id,
+
+    attendanceId:
+      dispute.attendanceId ||
+      null,
+
+    details: {
+      studentUserId:
+        dispute.userId ||
+        null,
+
+      studentId:
+        dispute.studentId ||
+        null,
+
+      studentName:
+        dispute.studentName ||
+        null,
+
+      department:
+        dispute.department ||
+        null,
+
+      issueType:
+        dispute.issueType ||
+        null,
+
+      reason:
+        dispute.reason ||
+        null,
+
+      previousStatus:
+        dispute.status ||
+        null,
+
+      originalStatus:
+        dispute.originalStatus ||
+        null,
+
+      requestedStatus:
+        dispute.requestedStatus ||
+        null,
+
+      submittedAt:
+        dispute.submittedAt
+          ? dispute.submittedAt.toISOString?.() ||
+            String(
+              dispute.submittedAt
             )
           : null,
     },
   });
+
+
+  await deleteDoc(
+    doc(
+      db,
+      "disputes",
+      dispute.id
+    )
+  );
 }
