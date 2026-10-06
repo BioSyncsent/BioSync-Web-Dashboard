@@ -2523,3 +2523,53 @@
     transition: none;
   }
 }
+/* Landing navbar: transparent glass */
+.biosync-landing .lp-navbar {
+  background: rgba(0, 0, 0, 0.38);
+  border-bottom: 1px solid rgba(160, 230, 245, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  isolation: isolate;
+}
+
+/* Subtle highlight across the bottom */
+.biosync-landing .lp-navbar::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(166, 239, 255, 0.55),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* Navbar links */
+.biosync-landing .lp-navbar a {
+  transition:
+    color 200ms ease,
+    background 200ms ease,
+    border-color 200ms ease;
+}
+
+.biosync-landing .lp-navbar a:hover {
+  color: #b5f2ff;
+}
+
+@media (max-width: 760px) {
+  .biosync-landing .lp-navbar {
+    background: rgba(0, 0, 0, 0.48);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biosync-landing .lp-navbar a {
+    transition: none;
+  }
+}
