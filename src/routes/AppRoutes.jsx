@@ -50,7 +50,7 @@ import StudentAccountCenter from "../pages/student/AccountCenter";
 
 function AppRoutes() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/BioSync-Web-Dashboard">
       <Routes>
         {/* PUBLIC */}
 
