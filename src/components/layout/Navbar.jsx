@@ -1,12 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  signOut,
-} from "firebase/auth";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   collection,
@@ -16,22 +8,22 @@ import {
 } from "firebase/firestore";
 
 import {
+  signOut,
+} from "firebase/auth";
+
+import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
 
 import {
-  Activity,
-  BarChart3,
   Bell,
-  CalendarCheck,
-  CheckCircle2,
+  CalendarDays,
   GraduationCap,
   LogOut,
   ShieldCheck,
   Users,
   Wifi,
-  WifiOff,
 } from "lucide-react";
 
 import {
@@ -51,9 +43,7 @@ import "./Navbar.css";
 ========================================================= */
 
 function capitalize(value) {
-  const text =
-    String(value || "")
-      .trim();
+  const text = String(value || "").trim();
 
   if (!text) {
     return "User";
@@ -75,66 +65,56 @@ function getInitials(user) {
     ]
       .filter(Boolean)
       .join(" ") ||
+    user?.displayName ||
     "User";
 
   return fullName
     .split(/\s+/)
     .filter(Boolean)
-    .map((part) =>
-      part.charAt(0)
-    )
+    .map((part) => part.charAt(0))
     .join("")
     .slice(0, 2)
     .toUpperCase();
 }
 
 
+function getDisplayName(user) {
+  return (
+    user?.fullName ||
+    [
+      user?.firstName,
+      user?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    user?.displayName ||
+    "BioSync User"
+  );
+}
+
+
 function getPageName(pathname) {
-  if (
-    pathname.includes(
-      "account-center"
-    )
-  ) {
+  if (pathname.includes("account-center")) {
     return "Account Center";
   }
 
-  if (
-    pathname.includes(
-      "attendance"
-    )
-  ) {
+  if (pathname.includes("attendance")) {
     return "Attendance";
   }
 
-  if (
-    pathname.includes(
-      "disputes"
-    )
-  ) {
+  if (pathname.includes("disputes")) {
     return "Disputes";
   }
 
-  if (
-    pathname.includes(
-      "analytics"
-    )
-  ) {
+  if (pathname.includes("analytics")) {
     return "Analytics";
   }
 
-  if (
-    pathname.includes(
-      "devices"
-    )
-  ) {
+  if (pathname.includes("devices")) {
     return "Devices";
   }
 
-  if (
-    pathname.includes(
-      "users"
-    )
-  ) {
+  if (pathname.includes("users")) {
     return "User Management";
   }
 
@@ -142,116 +122,53 @@ function getPageName(pathname) {
 }
 
 
-function toDate(value) {
-  if (!value) {
-    return null;
-  }
-
-  if (
-    value instanceof Date
-  ) {
-    return value;
-  }
-
-  if (
-    typeof value?.toDate ===
-    "function"
-  ) {
-    return value.toDate();
-  }
-
-  const parsed =
-    new Date(value);
-
-  return Number.isNaN(
-    parsed.getTime()
-  )
-    ? null
-    : parsed;
-}
-
+/* =========================================================
+   DATE HELPERS
+========================================================= */
 
 function isToday(value) {
-  const date =
-    toDate(value);
-
-  if (!date) {
+  if (!value) {
     return false;
   }
 
-  const today =
-    new Date();
+  let date = null;
+
+  try {
+    if (typeof value?.toDate === "function") {
+      date = value.toDate();
+    } else if (value instanceof Date) {
+      date = value;
+    } else if (typeof value === "string") {
+      date = new Date(value);
+    } else if (typeof value === "number") {
+      date = new Date(value);
+    }
+  } catch {
+    return false;
+  }
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const now = new Date();
 
   return (
-    date.getFullYear() ===
-      today.getFullYear() &&
-    date.getMonth() ===
-      today.getMonth() &&
-    date.getDate() ===
-      today.getDate()
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
   );
 }
 
 
-function normalizeStatus(value) {
-  const status =
-    String(value || "")
-      .trim()
-      .toLowerCase();
-
-  if (
-    status.includes("present")
-  ) {
-    return "present";
-  }
-
-  if (
-    status.includes("late")
-  ) {
-    return "late";
-  }
-
-  if (
-    status.includes("absent")
-  ) {
-    return "absent";
-  }
-
-  if (
-    status.includes("excused")
-  ) {
-    return "excused";
-  }
-
-  return "unknown";
-}
-
-
-function getLatestTodayRecord(
-  records
-) {
-  return records
-    .filter((record) =>
-      isToday(record.timestamp)
-    )
-    .sort(
-      (
-        first,
-        second
-      ) =>
-        (
-          toDate(
-            second.timestamp
-          )?.getTime() ||
-          0
-        ) -
-        (
-          toDate(
-            first.timestamp
-          )?.getTime() ||
-          0
-        )
-    )[0];
+function attendanceIsToday(record) {
+  return (
+    isToday(record?.timestamp) ||
+    isToday(record?.createdAt) ||
+    isToday(record?.checkInTime) ||
+    isToday(record?.date) ||
+    isToday(record?.attendanceDate)
+  );
 }
 
 
@@ -260,896 +177,594 @@ function getLatestTodayRecord(
 ========================================================= */
 
 function Navbar() {
-  const {
-    user,
-  } = useAuth();
+  const { user } = useAuth();
 
-  const location =
-    useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
+  const [usersCount, setUsersCount] = useState(0);
+  const [attendanceToday, setAttendanceToday] = useState(0);
+  const [pendingDisputes, setPendingDisputes] = useState(0);
 
-  const [
-    synced,
-    setSynced,
-  ] = useState(false);
+  const [syncState, setSyncState] = useState("loading");
 
-  const [
-    totalUsers,
-    setTotalUsers,
-  ] = useState(0);
+  const roleRaw =
+    String(user?.role || "")
+      .trim()
+      .toLowerCase();
 
-  const [
-    attendance,
-    setAttendance,
-  ] = useState([]);
+  const role = capitalize(roleRaw);
 
-  const [
-    departmentStudents,
-    setDepartmentStudents,
-  ] = useState({});
+  const displayName = getDisplayName(user);
 
-  const [
-    disputes,
-    setDisputes,
-  ] = useState([]);
-
-  const [
-    dataError,
-    setDataError,
-  ] = useState(false);
+  const pageName = getPageName(
+    location.pathname
+  );
 
 
-  const pageName =
-    getPageName(
-      location.pathname
-    );
-
-  const role =
-    String(
-      user?.role || ""
-    ).toLowerCase();
-
-  const roleLabel =
-    capitalize(role);
-
-  const displayName =
-    user?.fullName ||
-    [
-      user?.firstName,
-      user?.lastName,
-    ]
-      .filter(Boolean)
-      .join(" ") ||
-    "BioSync User";
-
-
-  /* =======================================================
-     REAL-TIME FIRESTORE NAVBAR DATA
-  ======================================================= */
+  /* =========================================================
+     LIVE FIRESTORE DATA
+  ========================================================= */
 
   useEffect(() => {
-    if (
-      !user?.uid ||
-      !role
-    ) {
+    if (!user?.uid) {
       return undefined;
     }
 
-    setSynced(false);
-    setDataError(false);
+    setSyncState("loading");
 
-    const unsubscribeList = [];
+    const unsubscribers = [];
 
-    let childAttendanceUnsubscribers =
-      [];
+    let usersReady = false;
+    let attendanceReady = false;
+    let disputesReady = false;
 
-
-    function markReady() {
-      setSynced(true);
-      setDataError(false);
-    }
-
-
-    function handleError(error) {
-      console.error(
-        "Navbar Firestore listener error:",
-        error
-      );
-
-      setDataError(true);
-      setSynced(false);
-    }
+    const updateSyncState = () => {
+      if (
+        usersReady &&
+        attendanceReady &&
+        disputesReady
+      ) {
+        setSyncState("live");
+      }
+    };
 
 
-    /* =====================================================
+    /* ---------------------------------------------------------
        ADMIN
-    ===================================================== */
+    --------------------------------------------------------- */
 
-    if (role === "admin") {
-      const usersUnsubscribe =
-        onSnapshot(
-          collection(
-            db,
-            "users"
-          ),
+    if (roleRaw === "admin") {
+      const unsubscribeUsers = onSnapshot(
+        collection(db, "users"),
 
-          (snapshot) => {
-            setTotalUsers(
-              snapshot.size
-            );
+        (snapshot) => {
+          setUsersCount(snapshot.size);
 
-            markReady();
-          },
+          usersReady = true;
+          updateSyncState();
+        },
 
-          handleError
-        );
+        (error) => {
+          console.error(
+            "Navbar users listener error:",
+            error
+          );
 
-
-      const attendanceUnsubscribe =
-        onSnapshot(
-          collection(
-            db,
-            "attendance"
-          ),
-
-          (snapshot) => {
-            setAttendance(
-              snapshot.docs.map(
-                (document) => ({
-                  id:
-                    document.id,
-                  ...document.data(),
-                })
-              )
-            );
-
-            markReady();
-          },
-
-          handleError
-        );
-
-
-      const disputesUnsubscribe =
-        onSnapshot(
-          collection(
-            db,
-            "disputes"
-          ),
-
-          (snapshot) => {
-            setDisputes(
-              snapshot.docs.map(
-                (document) => ({
-                  id:
-                    document.id,
-                  ...document.data(),
-                })
-              )
-            );
-
-            markReady();
-          },
-
-          handleError
-        );
-
-
-      unsubscribeList.push(
-        usersUnsubscribe,
-        attendanceUnsubscribe,
-        disputesUnsubscribe
+          usersReady = true;
+          setSyncState("error");
+        }
       );
-    }
+
+      unsubscribers.push(unsubscribeUsers);
 
 
-    /* =====================================================
-       TEACHER
-    ===================================================== */
+      const unsubscribeAttendance = onSnapshot(
+        collection(db, "attendance"),
 
-    if (
-      role === "teacher" &&
-      user?.department
-    ) {
-      const studentsQuery =
-        query(
-          collection(
-            db,
-            "users"
-          ),
+        (snapshot) => {
+          const todayCount =
+            snapshot.docs.filter((docSnap) =>
+              attendanceIsToday(
+                docSnap.data()
+              )
+            ).length;
 
-          where(
-            "role",
-            "==",
-            "student"
-          ),
+          setAttendanceToday(todayCount);
 
-          where(
-            "department",
-            "==",
-            user.department
-          )
-        );
+          attendanceReady = true;
+          updateSyncState();
+        },
 
+        (error) => {
+          console.error(
+            "Navbar attendance listener error:",
+            error
+          );
 
-      const studentsUnsubscribe =
-        onSnapshot(
-          studentsQuery,
+          attendanceReady = true;
+          setSyncState("error");
+        }
+      );
 
-          (snapshot) => {
-            const studentsMap =
-              {};
-
-            snapshot.docs.forEach(
-              (document) => {
-                studentsMap[
-                  document.id
-                ] = {
-                  uid:
-                    document.id,
-
-                  ...document.data(),
-                };
-              }
-            );
-
-            setDepartmentStudents(
-              studentsMap
-            );
+      unsubscribers.push(
+        unsubscribeAttendance
+      );
 
 
-            /*
-              Remove old attendance listeners
-              before creating new ones.
-            */
+      const unsubscribeDisputes = onSnapshot(
+        collection(db, "disputes"),
 
-            childAttendanceUnsubscribers.forEach(
-              (unsubscribe) =>
-                unsubscribe()
-            );
+        (snapshot) => {
+          const count =
+            snapshot.docs.filter((docSnap) => {
+              const data = docSnap.data();
 
-            childAttendanceUnsubscribers =
-              [];
-
-
-            const studentIds =
-              Object.keys(
-                studentsMap
+              return (
+                String(
+                  data?.status || ""
+                ).toLowerCase() === "pending"
               );
+            }).length;
 
+          setPendingDisputes(count);
 
-            if (
-              studentIds.length ===
-              0
-            ) {
-              setAttendance([]);
-              markReady();
-              return;
-            }
+          disputesReady = true;
+          updateSyncState();
+        },
 
+        (error) => {
+          console.error(
+            "Navbar disputes listener error:",
+            error
+          );
 
-            const attendanceMap =
-              new Map();
+          disputesReady = true;
+          setSyncState("error");
+        }
+      );
 
-
-            studentIds.forEach(
-              (studentId) => {
-                const studentAttendanceQuery =
-                  query(
-                    collection(
-                      db,
-                      "attendance"
-                    ),
-
-                    where(
-                      "userId",
-                      "==",
-                      studentId
-                    )
-                  );
-
-
-                const unsubscribeAttendance =
-                  onSnapshot(
-                    studentAttendanceQuery,
-
-                    (
-                      attendanceSnapshot
-                    ) => {
-                      attendanceMap.set(
-                        studentId,
-
-                        attendanceSnapshot.docs.map(
-                          (
-                            document
-                          ) => ({
-                            id:
-                              document.id,
-
-                            ...document.data(),
-                          })
-                        )
-                      );
-
-
-                      setAttendance(
-                        Array.from(
-                          attendanceMap.values()
-                        ).flat()
-                      );
-
-                      markReady();
-                    },
-
-                    handleError
-                  );
-
-
-                childAttendanceUnsubscribers.push(
-                  unsubscribeAttendance
-                );
-              }
-            );
-          },
-
-          handleError
-        );
-
-
-      const disputesQuery =
-        query(
-          collection(
-            db,
-            "disputes"
-          ),
-
-          where(
-            "department",
-            "==",
-            user.department
-          )
-        );
-
-
-      const disputesUnsubscribe =
-        onSnapshot(
-          disputesQuery,
-
-          (snapshot) => {
-            setDisputes(
-              snapshot.docs.map(
-                (document) => ({
-                  id:
-                    document.id,
-
-                  ...document.data(),
-                })
-              )
-            );
-
-            markReady();
-          },
-
-          handleError
-        );
-
-
-      unsubscribeList.push(
-        studentsUnsubscribe,
-        disputesUnsubscribe
+      unsubscribers.push(
+        unsubscribeDisputes
       );
     }
 
 
-    /* =====================================================
-       STUDENT
-    ===================================================== */
+    /* ---------------------------------------------------------
+       TEACHER
+    --------------------------------------------------------- */
 
-    if (role === "student") {
-      const attendanceQuery =
-        query(
-          collection(
-            db,
-            "attendance"
-          ),
+    else if (roleRaw === "teacher") {
+      const department =
+        String(
+          user?.department || ""
+        ).trim();
 
-          where(
-            "userId",
-            "==",
-            user.uid
-          )
-        );
+      if (!department) {
+        setUsersCount(0);
+        setAttendanceToday(0);
+        setPendingDisputes(0);
+        setSyncState("live");
 
-
-      const disputesQuery =
-        query(
-          collection(
-            db,
-            "disputes"
-          ),
-
-          where(
-            "userId",
-            "==",
-            user.uid
-          )
-        );
+        return undefined;
+      }
 
 
-      const attendanceUnsubscribe =
-        onSnapshot(
-          attendanceQuery,
+      /*
+       * IMPORTANT:
+       * Teacher queries are department-scoped.
+       * This matches your Firestore security model.
+       */
 
-          (snapshot) => {
-            setAttendance(
-              snapshot.docs.map(
-                (document) => ({
-                  id:
-                    document.id,
-
-                  ...document.data(),
-                })
-              )
-            );
-
-            markReady();
-          },
-
-          handleError
-        );
-
-
-      const disputesUnsubscribe =
-        onSnapshot(
-          disputesQuery,
-
-          (snapshot) => {
-            setDisputes(
-              snapshot.docs.map(
-                (document) => ({
-                  id:
-                    document.id,
-
-                  ...document.data(),
-                })
-              )
-            );
-
-            markReady();
-          },
-
-          handleError
-        );
-
-
-      unsubscribeList.push(
-        attendanceUnsubscribe,
-        disputesUnsubscribe
+      const studentsQuery = query(
+        collection(db, "users"),
+        where(
+          "department",
+          "==",
+          department
+        ),
+        where(
+          "role",
+          "==",
+          "student"
+        )
       );
+
+      const unsubscribeStudents = onSnapshot(
+        studentsQuery,
+
+        (snapshot) => {
+          setUsersCount(snapshot.size);
+
+          usersReady = true;
+          updateSyncState();
+        },
+
+        (error) => {
+          console.error(
+            "Navbar teacher student listener error:",
+            error
+          );
+
+          usersReady = true;
+          setSyncState("error");
+        }
+      );
+
+      unsubscribers.push(
+        unsubscribeStudents
+      );
+
+
+      /*
+       * Teacher attendance must also be allowed
+       * by your Firestore rules.
+       *
+       * If attendance documents contain department,
+       * this query is safe and efficient.
+       */
+
+      const attendanceQuery = query(
+        collection(db, "attendance"),
+        where(
+          "department",
+          "==",
+          department
+        )
+      );
+
+      const unsubscribeAttendance = onSnapshot(
+        attendanceQuery,
+
+        (snapshot) => {
+          const todayCount =
+            snapshot.docs.filter((docSnap) =>
+              attendanceIsToday(
+                docSnap.data()
+              )
+            ).length;
+
+          setAttendanceToday(todayCount);
+
+          attendanceReady = true;
+          updateSyncState();
+        },
+
+        (error) => {
+          console.error(
+            "Navbar teacher attendance listener error:",
+            error
+          );
+
+          /*
+           * Do not break the entire navbar if
+           * department is not stored on attendance.
+           */
+
+          setAttendanceToday(0);
+
+          attendanceReady = true;
+          updateSyncState();
+        }
+      );
+
+      unsubscribers.push(
+        unsubscribeAttendance
+      );
+
+
+      const disputesQuery = query(
+        collection(db, "disputes"),
+        where(
+          "department",
+          "==",
+          department
+        )
+      );
+
+      const unsubscribeDisputes = onSnapshot(
+        disputesQuery,
+
+        (snapshot) => {
+          const count =
+            snapshot.docs.filter((docSnap) => {
+              const data = docSnap.data();
+
+              return (
+                String(
+                  data?.status || ""
+                ).toLowerCase() === "pending"
+              );
+            }).length;
+
+          setPendingDisputes(count);
+
+          disputesReady = true;
+          updateSyncState();
+        },
+
+        (error) => {
+          console.error(
+            "Navbar teacher disputes listener error:",
+            error
+          );
+
+          disputesReady = true;
+          setSyncState("error");
+        }
+      );
+
+      unsubscribers.push(
+        unsubscribeDisputes
+      );
+    }
+
+
+    /* ---------------------------------------------------------
+       STUDENT
+    --------------------------------------------------------- */
+
+    else {
+      /*
+       * For students, "Users" becomes their own
+       * personal account indicator.
+       */
+
+      setUsersCount(1);
+      usersReady = true;
+
+
+      const attendanceQuery = query(
+        collection(db, "attendance"),
+        where(
+          "userId",
+          "==",
+          user.uid
+        )
+      );
+
+      const unsubscribeAttendance = onSnapshot(
+        attendanceQuery,
+
+        (snapshot) => {
+          const todayCount =
+            snapshot.docs.filter((docSnap) =>
+              attendanceIsToday(
+                docSnap.data()
+              )
+            ).length;
+
+          setAttendanceToday(todayCount);
+
+          attendanceReady = true;
+          updateSyncState();
+        },
+
+        (error) => {
+          console.error(
+            "Navbar student attendance listener error:",
+            error
+          );
+
+          attendanceReady = true;
+          setSyncState("error");
+        }
+      );
+
+      unsubscribers.push(
+        unsubscribeAttendance
+      );
+
+
+      const disputesQuery = query(
+        collection(db, "disputes"),
+        where(
+          "userId",
+          "==",
+          user.uid
+        )
+      );
+
+      const unsubscribeDisputes = onSnapshot(
+        disputesQuery,
+
+        (snapshot) => {
+          const count =
+            snapshot.docs.filter((docSnap) => {
+              const data = docSnap.data();
+
+              return (
+                String(
+                  data?.status || ""
+                ).toLowerCase() === "pending"
+              );
+            }).length;
+
+          setPendingDisputes(count);
+
+          disputesReady = true;
+          updateSyncState();
+        },
+
+        (error) => {
+          console.error(
+            "Navbar student disputes listener error:",
+            error
+          );
+
+          disputesReady = true;
+          setSyncState("error");
+        }
+      );
+
+      unsubscribers.push(
+        unsubscribeDisputes
+      );
+
+
+      updateSyncState();
     }
 
 
     return () => {
-      unsubscribeList.forEach(
-        (unsubscribe) =>
-          unsubscribe()
-      );
-
-      childAttendanceUnsubscribers.forEach(
-        (unsubscribe) =>
-          unsubscribe()
+      unsubscribers.forEach(
+        (unsubscribe) => {
+          if (
+            typeof unsubscribe === "function"
+          ) {
+            unsubscribe();
+          }
+        }
       );
     };
   }, [
     user?.uid,
     user?.department,
-    role,
+    roleRaw,
   ]);
 
 
-  /* =======================================================
-     CALCULATED REAL-TIME VALUES
-  ======================================================= */
+  /* =========================================================
+     NAVBAR DATA
+  ========================================================= */
 
-  const pendingDisputes =
-    useMemo(() => {
-      return disputes.filter(
-        (dispute) => {
-          const status =
-            String(
-              dispute.status || ""
-            )
-              .trim()
-              .toLowerCase();
-
-          return (
-            status === "pending" ||
-            status ===
-              "under_review"
-          );
-        }
-      ).length;
-    }, [
-      disputes,
-    ]);
-
-
-  const todayAttendance =
-    useMemo(
-      () =>
-        attendance.filter(
-          (record) =>
-            isToday(
-              record.timestamp
-            )
-        ),
-      [
-        attendance,
-      ]
-    );
+  const statusItems = useMemo(() => {
+    if (roleRaw === "student") {
+      return [
+        {
+          id: "account",
+          label: "Account",
+          value: "Student",
+          icon: GraduationCap,
+        },
+        {
+          id: "attendance",
+          label: "Attendance Today",
+          value: attendanceToday,
+          icon: CalendarDays,
+        },
+        {
+          id: "disputes",
+          label: "Pending Disputes",
+          value: pendingDisputes,
+          icon: Bell,
+          alert: pendingDisputes > 0,
+        },
+      ];
+    }
 
 
-  const teacherTodayRate =
-    useMemo(() => {
-      if (
-        role !== "teacher"
-      ) {
-        return 0;
-      }
-
-      const studentIds =
-        Object.keys(
-          departmentStudents
-        );
-
-      const activeStudents =
-        studentIds.filter(
-          (studentId) =>
-            departmentStudents[
-              studentId
-            ]?.active !== false
-        );
-
-
-      if (
-        activeStudents.length ===
-        0
-      ) {
-        return 0;
-      }
+    if (roleRaw === "teacher") {
+      return [
+        {
+          id: "students",
+          label: "Students",
+          value: usersCount,
+          icon: Users,
+        },
+        {
+          id: "attendance",
+          label: "Attendance Today",
+          value: attendanceToday,
+          icon: CalendarDays,
+        },
+        {
+          id: "disputes",
+          label: "Pending Disputes",
+          value: pendingDisputes,
+          icon: Bell,
+          alert: pendingDisputes > 0,
+        },
+      ];
+    }
 
 
-      const latestByStudent =
-        new Map();
+    return [
+      {
+        id: "users",
+        label: "Users",
+        value: usersCount,
+        icon: Users,
+      },
+      {
+        id: "attendance",
+        label: "Attendance Today",
+        value: attendanceToday,
+        icon: CalendarDays,
+      },
+      {
+        id: "disputes",
+        label: "Pending Disputes",
+        value: pendingDisputes,
+        icon: Bell,
+        alert: pendingDisputes > 0,
+      },
+    ];
+  }, [
+    roleRaw,
+    usersCount,
+    attendanceToday,
+    pendingDisputes,
+  ]);
 
 
-      todayAttendance.forEach(
-        (record) => {
-          if (!record.userId) {
-            return;
-          }
-
-          const previous =
-            latestByStudent.get(
-              record.userId
-            );
-
-          const currentTime =
-            toDate(
-              record.timestamp
-            )?.getTime() ||
-            0;
-
-          const previousTime =
-            toDate(
-              previous?.timestamp
-            )?.getTime() ||
-            0;
-
-
-          if (
-            !previous ||
-            currentTime >
-              previousTime
-          ) {
-            latestByStudent.set(
-              record.userId,
-              record
-            );
-          }
-        }
-      );
-
-
-      const attended =
-        Array.from(
-          latestByStudent.values()
-        ).filter(
-          (record) => {
-            const status =
-              normalizeStatus(
-                record.status
-              );
-
-            return (
-              status ===
-                "present" ||
-              status === "late"
-            );
-          }
-        ).length;
-
-
-      return Number(
-        (
-          (
-            attended /
-            activeStudents.length
-          ) *
-          100
-        ).toFixed(1)
-      );
-    }, [
-      role,
-      departmentStudents,
-      todayAttendance,
-    ]);
-
-
-  const studentAttendanceRate =
-    useMemo(() => {
-      if (
-        role !== "student"
-      ) {
-        return 0;
-      }
-
-      if (
-        attendance.length ===
-        0
-      ) {
-        return 0;
-      }
-
-      const attended =
-        attendance.filter(
-          (record) => {
-            const status =
-              normalizeStatus(
-                record.status
-              );
-
-            return (
-              status ===
-                "present" ||
-              status === "late"
-            );
-          }
-        ).length;
-
-
-      return Number(
-        (
-          (
-            attended /
-            attendance.length
-          ) *
-          100
-        ).toFixed(1)
-      );
-    }, [
-      role,
-      attendance,
-    ]);
-
-
-  const studentTodayStatus =
-    useMemo(() => {
-      if (
-        role !== "student"
-      ) {
-        return "—";
-      }
-
-      const record =
-        getLatestTodayRecord(
-          attendance
-        );
-
-      if (!record) {
-        return "Not Recorded";
-      }
-
-      return capitalize(
-        normalizeStatus(
-          record.status
-        )
-      );
-    }, [
-      role,
-      attendance,
-    ]);
-
-
-  /* =======================================================
-     ROLE STATUS ITEMS
-  ======================================================= */
-
-  const statusItems =
-    useMemo(() => {
-      if (role === "admin") {
-        return [
-          {
-            icon: Users,
-            label: "Users",
-            value:
-              totalUsers,
-          },
-
-          {
-            icon:
-              CalendarCheck,
-            label:
-              "Attendance Today",
-            value:
-              todayAttendance.length,
-          },
-
-          {
-            icon: Bell,
-            label:
-              "Pending Disputes",
-            value:
-              pendingDisputes,
-            alert:
-              pendingDisputes >
-              0,
-          },
-        ];
-      }
-
-
-      if (role === "teacher") {
-        return [
-          {
-            icon:
-              GraduationCap,
-            label:
-              "Department",
-            value:
-              user?.department ||
-              "N/A",
-          },
-
-          {
-            icon: Users,
-            label:
-              "Students",
-            value:
-              Object.keys(
-                departmentStudents
-              ).length,
-          },
-
-          {
-            icon:
-              BarChart3,
-            label:
-              "Today",
-            value:
-              `${teacherTodayRate}%`,
-          },
-
-          {
-            icon: Bell,
-            label:
-              "Disputes",
-            value:
-              pendingDisputes,
-            alert:
-              pendingDisputes >
-              0,
-          },
-        ];
-      }
-
-
-      if (role === "student") {
-        return [
-          {
-            icon:
-              BarChart3,
-            label:
-              "Attendance",
-            value:
-              `${studentAttendanceRate}%`,
-          },
-
-          {
-            icon:
-              CheckCircle2,
-            label:
-              "Today",
-            value:
-              studentTodayStatus,
-          },
-
-          {
-            icon: Bell,
-            label:
-              "Disputes",
-            value:
-              pendingDisputes,
-            alert:
-              pendingDisputes >
-              0,
-          },
-        ];
-      }
-
-
-      return [];
-    }, [
-      role,
-      totalUsers,
-      todayAttendance.length,
-      pendingDisputes,
-      user?.department,
-      departmentStudents,
-      teacherTodayRate,
-      studentAttendanceRate,
-      studentTodayStatus,
-    ]);
-
-
-  /* =======================================================
-     ACTIONS
-  ======================================================= */
+  /* =========================================================
+     LOGOUT
+  ========================================================= */
 
   async function handleLogout() {
-    await signOut(auth);
-  }
+    try {
+      await signOut(auth);
 
-
-  function openDisputes() {
-    if (
-      role === "admin"
-    ) {
       navigate(
-        "/admin/disputes"
+        "/login",
+        {
+          replace: true,
+        }
       );
-      return;
-    }
-
-    if (
-      role === "teacher"
-    ) {
-      navigate(
-        "/teacher/disputes"
-      );
-      return;
-    }
-
-    if (
-      role === "student"
-    ) {
-      navigate(
-        "/student/disputes"
+    } catch (error) {
+      console.error(
+        "Logout failed:",
+        error
       );
     }
   }
 
+
+  /* =========================================================
+     NOTIFICATION CLICK
+  ========================================================= */
+
+  function handleNotifications() {
+    if (roleRaw === "admin") {
+      navigate("/admin/disputes");
+      return;
+    }
+
+    if (roleRaw === "teacher") {
+      navigate("/teacher/disputes");
+      return;
+    }
+
+    if (roleRaw === "student") {
+      navigate("/student/disputes");
+    }
+  }
+
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <header className="db-navbar">
 
-      {/* =================================================
+      {/* ===============================================
           PAGE TITLE
-      ================================================= */}
+      =============================================== */}
 
       <div className="db-navbar-title-block">
+
         <div className="db-navbar-title-row">
           <ShieldCheck
             size={16}
@@ -1162,115 +777,97 @@ function Navbar() {
         </div>
 
         <span className="db-navbar-title-kicker">
-          BioSync Sentinel ·{" "}
-          {roleLabel} Portal
+          BioSync Sentinel · {role} Portal
         </span>
+
       </div>
 
 
-      {/* =================================================
-          REAL-TIME STATUS STRIP
-      ================================================= */}
+      {/* ===============================================
+          LIVE STATUS AREA
+      =============================================== */}
 
       <div className="db-navbar-status-area">
 
         <div
-          className={`db-navbar-sync ${
-            dataError
-              ? "db-navbar-sync-error"
-              : synced
-                ? "db-navbar-sync-live"
-                : ""
-          }`}
+          className={
+            syncState === "error"
+              ? "db-navbar-sync db-navbar-sync-error"
+              : syncState === "live"
+                ? "db-navbar-sync db-navbar-sync-live"
+                : "db-navbar-sync"
+          }
         >
-          {dataError ? (
-            <WifiOff
-              size={13}
-            />
-          ) : (
-            <Wifi
-              size={13}
-            />
-          )}
+          <Wifi size={13} />
 
           <span>
-            {dataError
+            {syncState === "error"
               ? "Sync Error"
-              : synced
+              : syncState === "live"
                 ? "Live Sync"
-                : "Syncing..."}
+                : "Connecting"}
           </span>
 
-          {!dataError && (
-            <i />
-          )}
+          <i />
         </div>
 
 
         <div className="db-navbar-status-strip">
-          {statusItems.map(
-            ({
-              icon: Icon,
-              label,
-              value,
-              alert,
-            }) => (
+
+          {statusItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
               <div
-                className={`db-navbar-status-item ${
-                  alert
-                    ? "db-navbar-status-alert"
-                    : ""
-                }`}
-                key={label}
+                key={item.id}
+                className={
+                  item.alert
+                    ? "db-navbar-status-item db-navbar-status-alert"
+                    : "db-navbar-status-item"
+                }
               >
-                <span className="db-navbar-status-icon">
-                  <Icon
-                    size={14}
-                  />
-                </span>
+
+                <div className="db-navbar-status-icon">
+                  <Icon size={14} />
+                </div>
 
                 <div>
                   <small>
-                    {label}
+                    {item.label}
                   </small>
 
                   <strong>
-                    {value}
+                    {item.value}
                   </strong>
                 </div>
+
               </div>
-            )
-          )}
+            );
+          })}
+
         </div>
+
       </div>
 
 
-      {/* =================================================
-          ACTIONS
-      ================================================= */}
+      {/* ===============================================
+          RIGHT ACTIONS
+      =============================================== */}
 
       <div className="db-navbar-actions">
+
         <button
           type="button"
-          onClick={
-            openDisputes
-          }
           className="db-navbar-icon-btn"
           aria-label="Notifications"
-          title="Open disputes"
+          title="Dispute notifications"
+          onClick={handleNotifications}
         >
-          <Bell size={18} />
+          <Bell size={17} />
 
-          {pendingDisputes >
-            0 && (
-            <span className="db-navbar-notification-dot" />
-          )}
-
-          {pendingDisputes >
-            0 && (
+          {pendingDisputes > 0 && (
             <span className="db-navbar-notification-count">
-              {pendingDisputes >
-              99
+              {pendingDisputes > 99
                 ? "99+"
                 : pendingDisputes}
             </span>
@@ -1279,46 +876,47 @@ function Navbar() {
 
 
         <div className="db-navbar-user">
+
           <div className="db-navbar-avatar">
-            {getInitials(
-              user
-            )}
+            {getInitials(user)}
           </div>
 
           <div className="db-navbar-user-details">
+
             <span className="db-navbar-username">
               {displayName}
             </span>
 
             <span className="db-navbar-role">
-              {roleLabel}
+              {role}
 
               {user?.department
                 ? ` · ${user.department}`
                 : ""}
             </span>
+
           </div>
+
         </div>
 
 
         <button
           type="button"
-          onClick={
-            handleLogout
-          }
+          onClick={handleLogout}
           className="db-navbar-logout"
         >
-          <LogOut
-            size={15}
-          />
+          <LogOut size={15} />
 
           <span className="db-navbar-logout-text">
             Logout
           </span>
         </button>
+
       </div>
+
     </header>
   );
 }
+
 
 export default Navbar;

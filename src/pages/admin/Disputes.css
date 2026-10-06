@@ -3163,3 +3163,239 @@
     min-width: 0 !important;
   }
 }
+/* =========================================================
+   TEACHER DECISION PANEL - ENHANCED
+========================================================= */
+
+.dp-decision-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.dp-decision-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(37, 99, 235, 0.08),
+      transparent 70%
+    );
+  transform:
+    translate(35%, -35%);
+  pointer-events: none;
+}
+
+/* STATUS FLOW */
+
+.dp-decision-flow {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    24px
+    minmax(0, 1fr)
+    24px
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dp-decision-step {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fbff;
+  text-align: center;
+}
+
+.dp-decision-label {
+  display: block;
+  color: #94a3b8;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.dp-decision-value {
+  display: inline-flex;
+  margin-top: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.dp-decision-value.current {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.dp-decision-value.requested {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.dp-decision-value.final {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.dp-decision-arrow {
+  color: #94a3b8;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* NOTICE */
+
+.dp-decision-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 13px;
+  padding: 10px 11px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dp-decision-notice > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.dp-decision-notice strong {
+  display: block;
+  font-size: 9px;
+}
+
+.dp-decision-notice span {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+/* SELECT PREVIEW */
+
+.dp-status-select-wrap {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.dp-final-preview {
+  display: inline-flex;
+  min-width: 70px;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border-radius: 9px;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.dp-final-present {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.dp-final-late {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.dp-final-absent {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.dp-final-excused {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* RESPONSE AREA */
+
+.dp-decision-panel textarea {
+  min-height: 135px !important;
+}
+
+.dp-response-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: -1px;
+}
+
+.dp-response-footer span {
+  color: #94a3b8;
+  font-size: 8px;
+}
+
+.dp-response-footer span:first-child::before {
+  content: "●";
+  margin-right: 5px;
+  color: #22c55e;
+  font-size: 7px;
+}
+
+/* FOOTER BUTTON EMPHASIS */
+
+.dp-review-footer .dp-btn-reject {
+  min-width: 92px !important;
+}
+
+.dp-review-footer .dp-btn-approve {
+  min-width: 100px !important;
+  box-shadow:
+    0 6px 14px
+    rgba(22, 163, 74, 0.18) !important;
+}
+
+.dp-review-footer .dp-btn-approve:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  background: #15803d !important;
+}
+
+.dp-review-footer .dp-btn-reject:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 650px) {
+  .dp-decision-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .dp-decision-arrow {
+    transform: rotate(90deg);
+  }
+
+  .dp-status-select-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .dp-final-preview {
+    justify-self: start;
+  }
+}
