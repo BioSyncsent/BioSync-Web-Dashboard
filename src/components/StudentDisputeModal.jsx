@@ -14,6 +14,10 @@ import {
   useState,
 } from "react";
 
+/* =========================================================
+   ISSUE OPTIONS
+========================================================= */
+
 const ISSUE_OPTIONS = [
   {
     value: "",
@@ -72,6 +76,10 @@ const ISSUE_LABELS = {
     "Other attendance issue",
 };
 
+/* =========================================================
+   FORM
+========================================================= */
+
 function getEmptyForm() {
   return {
     issueType: "",
@@ -87,9 +95,15 @@ function getEmptyForm() {
   };
 }
 
-function formatAttendanceOption(record) {
+function formatAttendanceOption(
+  record
+) {
   return `${record.dateLabel} • ${record.status} • ${record.authMethod}`;
 }
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 function StudentDisputeModal({
   mode = "create",
@@ -105,6 +119,10 @@ function StudentDisputeModal({
   ] = useState(
     getEmptyForm()
   );
+
+  /* =======================================================
+     EDIT MODE
+  ======================================================= */
 
   useEffect(() => {
     if (
@@ -143,10 +161,9 @@ function StudentDisputeModal({
           "",
 
         originalStatus:
-          dispute.attendance
-            ?.status ||
-          dispute.raw
-            ?.originalStatus ||
+          dispute.attendance?.status ||
+          dispute.originalStatus ||
+          dispute.raw?.originalStatus ||
           "",
 
         requestedStatus:
@@ -179,6 +196,10 @@ function StudentDisputeModal({
     mode,
     dispute,
   ]);
+
+  /* =======================================================
+     SELECTED ATTENDANCE
+  ======================================================= */
 
   const selectedAttendance =
     attendanceRecords.find(
@@ -226,6 +247,10 @@ function StudentDisputeModal({
     formData.issueType ===
     "wrong_checkin_time";
 
+  /* =======================================================
+     FIELD CHANGE
+  ======================================================= */
+
   function updateField(
     event
   ) {
@@ -241,6 +266,10 @@ function StudentDisputeModal({
       })
     );
   }
+
+  /* =======================================================
+     ISSUE CHANGE
+  ======================================================= */
 
   function selectIssue(
     event
@@ -270,6 +299,12 @@ function StudentDisputeModal({
             ? ""
             : current.attendanceId,
 
+        attendanceDate:
+          issueType ===
+          "missing_record"
+            ? current.attendanceDate
+            : "",
+
         originalStatus:
           issueType ===
           "missing_record"
@@ -290,6 +325,10 @@ function StudentDisputeModal({
       })
     );
   }
+
+  /* =======================================================
+     ATTENDANCE CHANGE
+  ======================================================= */
 
   function selectAttendance(
     event
@@ -317,30 +356,9 @@ function StudentDisputeModal({
     );
   }
 
-  function handleSubmit(
-    event
-  ) {
-    event.preventDefault();
-
-    onSubmit({
-      ...formData,
-
-      missingAttendance,
-
-      reason:
-        ISSUE_LABELS[
-          formData.issueType
-        ] ||
-        formData.reason,
-
-      originalStatus:
-        missingAttendance
-          ? "missing"
-          : selectedAttendance
-              ?.status ||
-            formData.originalStatus,
-    });
-  }
+  /* =======================================================
+     VALIDATION
+  ======================================================= */
 
   const canSubmit =
     Boolean(
@@ -368,6 +386,44 @@ function StudentDisputeModal({
       formData.description.trim()
     );
 
+  /* =======================================================
+     SUBMIT
+  ======================================================= */
+
+  function handleSubmit(
+    event
+  ) {
+    event.preventDefault();
+
+    if (
+      !canSubmit
+    ) {
+      return;
+    }
+
+    onSubmit({
+      ...formData,
+
+      missingAttendance,
+
+      reason:
+        ISSUE_LABELS[
+          formData.issueType
+        ] ||
+        formData.reason,
+
+      originalStatus:
+        missingAttendance
+          ? "missing"
+          : selectedAttendance?.status ||
+            formData.originalStatus,
+    });
+  }
+
+  /* =======================================================
+     UI
+  ======================================================= */
+
   return (
     <div
       className="sd-modal-overlay"
@@ -386,6 +442,8 @@ function StudentDisputeModal({
           event.stopPropagation()
         }
       >
+        {/* HEADER */}
+
         <div className="sd-modal-header">
           <div>
             <h2>
@@ -414,8 +472,11 @@ function StudentDisputeModal({
           </button>
         </div>
 
+        {/* CONTENT */}
+
         <div className="sd-modal-content">
-          {/* ISSUE TYPE */}
+
+          {/* ISSUE */}
 
           <div className="sd-form-group">
             <label>
@@ -452,14 +513,20 @@ function StudentDisputeModal({
                 )
               )}
             </select>
+
+            <small>
+              Select the issue that best
+              describes your attendance problem.
+            </small>
           </div>
 
-          {/* EXISTING ATTENDANCE */}
+          {/* ATTENDANCE RECORD */}
 
           {showAttendanceRecord && (
             <div className="sd-form-group">
               <label>
                 Attendance record
+
                 {optionalAttendanceRecord && (
                   <span>
                     {" "}
@@ -490,9 +557,7 @@ function StudentDisputeModal({
                 </option>
 
                 {attendanceRecords.map(
-                  (
-                    record
-                  ) => (
+                  (record) => (
                     <option
                       key={
                         record.id
@@ -513,9 +578,10 @@ function StudentDisputeModal({
                 attendanceRecords.length ===
                   0 && (
                   <small className="sd-warning-text">
-                    No attendance records were found.
-                    Choose Missing attendance record
-                    instead if no record exists.
+                    No attendance record was
+                    found. Select "Missing
+                    attendance record" instead
+                    if no record exists.
                   </small>
                 )}
             </div>
@@ -523,79 +589,80 @@ function StudentDisputeModal({
 
           {/* ATTENDANCE PREVIEW */}
 
-          {selectedAttendance && (
-            <div className="sd-attendance-preview">
-              <div>
-                <Calendar
-                  size={16}
-                />
+          {selectedAttendance &&
+            formData.attendanceId && (
+              <div className="sd-attendance-preview">
+                <div>
+                  <Calendar
+                    size={16}
+                  />
 
-                <span>
-                  <small>
-                    Date
-                  </small>
+                  <span>
+                    <small>
+                      Date
+                    </small>
 
-                  <strong>
-                    {selectedAttendance.dateLabel ||
-                      "N/A"}
-                  </strong>
-                </span>
+                    <strong>
+                      {selectedAttendance.dateLabel ||
+                        "N/A"}
+                    </strong>
+                  </span>
+                </div>
+
+                <div>
+                  <Clock3
+                    size={16}
+                  />
+
+                  <span>
+                    <small>
+                      Time
+                    </small>
+
+                    <strong>
+                      {selectedAttendance.timeLabel ||
+                        "N/A"}
+                    </strong>
+                  </span>
+                </div>
+
+                <div>
+                  <ShieldCheck
+                    size={16}
+                  />
+
+                  <span>
+                    <small>
+                      Status
+                    </small>
+
+                    <strong>
+                      {selectedAttendance.status ||
+                        "N/A"}
+                    </strong>
+                  </span>
+                </div>
+
+                <div>
+                  <Cpu
+                    size={16}
+                  />
+
+                  <span>
+                    <small>
+                      Method
+                    </small>
+
+                    <strong>
+                      {selectedAttendance.authMethod ||
+                        "N/A"}
+                    </strong>
+                  </span>
+                </div>
               </div>
+            )}
 
-              <div>
-                <Clock3
-                  size={16}
-                />
-
-                <span>
-                  <small>
-                    Time
-                  </small>
-
-                  <strong>
-                    {selectedAttendance.timeLabel ||
-                      "N/A"}
-                  </strong>
-                </span>
-              </div>
-
-              <div>
-                <ShieldCheck
-                  size={16}
-                />
-
-                <span>
-                  <small>
-                    Status
-                  </small>
-
-                  <strong>
-                    {selectedAttendance.status ||
-                      "N/A"}
-                  </strong>
-                </span>
-              </div>
-
-              <div>
-                <Cpu
-                  size={16}
-                />
-
-                <span>
-                  <small>
-                    Method
-                  </small>
-
-                  <strong>
-                    {selectedAttendance.authMethod ||
-                      "N/A"}
-                  </strong>
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* DATE WHEN NO RECORD */}
+          {/* DATE */}
 
           {showAttendanceDate && (
             <div className="sd-form-group">
@@ -617,55 +684,60 @@ function StudentDisputeModal({
                 }
                 required
               />
+
+              <small>
+                Select the date when the attendance
+                problem occurred.
+              </small>
             </div>
           )}
 
-          {/* STATUS */}
+          {/* REQUESTED STATUS */}
 
           {formData.issueType &&
             !showRequestedTime && (
-            <div className="sd-form-group">
-              <label>
-                {missingAttendance
-                  ? "Expected attendance status"
-                  : "Requested correction"}
-              </label>
+              <div className="sd-form-group">
+                <label>
+                  {missingAttendance
+                    ? "Expected attendance status"
+                    : "Requested correction"}
+                </label>
 
-              <select
-                name="requestedStatus"
-                value={
-                  formData.requestedStatus
-                }
-                onChange={
-                  updateField
-                }
-                disabled={
-                  saving ||
-                  formData.issueType ===
-                    "approved_absence"
-                }
-                required
-              >
-                <option value="present">
-                  Present
-                </option>
+                <select
+                  name="requestedStatus"
+                  value={
+                    formData.requestedStatus
+                  }
+                  onChange={
+                    updateField
+                  }
+                  disabled={
+                    saving ||
+                    formData.issueType ===
+                      "approved_absence"
+                  }
+                  required
+                >
+                  <option value="present">
+                    Present
+                  </option>
 
-                <option value="late">
-                  Late
-                </option>
+                  <option value="late">
+                    Late
+                  </option>
 
-                <option value="absent">
-                  Absent
-                </option>
+                  <option value="absent">
+                    Absent
+                  </option>
 
-                <option value="excused">
-                  Excused
-                </option>
-              </select>
-            </div>
-          )}
+                  <option value="excused">
+                    Excused
+                  </option>
+                </select>
+              </div>
+            )}
 
-          {/* TIME */}
+          {/* CORRECT TIME */}
 
           {showRequestedTime && (
             <div className="sd-form-group">
@@ -716,11 +788,13 @@ function StudentDisputeModal({
                     disabled={
                       saving
                     }
-                    placeholder="Explain what happened and why the attendance information should be reviewed."
+                    placeholder="Explain what happened and why this attendance information should be reviewed."
                     required
                   />
                 </div>
               </div>
+
+              {/* EVIDENCE */}
 
               <div className="sd-form-group">
                 <label>
@@ -753,10 +827,12 @@ function StudentDisputeModal({
 
                 <small>
                   Add a screenshot, medical
-                  certificate, PDF or other
-                  supporting document if needed.
+                  certificate or supporting
+                  document if necessary.
                 </small>
               </div>
+
+              {/* WARNING */}
 
               <div className="sd-form-notice">
                 <FileText
@@ -764,15 +840,17 @@ function StudentDisputeModal({
                 />
 
                 <p>
-                  Submitting false information may
-                  result in disciplinary action.
                   Review all information before
-                  submitting.
+                  submitting. False information
+                  may result in disciplinary
+                  action.
                 </p>
               </div>
             </>
           )}
         </div>
+
+        {/* FOOTER */}
 
         <div className="sd-modal-footer">
           <button
