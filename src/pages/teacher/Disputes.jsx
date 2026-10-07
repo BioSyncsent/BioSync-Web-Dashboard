@@ -508,7 +508,7 @@ function Disputes() {
           </span>
 
           <h1>
-            Student Disputes
+            Teacher Disputes
           </h1>
 
           <p>

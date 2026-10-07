@@ -32,7 +32,7 @@ import bioSyncShield from "../assets/BioSync_Login_Shield.png";
 import ColorBends from "../components/ColorBends";
 import "./LandingPage.css";
 
-const colorBendsColors = ["#359FA0", "#8AD6D1", "#425B9A"];
+const colorBendsColors = ["#2563eb", "#38bdf8", "#06b6d4"];
 
 const navigationItems = [
   ["Overview", "#overview"],

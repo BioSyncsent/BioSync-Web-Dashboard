@@ -1,14 +1,37 @@
 /* =========================================================
    BIOSYNC SENTINEL
    TEACHER DISPUTES
+   Themed to match the teacher dashboard (dark teal / cyan)
 ========================================================= */
 
 .teacher-disputes-page {
+  --td-dark: #04151c;
+  --td-dark-2: #061c25;
+  --td-dark-3: #071e28;
+  --td-accent: #00ddeb;
+  --td-blue: #00ddeb;
+  --td-cyan: #00ddeb;
+  --td-text: #edf7fc;
+  --td-muted: #8cabb9;
+  --td-border: rgba(0, 218, 235, 0.23);
+  --td-card: #061c25;
+
+  --td-border-soft: rgba(125, 190, 207, 0.12);
+  --td-border-input: rgba(125, 190, 207, 0.2);
+  --td-text-2: #bdd3df;
+  --td-faint: #789ba9;
+  --td-green: #52e3aa;
+  --td-amber: #fbbf24;
+  --td-red: #fb8b82;
+  --td-violet: #c4b5fd;
+
   display: flex;
   width: 100%;
   min-width: 0;
   flex-direction: column;
   gap: 20px;
+  color: var(--td-text);
+  font-family: "Inter", sans-serif;
   animation: teacherDpEnter 0.4s ease both;
 }
 
@@ -16,6 +39,21 @@
 .teacher-disputes-page *::before,
 .teacher-disputes-page *::after {
   box-sizing: border-box;
+}
+
+.teacher-disputes-page :where(button, input, select, textarea) {
+  font-family: "Inter", sans-serif;
+  color-scheme: dark;
+}
+
+.teacher-disputes-page :where(button, input, select, textarea):focus-visible {
+  outline: 2px solid #78dce9;
+  outline-offset: 3px;
+}
+
+.teacher-disputes-page select option {
+  background: #061c25;
+  color: #edf7fc;
 }
 
 @keyframes teacherDpEnter {
@@ -35,17 +73,20 @@
 ========================================================= */
 
 .teacher-disputes-page .dp-card {
-  border: 1px solid #dce7f4;
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      145deg,
-      #ffffff,
-      #fbfdff
-    );
-  box-shadow:
-    0 8px 26px
-    rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--td-border);
+  border-radius: 11px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 221, 235, 0.018),
+    rgba(0, 0, 0, 0.025)
+  );
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.teacher-disputes-page .dp-card:hover {
+  border-color: rgba(0, 221, 235, 0.4);
 }
 
 /* =========================================================
@@ -61,55 +102,35 @@
   gap: 32px;
   overflow: hidden;
   padding: 32px 36px;
-  border:
-    1px solid
-    rgba(56, 189, 248, 0.28);
-  border-radius: 24px;
+  border: 1px solid rgba(92, 216, 234, 0.3);
+  border-radius: 18px;
   background:
     radial-gradient(
-      circle at 90% 5%,
-      rgba(56, 189, 248, 0.18),
-      transparent 30%
+      ellipse at 100% 15%,
+      rgba(0, 197, 221, 0.18),
+      transparent 58%
     ),
-    radial-gradient(
-      circle at 75% 100%,
-      rgba(37, 99, 235, 0.15),
-      transparent 34%
-    ),
-    linear-gradient(
-      135deg,
-      #061221,
-      #0a1e35 56%,
-      #0b3150
-    );
+    linear-gradient(115deg, #071b25 0%, #082432 58%, #083440 100%);
+  color: #f2fbff;
   box-shadow:
-    0 20px 48px
-    rgba(2, 8, 20, 0.22);
+    inset 0 1px 0 rgba(194, 245, 255, 0.05),
+    0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .teacher-disputes-page .dp-page-header::before {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.44;
   background-image:
-    linear-gradient(
-      rgba(56, 189, 248, 0.09) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(56, 189, 248, 0.09) 1px,
-      transparent 1px
-    );
-  background-size: 38px 38px;
-  mask-image:
-    linear-gradient(
-      90deg,
-      #000 0%,
-      rgba(0, 0, 0, 0.8) 60%,
-      transparent 100%
-    );
+    linear-gradient(rgba(120, 216, 233, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 216, 233, 0.035) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(
+    90deg,
+    #000 0%,
+    rgba(0, 0, 0, 0.8) 55%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
@@ -126,74 +147,63 @@
 .dp-header-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  margin-bottom: 14px;
-  padding: 7px 11px;
-  border:
-    1px solid
-    rgba(103, 232, 249, 0.24);
-  border-radius: 999px;
-  background:
-    rgba(6, 182, 212, 0.09);
-  color: #67e8f9;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 5px 9px;
+  border: 1px solid rgba(92, 216, 234, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 221, 235, 0.045);
+  color: #7ee8f4;
   font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.45px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .teacher-disputes-page .dp-page-header h1 {
   margin: 0;
-  color: #ffffff;
-  font-family:
-    var(
-      --bs-font-heading,
-      "Poppins",
-      sans-serif
-    );
-  font-size:
-    clamp(31px, 3vw, 42px);
-  font-weight: 760;
-  letter-spacing: -1.2px;
+  color: #f2fbff;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: clamp(31px, 3vw, 43px);
+  font-weight: 600;
+  letter-spacing: -0.045em;
 }
 
 .teacher-disputes-page .dp-page-header p {
   max-width: 650px;
-  margin: 10px 0 0;
-  color: #b5c8dc;
+  margin: 11px 0 0;
+  color: #a8c4d2;
   font-size: 12px;
   line-height: 1.7;
 }
 
 .teacher-disputes-page .dp-page-header p strong {
-  color: #67e8f9;
+  color: #7ee8f4;
 }
 
 .dp-header-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
-  margin-top: 20px;
+  margin-top: 21px;
 }
 
 .dp-header-meta span {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  border:
-    1px solid
-    rgba(148, 163, 184, 0.17);
-  border-radius: 9px;
-  background:
-    rgba(255, 255, 255, 0.055);
-  color: #dbeafe;
-  font-size: 8px;
-  font-weight: 700;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid rgba(140, 194, 212, 0.16);
+  border-radius: 7px;
+  background: rgba(2, 15, 22, 0.2);
+  color: #b8d0dc;
+  font-size: 9px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
 }
 
 .dp-header-meta svg {
-  color: #67e8f9;
+  color: #7ee8f4;
 }
 
 /* HERO SIDE */
@@ -210,59 +220,48 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 11px;
-  border:
-    1px solid
-    rgba(74, 222, 128, 0.25);
+  padding: 6px 10px;
+  border: 1px solid rgba(82, 227, 170, 0.32);
   border-radius: 999px;
-  background:
-    rgba(34, 197, 94, 0.08);
-  color: #86efac;
+  background: rgba(82, 227, 170, 0.08);
+  color: #79edbd;
   font-size: 8px;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .teacher-disputes-page .dp-live-badge > span {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #22c55e;
-  box-shadow:
-    0 0 0 4px
-    rgba(34, 197, 94, 0.12);
+  background: var(--td-green);
+  box-shadow: 0 0 0 4px rgba(82, 227, 170, 0.12);
 }
 
 .dp-hero-count {
   display: flex;
-  width: 140px;
-  height: 140px;
+  width: 150px;
+  height: 150px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  border:
-    1px solid
-    rgba(103, 232, 249, 0.17);
+  border: 1px solid rgba(100, 228, 244, 0.15);
   border-radius: 50%;
-  background:
-    radial-gradient(
-      circle,
-      rgba(56, 189, 248, 0.13),
-      rgba(8, 26, 46, 0.7)
-    );
-  box-shadow:
-    0 0 35px
-    rgba(56, 189, 248, 0.13);
+  background: linear-gradient(145deg, #05161e, #072430);
+  box-shadow: 0 0 42px rgba(0, 184, 211, 0.16);
 }
 
 .dp-hero-count strong {
-  color: #ffffff;
-  font-size: 31px;
+  color: #f2fbff;
+  font-size: 29px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .dp-hero-count span {
-  margin-top: 5px;
-  color: #8fb1cf;
-  font-size: 7.5px;
+  margin-top: 4px;
+  color: #89bdcd;
+  font-size: 8px;
+  font-weight: 500;
 }
 
 /* =========================================================
@@ -271,8 +270,7 @@
 
 .teacher-disputes-page .dp-summary-grid {
   display: grid;
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -284,16 +282,14 @@
   padding: 17px;
   transition:
     transform 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .teacher-disputes-page .dp-summary-card:hover {
   transform: translateY(-4px);
-  border-color: #bfdbfe;
-  box-shadow:
-    0 14px 32px
-    rgba(37, 99, 235, 0.09);
+  border-color: rgba(0, 221, 235, 0.55);
+  background: rgba(0, 221, 235, 0.065);
 }
 
 .teacher-disputes-page .dp-summary-icon {
@@ -302,42 +298,52 @@
   height: 42px;
   flex-shrink: 0;
   place-items: center;
-  border-radius: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
 }
 
 .teacher-disputes-page .dp-summary-blue {
-  background: #dbeafe;
-  color: #2563eb;
+  border-color: rgba(0, 221, 235, 0.3);
+  background: rgba(0, 221, 235, 0.07);
+  color: var(--td-cyan);
 }
 
 .teacher-disputes-page .dp-summary-yellow {
-  background: #fef3c7;
-  color: #d97706;
+  border-color: rgba(251, 191, 36, 0.32);
+  background: rgba(251, 191, 36, 0.08);
+  color: var(--td-amber);
 }
 
 .teacher-disputes-page .dp-summary-green {
-  background: #dcfce7;
-  color: #16a34a;
+  border-color: rgba(82, 227, 170, 0.32);
+  background: rgba(82, 227, 170, 0.08);
+  color: var(--td-green);
 }
 
 .teacher-disputes-page .dp-summary-red {
-  background: #fee2e2;
-  color: #dc2626;
+  border-color: rgba(251, 139, 130, 0.32);
+  background: rgba(251, 139, 130, 0.08);
+  color: var(--td-red);
 }
 
 .teacher-disputes-page .dp-summary-card span {
   display: block;
-  color: #64748b;
+  color: var(--td-text-2);
   font-size: 8px;
-  font-weight: 800;
+  font-weight: 500;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .teacher-disputes-page .dp-summary-card strong {
   display: block;
   margin-top: 4px;
-  color: #0f172a;
-  font-size: 24px;
+  color: var(--td-text);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
 }
 
 /* =========================================================
@@ -346,9 +352,7 @@
 
 .teacher-disputes-page .dp-filter-card {
   display: grid;
-  grid-template-columns:
-    minmax(0, 1fr)
-    220px;
+  grid-template-columns: minmax(0, 1fr) 220px;
   gap: 11px;
   align-items: end;
   padding: 16px;
@@ -362,7 +366,7 @@
   position: absolute;
   top: 50%;
   left: 12px;
-  color: #94a3b8;
+  color: var(--td-faint);
   transform: translateY(-50%);
 }
 
@@ -370,13 +374,17 @@
   width: 100%;
   height: 40px;
   padding: 0 12px 0 38px;
-  border: 1px solid #dce7f4;
+  border: 1px solid var(--td-border-input);
   border-radius: 9px;
   outline: none;
-  background: #f8fbff;
-  color: #334155;
+  background: rgba(2, 15, 22, 0.45);
+  color: var(--td-text);
   font-family: inherit;
   font-size: 9px;
+}
+
+.teacher-disputes-page .dp-search-box input::placeholder {
+  color: var(--td-faint);
 }
 
 .teacher-disputes-page .dp-filter-grid {
@@ -390,9 +398,10 @@
 }
 
 .teacher-disputes-page .dp-filter-group label {
-  color: #64748b;
+  color: var(--td-muted);
   font-size: 7.5px;
-  font-weight: 800;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -400,21 +409,19 @@
   width: 100%;
   height: 40px;
   padding: 0 10px;
-  border: 1px solid #dce7f4;
+  border: 1px solid var(--td-border-input);
   border-radius: 9px;
   outline: none;
-  background: #f8fbff;
-  color: #334155;
+  background: rgba(2, 15, 22, 0.45);
+  color: var(--td-text);
   font-family: inherit;
   font-size: 9px;
 }
 
 .teacher-disputes-page .dp-search-box input:focus,
 .teacher-disputes-page .dp-filter-group select:focus {
-  border-color: #60a5fa;
-  box-shadow:
-    0 0 0 3px
-    rgba(37, 99, 235, 0.07);
+  border-color: rgba(0, 221, 235, 0.6);
+  box-shadow: 0 0 0 3px rgba(0, 221, 235, 0.09);
 }
 
 /* =========================================================
@@ -431,38 +438,40 @@
   justify-content: space-between;
   gap: 15px;
   padding: 17px 20px;
-  border-bottom:
-    1px solid #e7edf5;
+  border-bottom: 1px solid var(--td-border-soft);
 }
 
 .teacher-disputes-page .dp-table-header > div > span {
-  color: #2563eb;
-  font-size: 7px;
-  font-weight: 850;
-  letter-spacing: 0.9px;
+  color: var(--td-cyan);
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .teacher-disputes-page .dp-table-header h2 {
   margin: 4px 0 0;
-  color: #172033;
+  color: var(--td-text);
   font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
 }
 
 .teacher-disputes-page .dp-table-header p {
   margin: 4px 0 0;
-  color: #94a3b8;
-  font-size: 8px;
+  color: var(--td-muted);
+  font-size: 8.5px;
 }
 
 .dp-result-chip {
   display: inline-flex;
   padding: 5px 9px;
+  border: 1px solid rgba(0, 221, 235, 0.3);
   border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: rgba(0, 221, 235, 0.07);
+  color: #92e7f1;
   font-size: 7.5px;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .teacher-disputes-page .dp-table-scroll {
@@ -477,10 +486,10 @@
 
 .teacher-disputes-page .dp-table th {
   padding: 11px 13px;
-  background: #f8fafc;
-  color: #94a3b8;
-  font-size: 7.3px;
-  font-weight: 850;
+  background: rgba(0, 221, 235, 0.045);
+  color: #b4d0dd;
+  font-size: 7.5px;
+  font-weight: 500;
   letter-spacing: 0.45px;
   text-align: left;
   text-transform: uppercase;
@@ -489,18 +498,21 @@
 
 .teacher-disputes-page .dp-table td {
   padding: 12px 13px;
-  border-top:
-    1px solid #edf2f7;
-  color: #475569;
-  font-size: 8.8px;
+  border-top: 1px solid var(--td-border-soft);
+  color: var(--td-text-2);
+  font-size: 9px;
   vertical-align: middle;
 }
 
-.teacher-disputes-page .dp-table tbody tr:hover {
-  background: #f8fbff;
+.teacher-disputes-page .dp-table tbody tr {
+  transition: background 0.18s ease;
 }
 
-/* STUDENT CELL */
+.teacher-disputes-page .dp-table tbody tr:hover {
+  background: rgba(0, 221, 235, 0.025);
+}
+
+/* STUDENT CELL (class name kept so it still matches your markup) */
 
 .teacher-disputes-page .dp-student-cell {
   display: flex;
@@ -510,59 +522,58 @@
 
 .teacher-disputes-page .dp-student-cell > span {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   place-items: center;
-  border-radius: 10px;
-  background:
-    linear-gradient(
-      135deg,
-      #dbeafe,
-      #e0f2fe
-    );
-  color: #2563eb;
+  border: 1px solid rgba(0, 221, 235, 0.6);
+  border-radius: 50%;
+  background: rgba(0, 221, 235, 0.04);
+  color: #bdf6fd;
   font-size: 9px;
-  font-weight: 850;
+  font-weight: 500;
 }
 
 .teacher-disputes-page .dp-student-cell strong {
   display: block;
-  color: #172033;
+  color: var(--td-text);
   font-size: 9px;
+  font-weight: 500;
 }
 
 .teacher-disputes-page .dp-student-cell small {
   display: block;
   margin-top: 2px;
-  color: #94a3b8;
-  font-size: 7px;
+  color: var(--td-muted);
+  font-size: 7.5px;
 }
 
 /* ATTENDANCE */
 
 .teacher-disputes-page .dp-attendance-cell strong {
   display: block;
-  color: #334155;
+  color: var(--td-text);
   font-size: 9px;
+  font-weight: 500;
   text-transform: capitalize;
 }
 
 .teacher-disputes-page .dp-attendance-cell small {
   display: block;
   margin-top: 3px;
-  color: #94a3b8;
-  font-size: 7px;
+  color: var(--td-muted);
+  font-size: 7.5px;
 }
 
 .dp-requested-status {
   display: inline-flex;
-  padding: 5px 8px;
+  padding: 4px 8px;
+  border: 1px solid rgba(196, 181, 253, 0.32);
   border-radius: 999px;
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: rgba(196, 181, 253, 0.08);
+  color: var(--td-violet);
   font-size: 7.5px;
-  font-weight: 800;
+  font-weight: 500;
   text-transform: capitalize;
 }
 
@@ -580,42 +591,49 @@
 
 .teacher-disputes-page .dp-status {
   display: inline-flex;
-  padding: 5px 9px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
   border-radius: 999px;
   font-size: 7.5px;
-  font-weight: 800;
+  font-weight: 500;
   white-space: nowrap;
 }
 
 .teacher-disputes-page .dp-status-pending {
-  background: #fef3c7;
-  color: #b45309;
+  border-color: rgba(251, 191, 36, 0.32);
+  background: rgba(251, 191, 36, 0.08);
+  color: #f5d171;
 }
 
 .teacher-disputes-page .dp-status-under_review {
-  background: #ede9fe;
-  color: #6d28d9;
+  border-color: rgba(196, 181, 253, 0.32);
+  background: rgba(196, 181, 253, 0.08);
+  color: var(--td-violet);
 }
 
 .teacher-disputes-page .dp-status-awaiting_information {
-  background: #dbeafe;
-  color: #1d4ed8;
+  border-color: rgba(0, 221, 235, 0.3);
+  background: rgba(0, 221, 235, 0.07);
+  color: #92e7f1;
 }
 
 .teacher-disputes-page .dp-status-approved {
-  background: #dcfce7;
-  color: #15803d;
+  border-color: rgba(82, 227, 170, 0.32);
+  background: rgba(82, 227, 170, 0.08);
+  color: #79edbd;
 }
 
 .teacher-disputes-page .dp-status-rejected {
-  background: #fee2e2;
-  color: #b91c1c;
+  border-color: rgba(251, 139, 130, 0.32);
+  background: rgba(251, 139, 130, 0.08);
+  color: #ffb0a9;
 }
 
 .teacher-disputes-page .dp-status-cancelled,
 .teacher-disputes-page .dp-status-closed {
-  background: #e2e8f0;
-  color: #475569;
+  border-color: rgba(140, 171, 185, 0.25);
+  background: rgba(140, 171, 185, 0.05);
+  color: #9eb9c5;
 }
 
 /* =========================================================
@@ -629,22 +647,24 @@
   justify-content: center;
   gap: 5px;
   padding: 0 10px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgba(0, 221, 235, 0.3);
   border-radius: 8px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: rgba(0, 221, 235, 0.07);
+  color: var(--td-cyan);
   font-family: inherit;
   font-size: 7.5px;
-  font-weight: 800;
+  font-weight: 500;
   cursor: pointer;
   transition:
     transform 0.18s ease,
-    background 0.18s ease;
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .teacher-disputes-page .dp-view-button:hover {
   transform: translateY(-1px);
-  background: #dbeafe;
+  border-color: rgba(0, 221, 235, 0.55);
+  background: rgba(0, 221, 235, 0.14);
 }
 
 /* =========================================================
@@ -653,20 +673,21 @@
 
 .teacher-disputes-page .dp-empty-cell {
   height: 220px;
-  color: #94a3b8 !important;
+  color: var(--td-muted) !important;
   text-align: center;
 }
 
 .teacher-disputes-page .dp-empty-cell svg {
   display: block;
   margin: 0 auto 9px;
-  color: #2563eb;
+  color: var(--td-cyan);
 }
 
 .teacher-disputes-page .dp-empty-cell h3 {
   margin: 0;
-  color: #334155;
+  color: var(--td-text-2);
   font-size: 10px;
+  font-weight: 500;
 }
 
 .teacher-disputes-page .dp-empty-cell p {
@@ -686,30 +707,22 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background:
-    rgba(2, 8, 23, 0.68);
+  background: rgba(2, 10, 15, 0.78);
   backdrop-filter: blur(7px);
 }
 
 .teacher-disputes-page .dp-modal,
 .teacher-disputes-page .dp-review-modal {
   display: flex;
-  width:
-    min(
-      880px,
-      calc(100vw - 40px)
-    );
+  width: min(880px, calc(100vw - 40px));
   max-height: 92vh;
   flex-direction: column;
   overflow: hidden;
-  border:
-    1px solid
-    rgba(96, 165, 250, 0.32);
-  border-radius: 21px;
-  background: #ffffff;
-  box-shadow:
-    0 30px 90px
-    rgba(2, 8, 23, 0.35);
+  border: 1px solid var(--td-border);
+  border-radius: 18px;
+  background: var(--td-dark-2);
+  color: var(--td-text);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
 }
 
 .teacher-disputes-page .dp-modal-header,
@@ -721,33 +734,29 @@
   gap: 20px;
   overflow: hidden;
   padding: 20px 23px;
-  border-bottom:
-    1px solid
-    rgba(96, 165, 250, 0.16);
+  border-bottom: 1px solid var(--td-border-soft);
   background:
     radial-gradient(
-      circle at 90% 0,
-      rgba(56, 189, 248, 0.13),
-      transparent 35%
+      ellipse at 100% 15%,
+      rgba(0, 197, 221, 0.18),
+      transparent 58%
     ),
-    linear-gradient(
-      135deg,
-      #071426,
-      #0b2945
-    );
+    linear-gradient(115deg, #071b25 0%, #082432 58%, #083440 100%);
 }
 
 .teacher-disputes-page .dp-modal-header h2,
 .teacher-disputes-page .dp-review-header h2 {
   margin: 0;
-  color: #ffffff;
+  color: #f2fbff;
   font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
 
 .teacher-disputes-page .dp-modal-header p,
 .teacher-disputes-page .dp-review-header p {
   margin: 5px 0 0;
-  color: #9fb6ce;
+  color: #8eb4c4;
   font-size: 9px;
 }
 
@@ -757,14 +766,19 @@
   height: 34px;
   flex-shrink: 0;
   place-items: center;
-  border:
-    1px solid
-    rgba(148, 163, 184, 0.22);
+  border: 1px solid rgba(140, 194, 212, 0.2);
   border-radius: 9px;
-  background:
-    rgba(255, 255, 255, 0.06);
-  color: #cbd5e1;
+  background: rgba(2, 15, 22, 0.3);
+  color: #b8d0dc;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.teacher-disputes-page .dp-modal-close:hover {
+  border-color: rgba(0, 221, 235, 0.55);
+  color: var(--td-cyan);
 }
 
 .teacher-disputes-page .dp-modal-content,
@@ -778,38 +792,39 @@
 .teacher-disputes-page .dp-review-panel {
   margin-bottom: 15px;
   padding: 14px;
-  border: 1px solid #e3ebf4;
-  border-radius: 13px;
-  background: #fbfdff;
+  border: 1px solid var(--td-border-soft);
+  border-radius: 11px;
+  background: rgba(0, 221, 235, 0.025);
 }
 
 .teacher-disputes-page .dp-review-panel h3 {
   margin: 0 0 10px;
-  color: #172033;
+  color: var(--td-text);
   font-size: 11px;
+  font-weight: 600;
 }
 
 .teacher-disputes-page .dp-detail-grid {
   display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
 }
 
 .teacher-disputes-page .dp-detail-grid > div,
 .teacher-disputes-page .dp-detail-item {
   padding: 10px;
-  border: 1px solid #e5edf5;
+  border: 1px solid var(--td-border-soft);
   border-radius: 9px;
-  background: #ffffff;
+  background: rgba(2, 15, 22, 0.35);
 }
 
 .teacher-disputes-page .dp-detail-grid span,
 .teacher-disputes-page .dp-detail-label {
   display: block;
-  color: #94a3b8;
+  color: var(--td-muted);
   font-size: 7.5px;
-  font-weight: 800;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -817,49 +832,51 @@
 .teacher-disputes-page .dp-detail-value {
   display: block;
   margin-top: 5px;
-  color: #334155;
+  color: var(--td-text);
   font-size: 9px;
+  font-weight: 500;
 }
 
 /* DECISION FLOW */
 
 .teacher-disputes-page .dp-decision-flow {
   display: grid;
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 9px;
   margin-top: 10px;
 }
 
 .teacher-disputes-page .dp-decision-step {
   padding: 11px;
-  border: 1px solid #e5edf5;
+  border: 1px solid var(--td-border-soft);
   border-radius: 10px;
-  background: #f8fafc;
+  background: rgba(2, 15, 22, 0.35);
 }
 
 .teacher-disputes-page .dp-decision-step span {
   display: block;
-  color: #94a3b8;
+  color: var(--td-muted);
   font-size: 7px;
-  font-weight: 800;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .teacher-disputes-page .dp-decision-step strong {
   display: block;
   margin-top: 4px;
-  color: #334155;
+  color: var(--td-text);
   font-size: 9px;
+  font-weight: 500;
 }
 
 .teacher-disputes-page .dp-decision-notice {
   margin-top: 10px;
   padding: 10px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgba(0, 221, 235, 0.3);
   border-radius: 9px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: rgba(0, 221, 235, 0.07);
+  color: #92e7f1;
   font-size: 8px;
   line-height: 1.5;
 }
@@ -874,19 +891,19 @@
 }
 
 .teacher-disputes-page .dp-form-group label {
-  color: #334155;
+  color: var(--td-text-2);
   font-size: 8px;
-  font-weight: 800;
+  font-weight: 500;
 }
 
 .teacher-disputes-page .dp-form-group select,
 .teacher-disputes-page .dp-form-group textarea {
   width: 100%;
-  border: 1px solid #dce7f4;
+  border: 1px solid var(--td-border-input);
   border-radius: 9px;
   outline: none;
-  background: #ffffff;
-  color: #334155;
+  background: rgba(2, 15, 22, 0.45);
+  color: var(--td-text);
   font-family: inherit;
   font-size: 9px;
 }
@@ -902,12 +919,14 @@
   resize: vertical;
 }
 
+.teacher-disputes-page .dp-form-group textarea::placeholder {
+  color: var(--td-faint);
+}
+
 .teacher-disputes-page .dp-form-group select:focus,
 .teacher-disputes-page .dp-form-group textarea:focus {
-  border-color: #60a5fa;
-  box-shadow:
-    0 0 0 3px
-    rgba(37, 99, 235, 0.07);
+  border-color: rgba(0, 221, 235, 0.6);
+  box-shadow: 0 0 0 3px rgba(0, 221, 235, 0.09);
 }
 
 /* MODAL FOOTER */
@@ -919,8 +938,8 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 15px 23px 18px;
-  border-top: 1px solid #e7edf5;
-  background: #fbfdff;
+  border-top: 1px solid var(--td-border-soft);
+  background: rgba(2, 15, 22, 0.3);
 }
 
 .teacher-disputes-page .dp-btn {
@@ -932,33 +951,57 @@
   padding: 0 13px;
   border-radius: 9px;
   font-family: inherit;
-  font-size: 8px;
-  font-weight: 800;
+  font-size: 8.5px;
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.teacher-disputes-page .dp-btn:hover {
+  transform: translateY(-2px);
 }
 
 .teacher-disputes-page .dp-btn-primary,
 .teacher-disputes-page .dp-btn-approve {
-  border: 1px solid #2563eb;
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb,
-      #1d4ed8
-    );
-  color: #ffffff;
+  border: 1px solid rgba(100, 228, 244, 0.5);
+  background: linear-gradient(135deg, #105266, #0c3d50);
+  color: #e3fbff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 5px 18px rgba(0, 184, 211, 0.09);
+}
+
+.teacher-disputes-page .dp-btn-primary:hover,
+.teacher-disputes-page .dp-btn-approve:hover {
+  border-color: #83e9f4;
+  background: linear-gradient(135deg, #17677c, #104d61);
+  box-shadow: 0 5px 22px rgba(0, 184, 211, 0.15);
 }
 
 .teacher-disputes-page .dp-btn-secondary {
-  border: 1px solid #dce7f4;
-  background: #ffffff;
-  color: #64748b;
+  border: 1px solid var(--td-border-input);
+  background: rgba(2, 15, 22, 0.35);
+  color: var(--td-text-2);
+}
+
+.teacher-disputes-page .dp-btn-secondary:hover {
+  border-color: rgba(0, 221, 235, 0.4);
+  color: var(--td-text);
 }
 
 .teacher-disputes-page .dp-btn-reject {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #dc2626;
+  border: 1px solid rgba(251, 139, 130, 0.32);
+  background: rgba(251, 139, 130, 0.08);
+  color: #ffb0a9;
+}
+
+.teacher-disputes-page .dp-btn-reject:hover {
+  border-color: rgba(251, 139, 130, 0.55);
+  background: rgba(251, 139, 130, 0.14);
 }
 
 /* =========================================================
@@ -970,25 +1013,22 @@
   flex-direction: column;
   gap: 10px;
   padding: 25px;
-  border: 1px solid #dce7f4;
-  border-radius: 18px;
-  background: #ffffff;
+  border: 1px solid var(--td-border);
+  border-radius: 11px;
+  background: var(--td-card);
 }
 
 .teacher-disputes-page .dp-skeleton {
   height: 55px;
   border-radius: 10px;
-  background:
-    linear-gradient(
-      90deg,
-      #eef3f8 25%,
-      #f8fafc 50%,
-      #eef3f8 75%
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(0, 221, 235, 0.04) 25%,
+    rgba(0, 221, 235, 0.1) 50%,
+    rgba(0, 221, 235, 0.04) 75%
+  );
   background-size: 200% 100%;
-  animation:
-    teacherDpSkeleton
-    1.3s infinite;
+  animation: teacherDpSkeleton 1.3s infinite;
 }
 
 @keyframes teacherDpSkeleton {
@@ -1006,10 +1046,12 @@
   align-items: center;
   gap: 15px;
   padding: 20px;
+  border-color: rgba(251, 139, 130, 0.25);
+  background: rgba(251, 139, 130, 0.06);
 }
 
 .teacher-disputes-page .dp-error-state > svg {
-  color: #dc2626;
+  color: var(--td-red);
 }
 
 .teacher-disputes-page .dp-error-state > div {
@@ -1018,13 +1060,14 @@
 
 .teacher-disputes-page .dp-error-state h2 {
   margin: 0;
-  color: #172033;
+  color: var(--td-text);
   font-size: 14px;
+  font-weight: 600;
 }
 
 .teacher-disputes-page .dp-error-state p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: #ffc0ba;
   font-size: 9px;
 }
 
@@ -1034,8 +1077,7 @@
 
 @media (max-width: 900px) {
   .teacher-disputes-page .dp-summary-grid {
-    grid-template-columns:
-      repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .teacher-disputes-page .dp-filter-card {
@@ -1077,7 +1119,14 @@
   .teacher-disputes-page .dp-review-modal {
     width: 100%;
     max-height: 94vh;
-    border-radius:
-      20px 20px 0 0;
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-disputes-page,
+  .teacher-disputes-page * {
+    transition: none !important;
+    animation: none !important;
   }
 }
