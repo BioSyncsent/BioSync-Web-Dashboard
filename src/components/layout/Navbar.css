@@ -776,3 +776,125 @@
 .db-navbar-title-row {
   line-height: 1;
 }
+.bs-navbar .db-navbar-title-block {
+  width: auto;
+  min-width: 0;
+  flex: 1;
+}
+
+.bs-navbar .db-navbar-title {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.bs-navbar .db-navbar-title-kicker {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.bs-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+}
+
+.bs-navbar-date {
+  color: #64748b;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.bs-navbar .db-navbar-sync {
+  font-size: 12px;
+  min-width: 110px;
+}
+
+.bs-navbar .db-navbar-notification-count {
+  font-size: 10px;
+  min-width: 20px;
+  height: 20px;
+}
+
+.bs-navbar-menu {
+  display: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #2b5562;
+  border-radius: 9px;
+  background: #0c2530;
+  color: #c4e4ee;
+  cursor: pointer;
+}
+
+.bs-navbar-dark {
+  border-bottom: 1px solid #23434e;
+  background: rgba(4, 19, 26, 0.92);
+  box-shadow: none;
+}
+
+.bs-navbar-dark .db-navbar-title {
+  color: #f4f9fc;
+}
+
+.bs-navbar-dark .db-navbar-title-kicker,
+.bs-navbar-dark .bs-navbar-date {
+  color: #a7c3d0;
+}
+
+.bs-navbar-dark .db-navbar-sync {
+  border-color: #2a4853;
+  background: #0a2029;
+  color: #a9c5d1;
+}
+
+.bs-navbar-dark .db-navbar-sync-live {
+  border-color: #206b55;
+  background: #09261f;
+  color: #77e3b5;
+}
+
+.bs-navbar-dark .db-navbar-sync-error {
+  border-color: #854447;
+  background: #321b21;
+  color: #fca5a5;
+}
+
+.bs-navbar-dark .db-navbar-icon-btn {
+  border-color: #2b5562;
+  background: #0c2530;
+  color: #c4e4ee;
+}
+
+.bs-navbar button:focus-visible {
+  outline: 2px solid #78dce9;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1000px) {
+  .bs-navbar-date {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .bs-navbar-menu {
+    display: grid;
+  }
+
+  .bs-navbar-right {
+    gap: 9px;
+  }
+
+  .bs-navbar .db-navbar-sync {
+    display: none;
+  }
+
+  .bs-navbar .db-navbar-title {
+    font-size: 17px;
+  }
+}

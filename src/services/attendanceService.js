@@ -1,149 +1,128 @@
 import {
-  addDoc,
   collection,
-  deleteDoc,
   doc,
   getDocs,
   onSnapshot,
+  runTransaction,
   serverTimestamp,
-  updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 
-import { db } from "../firebase/firebase";
+import { auth, db } from "../firebase/firebase";
 
+const VALID_STATUSES = new Set([
+  "present",
+  "late",
+  "absent",
+  "excused",
+]);
 
 /* =========================================================
-   NORMALIZATION HELPERS
+   NORMALIZATION
 ========================================================= */
 
 function toSafeDate(value) {
-  if (!value) return null;
+  if (value == null || value === "") return null;
 
-  if (value instanceof Date) {
-    return value;
+  try {
+    const date =
+      value instanceof Date
+        ? value
+        : typeof value.toDate === "function"
+          ? value.toDate()
+          : new Date(value);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
   }
-
-  if (typeof value.toDate === "function") {
-    return value.toDate();
-  }
-
-  const parsedDate = new Date(value);
-
-  return Number.isNaN(parsedDate.getTime())
-    ? null
-    : parsedDate;
 }
 
 function normalizeStatus(value) {
-  const status = String(value || "")
-    .trim()
-    .toLowerCase();
+  const status = String(value || "").trim().toLowerCase();
 
-  if (status.includes("present")) {
-    return "present";
+  // Exact values prevent "not present" becoming "present".
+  return VALID_STATUSES.has(status) ? status : "unknown";
+}
+
+function verificationResult(raw) {
+  const explicit =
+    raw.verificationResult ??
+    raw.verificationStatus ??
+    raw.result;
+
+  if (explicit != null && String(explicit).trim()) {
+    return String(explicit).trim().toLowerCase();
   }
 
-  if (status.includes("late")) {
-    return "late";
+  const method =
+    raw.authMethod ||
+    raw.authenticationMethod ||
+    raw.method ||
+    "";
+
+  if (
+    String(raw.source || "").toLowerCase() === "manual" ||
+    String(method).toLowerCase() === "manual"
+  ) {
+    return "manual";
   }
 
-  if (status.includes("absent")) {
-    return "absent";
-  }
-
-  if (status.includes("excused")) {
-    return "excused";
-  }
-
+  // Attendance status does not prove authentication succeeded.
   return "unknown";
 }
 
-function normalizeVerificationResult(raw) {
-  const result =
-    raw.verificationResult ??
-    raw.verificationStatus ??
-    raw.result ??
-    null;
-
-  if (result) {
-    return String(result)
-      .trim()
-      .toLowerCase();
-  }
-
-  const status = normalizeStatus(raw.status);
-
-  if (status === "absent") {
-    return "flagged";
-  }
-
-  return "verified";
-}
-
-function getStudentName(user, rawRecord) {
-  const userName = [
-    user?.firstName,
-    user?.lastName,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-
+function getStudentName(user, raw) {
   return (
-    userName ||
-    rawRecord.studentName ||
-    rawRecord.name ||
-    rawRecord.fullName ||
-    rawRecord.userName ||
+    user?.fullName ||
+    [user?.firstName, user?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() ||
+    raw.studentName ||
+    raw.name ||
+    raw.fullName ||
+    raw.userName ||
     "Unknown User"
   );
 }
 
-function formatDateLabel(date) {
-  if (!date) return "N/A";
-
-  return date.toLocaleDateString("en-MY");
+function formatDateLabel(value) {
+  const date = toSafeDate(value);
+  return date ? date.toLocaleDateString("en-MY") : "N/A";
 }
 
-function formatTimeLabel(date) {
-  if (!date) return "N/A";
+function formatTimeLabel(value) {
+  const date = toSafeDate(value);
 
-  return date.toLocaleTimeString("en-MY", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return date
+    ? date.toLocaleTimeString("en-MY", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "N/A";
 }
 
-/* =========================================================
-   RECORD NORMALIZATION
-========================================================= */
+function recordTimestamp(raw) {
+  return [
+    raw.timestamp,
+    raw.date,
+    raw.checkInTime,
+    raw.createdAt,
+    raw.time,
+  ]
+    .map(toSafeDate)
+    .find(Boolean) || null;
+}
 
-function normalizeAttendanceRecord(
-  attendanceDoc,
-  usersMap
-) {
-  const raw = attendanceDoc.data();
+function normalizeAttendanceRecord(document, usersMap) {
+  const raw = document.data();
 
-  const userId =
-    raw.userId ||
-    raw.uid ||
-    raw.usedId ||
-    "";
-
+  const userId = raw.userId || raw.uid || raw.usedId || "";
   const user = usersMap[userId] || null;
+  const timestamp = recordTimestamp(raw);
 
-  const timestamp = toSafeDate(
-    raw.timestamp ??
-      raw.date ??
-      raw.checkInTime ??
-      raw.createdAt ??
-      raw.time
-  );
-
-  const studentName = getStudentName(
-    user,
-    raw
-  );
+  const studentName = getStudentName(user, raw);
 
   const authMethod =
     raw.authMethod ||
@@ -151,14 +130,10 @@ function normalizeAttendanceRecord(
     raw.method ||
     "Unknown";
 
-  const deviceId =
-    raw.deviceId ||
-    raw.terminalId ||
-    "N/A";
+  const deviceId = raw.deviceId || raw.terminalId || "N/A";
 
   return {
-    id: attendanceDoc.id,
-
+    id: document.id,
     userId,
 
     studentName,
@@ -170,40 +145,14 @@ function normalizeAttendanceRecord(
       raw.employeeId ||
       "N/A",
 
-    email:
-      user?.email ||
-      raw.email ||
-      "",
+    email: user?.email || raw.email || "",
+    course: user?.course || raw.course || "N/A",
+    department: user?.department || raw.department || "N/A",
+    intake: user?.intake || raw.intake || "N/A",
+    phoneNum: user?.phoneNum || raw.phoneNum || "N/A",
 
-    course:
-      user?.course ||
-      raw.course ||
-      "N/A",
-
-    department:
-      user?.department ||
-      raw.department ||
-      "N/A",
-
-    intake:
-      user?.intake ||
-      raw.intake ||
-      "N/A",
-
-    phoneNum:
-      user?.phoneNum ||
-      raw.phoneNum ||
-      "N/A",
-
-    role:
-      user?.role ||
-      raw.role ||
-      null,
-
-    active:
-      user?.active ??
-      raw.active ??
-      true,
+    role: user?.role || raw.role || null,
+    active: user?.active ?? raw.active ?? true,
 
     status: normalizeStatus(raw.status),
 
@@ -244,22 +193,20 @@ function normalizeAttendanceRecord(
       raw.fingerprintStatus ??
       "N/A",
 
-    verificationResult:
-      normalizeVerificationResult(raw),
+    verificationResult: verificationResult(raw),
 
     verificationAttempts:
       raw.verificationAttempts ??
       raw.attemptCount ??
-      1,
+      null,
 
     source:
       raw.source ||
-      "device",
+      (String(authMethod).toLowerCase() === "manual"
+        ? "manual"
+        : "unknown"),
 
-    notes:
-      raw.notes ||
-      raw.reason ||
-      "",
+    notes: raw.notes || raw.reason || "",
 
     relatedDisputeId:
       raw.relatedDisputeId ||
@@ -275,360 +222,299 @@ function normalizeAttendanceRecord(
     createdAt: toSafeDate(raw.createdAt),
     updatedAt: toSafeDate(raw.updatedAt),
 
-    createdBy:
-      raw.createdBy ||
-      null,
-
-    updatedBy:
-      raw.updatedBy ||
-      null,
+    createdBy: raw.createdBy || null,
+    updatedBy: raw.updatedBy || null,
 
     raw,
   };
 }
 
+function usersFromSnapshot(snapshot) {
+  return Object.fromEntries(
+    snapshot.docs.map((document) => [
+      document.id,
+      { ...document.data(), id: document.id },
+    ])
+  );
+}
+
+function normalizedRecords(documents, usersMap) {
+  return documents
+    .map((document) =>
+      normalizeAttendanceRecord(document, usersMap)
+    )
+    .sort((first, second) => {
+      const difference =
+        (second.timestamp?.getTime() ?? 0) -
+        (first.timestamp?.getTime() ?? 0);
+
+      return difference || first.id.localeCompare(second.id);
+    });
+}
+
 /* =========================================================
-   REAL-TIME ATTENDANCE SUBSCRIPTION
+   READ RECORDS
+   Collection-wide reads require administrator permissions.
 ========================================================= */
 
-/**
- * Subscribes to attendance and users collections.
- *
- * Attendance records are enriched using data from users/{userId}.
- * Used by the Admin Attendance Management page.
- */
-/**
- * Loads attendance records once.
- *
- * Used by Analytics.jsx and any page that does not require
- * a real-time Firestore subscription.
- */
 export async function fetchAttendanceRecords() {
-  const [
-    attendanceSnapshot,
-    usersSnapshot,
-  ] = await Promise.all([
+  const [attendanceSnapshot, usersSnapshot] = await Promise.all([
     getDocs(collection(db, "attendance")),
     getDocs(collection(db, "users")),
   ]);
 
-  const usersMap = {};
-
-  usersSnapshot.docs.forEach((userDocument) => {
-    usersMap[userDocument.id] = {
-      id: userDocument.id,
-      ...userDocument.data(),
-    };
-  });
-
-  return attendanceSnapshot.docs
-    .map((attendanceDocument) =>
-      normalizeAttendanceRecord(
-        attendanceDocument,
-        usersMap
-      )
-    )
-    .sort((firstRecord, secondRecord) => {
-      const firstTime =
-        firstRecord.timestamp?.getTime?.() || 0;
-
-      const secondTime =
-        secondRecord.timestamp?.getTime?.() || 0;
-
-      return secondTime - firstTime;
-    });
+  return normalizedRecords(
+    attendanceSnapshot.docs,
+    usersFromSnapshot(usersSnapshot)
+  );
 }
-export function subscribeToAttendanceManagement(
-  onData,
-  onError
-) {
+
+export function subscribeToAttendanceManagement(onData, onError) {
   let attendanceDocuments = [];
   let usersMap = {};
 
   let attendanceReady = false;
   let usersReady = false;
+  let stopped = false;
 
-  const emitRecords = () => {
-    if (!attendanceReady || !usersReady) {
-      return;
-    }
+  function emit() {
+    if (stopped || !attendanceReady || !usersReady) return;
 
-    const records = attendanceDocuments
-      .map((attendanceDocument) =>
-        normalizeAttendanceRecord(
-          attendanceDocument,
-          usersMap
-        )
-      )
-      .sort((firstRecord, secondRecord) => {
-        const firstTime =
-          firstRecord.timestamp?.getTime?.() ||
-          0;
+    onData(normalizedRecords(attendanceDocuments, usersMap));
+  }
 
-        const secondTime =
-          secondRecord.timestamp?.getTime?.() ||
-          0;
+  function fail(error) {
+    if (stopped) return;
 
-        return secondTime - firstTime;
-      });
-
-    onData(records);
-  };
+    // Stop publishing potentially stale combined data after an error.
+    stopped = true;
+    onError?.(error);
+  }
 
   const unsubscribeUsers = onSnapshot(
     collection(db, "users"),
-
     (snapshot) => {
-      const nextUsersMap = {};
-
-      snapshot.docs.forEach((userDocument) => {
-        nextUsersMap[userDocument.id] = {
-          id: userDocument.id,
-          ...userDocument.data(),
-        };
-      });
-
-      usersMap = nextUsersMap;
+      usersMap = usersFromSnapshot(snapshot);
       usersReady = true;
-
-      emitRecords();
+      emit();
     },
-
-    (error) => {
-      console.error(
-        "Unable to subscribe to users:",
-        error
-      );
-
-      onError?.(error);
-    }
+    fail
   );
 
   const unsubscribeAttendance = onSnapshot(
     collection(db, "attendance"),
-
     (snapshot) => {
       attendanceDocuments = snapshot.docs;
       attendanceReady = true;
-
-      emitRecords();
+      emit();
     },
-
-    (error) => {
-      console.error(
-        "Unable to subscribe to attendance:",
-        error
-      );
-
-      onError?.(error);
-    }
+    fail
   );
 
   return () => {
+    stopped = true;
     unsubscribeUsers();
     unsubscribeAttendance();
   };
 }
 
-/**
- * Dashboard-compatible attendance subscription.
- *
- * This function exists because Dashboard.jsx imports
- * subscribeToAttendanceRecords.
- */
-export function subscribeToAttendanceRecords(
-  onData,
-  onError
-) {
-  return subscribeToAttendanceManagement(
-    (records) => {
-      const dashboardRecords = records.map(
-        (record) => ({
-          ...record,
-
-          name:
-            record.studentName ||
-            record.name ||
-            "Unknown User",
-
-          method:
-            record.authMethod ||
-            record.method ||
-            "Unknown",
-
-          date: record.timestamp,
-
-          dateLabel: formatDateLabel(
-            record.timestamp
-          ),
-
-          timeLabel: formatTimeLabel(
-            record.timestamp
-          ),
-        })
-      );
-
-      onData(dashboardRecords);
-    },
-
-    onError
-  );
+export function subscribeToAttendanceRecords(onData, onError) {
+  return subscribeToAttendanceManagement(onData, onError);
 }
 
 /* =========================================================
-   AUDIT LOG
+   VALIDATION
 ========================================================= */
 
-async function createAuditLog({
-  action,
-  actor,
-  attendanceId,
-  details = {},
-}) {
-  try {
-    await addDoc(
-      collection(db, "auditLogs"),
-      {
-        action,
-
-        actorId:
-          actor?.uid ||
-          null,
-
-        actorEmail:
-          actor?.email ||
-          null,
-
-        actorName:
-          actor?.fullName ||
-          actor?.email ||
-          "Unknown administrator",
-
-        actorRole:
-          actor?.role ||
-          "admin",
-
-        targetType: "attendance",
-
-        targetId:
-          attendanceId ||
-          null,
-
-        details,
-
-        timestamp: serverTimestamp(),
-      }
-    );
-  } catch (error) {
-    /*
-      An attendance operation should not fail only
-      because its audit log could not be created.
-    */
-    console.error(
-      "Unable to create audit log:",
-      error
-    );
+function documentId(value, label) {
+  if (
+    typeof value !== "string" ||
+    !value.trim() ||
+    value.includes("/")
+  ) {
+    throw new Error(`${label} is invalid.`);
   }
+
+  return value;
 }
 
-/* =========================================================
-   CREATE MANUAL ATTENDANCE
-========================================================= */
-
-export async function addManualAttendance(
-  formData,
-  adminUser
-) {
-  const timestamp = new Date(
-    `${formData.date}T${formData.time}`
-  );
+function selectedTimestamp(formData) {
+  const dateText = String(formData.date || "");
+  const timeText = String(formData.time || "");
 
   if (
-    Number.isNaN(timestamp.getTime())
+    !/^\d{4}-\d{2}-\d{2}$/.test(dateText) ||
+    !/^\d{2}:\d{2}$/.test(timeText)
   ) {
-    throw new Error(
-      "The selected attendance date or time is invalid."
-    );
+    throw new Error("Select a valid attendance date and time.");
   }
 
-  if (!formData.userId) {
-    throw new Error(
-      "A student must be selected."
-    );
+  // Matches the current page's browser-local date/time inputs.
+  const timestamp = new Date(`${dateText}T${timeText}:00`);
+
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new Error("The attendance date or time is invalid.");
   }
 
-  const attendanceReference = await addDoc(
-    collection(db, "attendance"),
-    {
-      userId: formData.userId,
+  const [year, month, day] = dateText.split("-").map(Number);
+  const [hour, minute] = timeText.split(":").map(Number);
 
-      status:
-        formData.status ||
-        "present",
+  // Reject dates that JavaScript silently rolls into another day.
+  if (
+    timestamp.getFullYear() !== year ||
+    timestamp.getMonth() + 1 !== month ||
+    timestamp.getDate() !== day ||
+    timestamp.getHours() !== hour ||
+    timestamp.getMinutes() !== minute
+  ) {
+    throw new Error("The attendance date or time is invalid.");
+  }
 
-      authMethod:
-        formData.authMethod ||
-        "Manual",
+  return timestamp;
+}
 
-      deviceId:
-        formData.deviceId ||
-        "Admin Portal",
+function correctionValues(formData) {
+  const status = String(formData.status || "").trim().toLowerCase();
+  const notes = String(formData.notes || "").trim();
 
-      timestamp,
+  if (!VALID_STATUSES.has(status)) {
+    throw new Error("Choose a valid attendance status.");
+  }
 
-      source:
-        formData.source ||
-        "manual",
+  if (!notes) {
+    throw new Error("A reason is required for manual attendance changes.");
+  }
 
-      verificationResult:
-        formData.verificationResult ||
-        "manual",
+  if (notes.length > 1000) {
+    throw new Error("The reason must be 1,000 characters or fewer.");
+  }
 
-      notes:
-        formData.notes ||
-        "",
+  return {
+    status,
+    notes,
+    timestamp: selectedTimestamp(formData),
+  };
+}
 
-      createdBy:
-        adminUser?.uid ||
-        null,
+function actorId(adminUser) {
+  const currentUser = auth.currentUser;
 
-      updatedBy:
-        adminUser?.uid ||
-        null,
+  if (!currentUser || currentUser.uid !== adminUser?.uid) {
+    throw new Error("Your session changed. Please sign in again.");
+  }
 
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }
-  );
+  return currentUser.uid;
+}
 
-  await createAuditLog({
-    action: "attendance_created",
+async function requireAdmin(transaction, uid) {
+  const snapshot = await transaction.get(doc(db, "users", uid));
 
-    actor: adminUser,
+  if (
+    !snapshot.exists() ||
+    snapshot.data().role !== "admin" ||
+    snapshot.data().active !== true
+  ) {
+    throw new Error("An active administrator account is required.");
+  }
+}
 
-    attendanceId:
-      attendanceReference.id,
+function auditReference() {
+  return doc(collection(db, "auditLogs"));
+}
 
+function auditData(action, uid, attendanceId, details = {}) {
+  // These four top-level fields match the uploaded audit rules.
+  return {
+    actorId: uid,
+    action,
+    timestamp: serverTimestamp(),
     details: {
-      userId: formData.userId,
-
-      status:
-        formData.status ||
-        "present",
-
-      authMethod:
-        formData.authMethod ||
-        "Manual",
-
-      source: "manual",
+      targetType: "attendance",
+      attendanceId: attendanceId || null,
+      ...details,
     },
-  });
+  };
+}
 
-  return attendanceReference.id;
+function sameMinute(first, second) {
+  return (
+    first &&
+    second &&
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate() &&
+    first.getHours() === second.getHours() &&
+    first.getMinutes() === second.getMinutes()
+  );
 }
 
 /* =========================================================
-   UPDATE ATTENDANCE
+   ADD MANUAL ATTENDANCE
+========================================================= */
+
+export async function addManualAttendance(formData, adminUser) {
+  const uid = actorId(adminUser);
+  const userId = documentId(formData.userId, "Student ID");
+  const values = correctionValues(formData);
+
+  const attendanceRef = doc(collection(db, "attendance"));
+  const logRef = auditReference();
+
+  await runTransaction(db, async (transaction) => {
+    await requireAdmin(transaction, uid);
+
+    const studentSnapshot = await transaction.get(
+      doc(db, "users", userId)
+    );
+
+    if (
+      !studentSnapshot.exists() ||
+      studentSnapshot.data().role !== "student" ||
+      studentSnapshot.data().active === false
+    ) {
+      throw new Error("Select an existing active student.");
+    }
+
+    const student = studentSnapshot.data();
+
+    transaction.set(attendanceRef, {
+      userId,
+      studentName: getStudentName(student, {}),
+      studentId: student.studentId || "N/A",
+      department: student.department || "N/A",
+      course: student.course || "N/A",
+
+      ...values,
+
+      // Enforced here, regardless of values passed by the form.
+      authMethod: "Manual",
+      deviceId: "Admin Portal",
+      source: "manual",
+      verificationResult: "manual",
+
+      createdBy: uid,
+      updatedBy: uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    transaction.set(
+      logRef,
+      auditData("attendance_created", uid, attendanceRef.id, {
+        userId,
+        status: values.status,
+        timestamp: values.timestamp,
+        notes: values.notes,
+        source: "manual",
+      })
+    );
+  });
+
+  return attendanceRef.id;
+}
+
+/* =========================================================
+   EDIT ATTENDANCE
 ========================================================= */
 
 export async function updateAttendanceRecord(
@@ -636,168 +522,178 @@ export async function updateAttendanceRecord(
   formData,
   adminUser
 ) {
-  if (!attendanceId) {
-    throw new Error(
-      "Attendance record ID is required."
-    );
-  }
+  const uid = actorId(adminUser);
+  const id = documentId(attendanceId, "Attendance record ID");
+  const values = correctionValues(formData);
 
-  const timestamp = new Date(
-    `${formData.date}T${formData.time}`
-  );
+  const attendanceRef = doc(db, "attendance", id);
+  const logRef = auditReference();
 
-  if (
-    Number.isNaN(timestamp.getTime())
-  ) {
-    throw new Error(
-      "The selected attendance date or time is invalid."
-    );
-  }
+  await runTransaction(db, async (transaction) => {
+    await requireAdmin(transaction, uid);
 
-  await updateDoc(
-    doc(
-      db,
-      "attendance",
-      attendanceId
-    ),
-    {
-      userId: formData.userId,
+    const snapshot = await transaction.get(attendanceRef);
 
-      status:
-        formData.status ||
-        "present",
-
-      authMethod:
-        formData.authMethod ||
-        "Manual",
-
-      deviceId:
-        formData.deviceId ||
-        "Admin Portal",
-
-      timestamp,
-
-      source:
-        formData.source ||
-        "manual",
-
-      verificationResult:
-        formData.verificationResult ||
-        "manual",
-
-      notes:
-        formData.notes ||
-        "",
-
-      updatedBy:
-        adminUser?.uid ||
-        null,
-
-      updatedAt: serverTimestamp(),
+    if (!snapshot.exists()) {
+      throw new Error("This attendance record no longer exists.");
     }
-  );
 
-  await createAuditLog({
-    action: "attendance_updated",
+    const before = snapshot.data();
+    const existingUserId =
+      before.userId || before.uid || before.usedId || "";
 
-    actor: adminUser,
+    if (
+      formData.userId &&
+      formData.userId !== existingUserId
+    ) {
+      throw new Error("An attendance record cannot be reassigned.");
+    }
 
-    attendanceId,
+    const originalTimestamp = recordTimestamp(before);
 
-    details: {
-      userId: formData.userId,
+    const changes = {
+      status: values.status,
+      notes: values.notes,
+      updatedBy: uid,
+      updatedAt: serverTimestamp(),
+      correctionSource: "admin",
+    };
 
-      status:
-        formData.status,
+    // Avoid truncating seconds when the administrator did not
+    // actually change the displayed date/time.
+    const timeChanged = !sameMinute(
+      originalTimestamp,
+      values.timestamp
+    );
 
-      authMethod:
-        formData.authMethod,
-    },
+    if (timeChanged) {
+      changes.timestamp = values.timestamp;
+    }
+
+    // Authentication, verification, device, source, and userId
+    // are deliberately excluded from the update.
+    transaction.update(attendanceRef, changes);
+
+    transaction.set(
+      logRef,
+      auditData("attendance_updated", uid, id, {
+        userId: existingUserId,
+        before: {
+          status: before.status || "unknown",
+          notes: before.notes || before.reason || "",
+          timestamp: originalTimestamp,
+        },
+        after: {
+          status: values.status,
+          notes: values.notes,
+          timestamp: timeChanged
+            ? values.timestamp
+            : originalTimestamp,
+        },
+      })
+    );
   });
 }
 
 /* =========================================================
-   DELETE ONE ATTENDANCE RECORD
+   DELETE ONE RECORD
 ========================================================= */
 
 export async function deleteAttendanceRecord(
   attendanceId,
   adminUser
 ) {
-  if (!attendanceId) {
-    throw new Error(
-      "Attendance record ID is required."
+  const uid = actorId(adminUser);
+  const id = documentId(attendanceId, "Attendance record ID");
+
+  const attendanceRef = doc(db, "attendance", id);
+  const logRef = auditReference();
+
+  await runTransaction(db, async (transaction) => {
+    await requireAdmin(transaction, uid);
+
+    const snapshot = await transaction.get(attendanceRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("This attendance record was already deleted.");
+    }
+
+    const before = snapshot.data();
+
+    transaction.delete(attendanceRef);
+
+    transaction.set(
+      logRef,
+      auditData("attendance_deleted", uid, id, {
+        userId: before.userId || before.uid || before.usedId || "",
+        status: before.status || "unknown",
+        timestamp: recordTimestamp(before),
+        notes: before.notes || before.reason || "",
+        authMethod:
+          before.authMethod ||
+          before.authenticationMethod ||
+          before.method ||
+          "Unknown",
+      })
     );
-  }
-
-  await deleteDoc(
-    doc(
-      db,
-      "attendance",
-      attendanceId
-    )
-  );
-
-  await createAuditLog({
-    action: "attendance_deleted",
-
-    actor: adminUser,
-
-    attendanceId,
-
-    details: {
-      deletedRecordId: attendanceId,
-    },
   });
 }
 
 /* =========================================================
-   BULK DELETE ATTENDANCE RECORDS
+   BULK DELETE
 ========================================================= */
 
 export async function deleteAttendanceRecords(
   attendanceIds,
   adminUser
 ) {
-  if (
-    !Array.isArray(attendanceIds) ||
-    attendanceIds.length === 0
-  ) {
-    throw new Error(
-      "No attendance records were selected."
-    );
+  const uid = actorId(adminUser);
+
+  if (!Array.isArray(attendanceIds) || !attendanceIds.length) {
+    throw new Error("No attendance records were selected.");
   }
 
-  await Promise.all(
-    attendanceIds.map((attendanceId) =>
-      deleteDoc(
-        doc(
-          db,
-          "attendance",
-          attendanceId
-        )
+  const ids = [
+    ...new Set(
+      attendanceIds.map((id) =>
+        documentId(id, "Attendance record ID")
       )
-    )
+    ),
+  ];
+
+  // Intentional application limit: one atomic operation,
+  // with no partial-success chunking.
+  if (ids.length > 100) {
+    throw new Error("Delete at most 100 records at a time.");
+  }
+
+  if (
+    adminUser.role !== "admin" ||
+    adminUser.active === false
+  ) {
+    throw new Error("An active administrator account is required.");
+  }
+
+  // Firestore security rules enforce the current database role.
+  const batch = writeBatch(db);
+
+  ids.forEach((id) => {
+    batch.delete(doc(db, "attendance", id));
+  });
+
+  batch.set(
+    auditReference(),
+    auditData("attendance_bulk_deleted", uid, null, {
+      attendanceIds: ids,
+      totalRequested: ids.length,
+    })
   );
 
-  await createAuditLog({
-    action: "attendance_bulk_deleted",
-
-    actor: adminUser,
-
-    attendanceId: null,
-
-    details: {
-      attendanceIds,
-
-      totalDeleted:
-        attendanceIds.length,
-    },
-  });
+  await batch.commit();
 }
 
 /* =========================================================
-   SUMMARY HELPERS
+   SUMMARY
 ========================================================= */
 
 export function getSummary(records = []) {
@@ -805,27 +701,11 @@ export function getSummary(records = []) {
     (summary, record) => {
       summary.total += 1;
 
-      if (record.status === "present") {
-        summary.present += 1;
-      } else if (
-        record.status === "late"
-      ) {
-        summary.late += 1;
-      } else if (
-        record.status === "absent"
-      ) {
-        summary.absent += 1;
-      } else if (
-        record.status === "excused"
-      ) {
-        summary.excused += 1;
-      } else {
-        summary.unknown += 1;
-      }
+      const status = normalizeStatus(record.status);
+      summary[status] += 1;
 
       return summary;
     },
-
     {
       total: 0,
       present: 0,
@@ -838,201 +718,81 @@ export function getSummary(records = []) {
 }
 
 /* =========================================================
-   WEEKLY CHART DATA
+   CHART HELPERS
 ========================================================= */
-
-const WEEKDAY_LABELS = [
-  "Sun",
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-];
 
 function getRecordDate(record) {
-  return (
-    toSafeDate(record.timestamp) ||
-    toSafeDate(record.date)
-  );
+  return toSafeDate(record.timestamp) || toSafeDate(record.date);
 }
 
-export function getWeeklyChartData(
-  records = []
-) {
-  const days = [];
-
+function buildDailyData(records, numberOfDays, labelKey) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  for (
-    let index = 6;
-    index >= 0;
-    index -= 1
-  ) {
-    const date = new Date(today);
+  const days = [];
 
-    date.setDate(
-      date.getDate() - index
-    );
+  for (let index = numberOfDays - 1; index >= 0; index -= 1) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - index);
 
     days.push({
       key: date.toDateString(),
 
-      day:
-        WEEKDAY_LABELS[
-          date.getDay()
-        ],
+      [labelKey]:
+        labelKey === "day"
+          ? date.toLocaleDateString("en-US", {
+              weekday: "short",
+            })
+          : date.toLocaleDateString("en-MY", {
+              month: "short",
+              day: "numeric",
+            }),
 
       present: 0,
       late: 0,
       absent: 0,
+      excused: 0,
     });
   }
 
-  const recordsByDay =
-    Object.fromEntries(
-      days.map((day) => [
-        day.key,
-        day,
-      ])
-    );
+  const lookup = new Map(
+    days.map((day) => [day.key, day])
+  );
 
   records.forEach((record) => {
-    const recordDate =
-      getRecordDate(record);
+    const date = getRecordDate(record);
+    if (!date) return;
 
-    if (!recordDate) {
-      return;
-    }
+    const day = lookup.get(date.toDateString());
+    const status = normalizeStatus(record.status);
 
-    const day =
-      recordsByDay[
-        recordDate.toDateString()
-      ];
-
-    if (!day) {
-      return;
-    }
-
-    if (record.status === "present") {
-      day.present += 1;
-    } else if (
-      record.status === "late"
-    ) {
-      day.late += 1;
-    } else if (
-      record.status === "absent"
-    ) {
-      day.absent += 1;
+    if (day && VALID_STATUSES.has(status)) {
+      day[status] += 1;
     }
   });
 
-  return days.map(
-    ({ key, ...day }) => day
-  );
+  return days.map(({ key, ...day }) => day);
 }
 
-/* =========================================================
-   14-DAY TREND DATA
-========================================================= */
-
-export function getTrendData(
-  records = []
-) {
-  const days = [];
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (
-    let index = 13;
-    index >= 0;
-    index -= 1
-  ) {
-    const date = new Date(today);
-
-    date.setDate(
-      date.getDate() - index
-    );
-
-    days.push({
-      key: date.toDateString(),
-
-      date: date.toLocaleDateString(
-        "en-MY",
-        {
-          month: "short",
-          day: "numeric",
-        }
-      ),
-
-      present: 0,
-      late: 0,
-      absent: 0,
-    });
-  }
-
-  const recordsByDay =
-    Object.fromEntries(
-      days.map((day) => [
-        day.key,
-        day,
-      ])
-    );
-
-  records.forEach((record) => {
-    const recordDate =
-      getRecordDate(record);
-
-    if (!recordDate) {
-      return;
-    }
-
-    const day =
-      recordsByDay[
-        recordDate.toDateString()
-      ];
-
-    if (!day) {
-      return;
-    }
-
-    if (record.status === "present") {
-      day.present += 1;
-    } else if (
-      record.status === "late"
-    ) {
-      day.late += 1;
-    } else if (
-      record.status === "absent"
-    ) {
-      day.absent += 1;
-    }
-  });
-
-  return days.map(
-    ({ key, ...day }) => day
-  );
+export function getWeeklyChartData(records = []) {
+  return buildDailyData(records, 7, "day");
 }
 
-/* =========================================================
-   RECENT ACTIVITY
-========================================================= */
+export function getTrendData(records = []) {
+  return buildDailyData(records, 14, "date");
+}
 
-export function getRecentActivity(
-  records = [],
-  count = 6
-) {
+export function getRecentActivity(records = [], count = 6) {
+  const limit = Number.isFinite(Number(count))
+    ? Math.max(0, Math.floor(Number(count)))
+    : 6;
+
   return [...records]
     .map((record) => {
-      const timestamp =
-        getRecordDate(record);
+      const timestamp = getRecordDate(record);
 
       return {
         ...record,
-
         timestamp,
         date: timestamp,
 
@@ -1046,24 +806,15 @@ export function getRecentActivity(
           record.method ||
           "Unknown",
 
-        dateLabel:
-          formatDateLabel(timestamp),
-
-        timeLabel:
-          formatTimeLabel(timestamp),
+        dateLabel: formatDateLabel(timestamp),
+        timeLabel: formatTimeLabel(timestamp),
       };
     })
-
-    .filter(
-      (record) =>
-        record.timestamp instanceof Date
-    )
-
+    .filter((record) => Boolean(record.timestamp))
     .sort(
-      (firstRecord, secondRecord) =>
-        secondRecord.timestamp.getTime() -
-        firstRecord.timestamp.getTime()
+      (first, second) =>
+        second.timestamp.getTime() -
+        first.timestamp.getTime()
     )
-
-    .slice(0, count);
+    .slice(0, limit);
 }

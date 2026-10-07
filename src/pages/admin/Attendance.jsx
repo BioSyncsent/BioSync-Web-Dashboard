@@ -1,15 +1,7 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  AlertCircle,
   ArrowDown,
   ArrowUp,
-  ArrowUpDown,
-  BarChart3,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
@@ -19,7 +11,6 @@ import {
   Eye,
   FilePlus2,
   Filter,
-  RefreshCw,
   Search,
   ShieldCheck,
   Trash2,
@@ -27,16 +18,11 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-
 import Swal from "sweetalert2";
-
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFirestoreSubscription } from "../../hooks/useFirestoreSubscription";
-
-import SummaryCard from "../../components/SummaryCard";
-import StatusBadge from "../../components/StatusBadge";
-import AttendanceDetailsModal from "../../components/AttendanceDetailsModal";
-
 import {
   addManualAttendance,
   deleteAttendanceRecord,
@@ -44,2109 +30,973 @@ import {
   subscribeToAttendanceManagement,
   updateAttendanceRecord,
 } from "../../services/attendanceService";
-
-import {
-  exportToCSV,
-  exportToPDF,
-} from "../../utils/exportAttendance";
-
+import { exportToCSV, exportToPDF } from "../../utils/exportAttendance";
 import "./Attendance.css";
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const EMPTY_RECORDS = [];
+const STATUSES = ["present", "late", "absent", "excused"];
 
-function dateToInputValue(date) {
-  if (!date) return "";
+const DEFAULT_FILTERS = {
+  search: "",
+  department: "all",
+  status: "all",
+  method: "all",
+  from: "",
+  to: "",
+};
 
-  const localDate = new Date(
-    date.getTime() -
-      date.getTimezoneOffset() * 60_000
-  );
+function asDate(value) {
+  if (!value) return null;
 
-  return localDate
-    .toISOString()
-    .slice(0, 10);
+  const date =
+    typeof value.toDate === "function"
+      ? value.toDate()
+      : value instanceof Date
+        ? value
+        : new Date(value);
+
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function timeToInputValue(date) {
-  if (!date) return "08:00";
+function inputDate(value = new Date()) {
+  const date = asDate(value);
+  if (!date) return "";
 
-  return date.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function inputTime(value = new Date()) {
+  const date = asDate(value);
+  if (!date) return "";
+
+  return [
+    String(date.getHours()).padStart(2, "0"),
+    String(date.getMinutes()).padStart(2, "0"),
+  ].join(":");
+}
+
+function titleCase(value) {
+  return String(value || "Unknown")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function displayDate(value) {
+  const date = asDate(value);
+  return date
+    ? date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "Unavailable";
+}
+
+function displayTime(value) {
+  const date = asDate(value);
+  return date
+    ? date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+}
+
+function notify(options) {
+  return Swal.fire({
+    background: "#09212c",
+    color: "#eaf7fc",
+    confirmButtonColor: "#087f91",
+    cancelButtonColor: "#28424f",
+    ...options,
   });
 }
 
-function compareValues(first, second) {
-  if (first == null && second == null) return 0;
-  if (first == null) return 1;
-  if (second == null) return -1;
+function Dialog({ title, children, onClose, busy = false }) {
+  const ref = useRef(null);
 
-  if (
-    first instanceof Date &&
-    second instanceof Date
-  ) {
-    return first.getTime() - second.getTime();
-  }
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog.open) dialog.showModal();
 
-  return String(first).localeCompare(
-    String(second),
-    undefined,
-    {
-      numeric: true,
-      sensitivity: "base",
-    }
+    return () => {
+      if (dialog.open) dialog.close();
+    };
+  }, []);
+
+  return (
+    <dialog
+      ref={ref}
+      className="aa-dialog"
+      aria-label={title}
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!busy) onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === ref.current && !busy) onClose();
+      }}
+    >
+      <div className="aa-dialog-inner">
+        <header className="aa-dialog-header">
+          <div>
+            <span className="aa-eyebrow">BIOSYNC SENTINEL</span>
+            <h2>{title}</h2>
+          </div>
+
+          <button
+            type="button"
+            className="aa-icon-button"
+            aria-label="Close dialog"
+            disabled={busy}
+            onClick={onClose}
+          >
+            <X size={19} />
+          </button>
+        </header>
+
+        {children}
+      </div>
+    </dialog>
   );
 }
 
-function verificationLabel(result) {
-  const normalized = String(
-    result || "unknown"
-  ).toLowerCase();
-
-  if (
-    normalized === "verified" ||
-    normalized === "success"
-  ) {
-    return "Verified";
-  }
-
-  if (normalized === "manual") {
-    return "Manual";
-  }
-
-  if (
-    normalized === "failed" ||
-    normalized === "rejected"
-  ) {
-    return "Failed";
-  }
-
-  if (normalized === "flagged") {
-    return "Flagged";
-  }
-
-  return "Unknown";
-}
-
-function verificationClass(result) {
-  const normalized = String(
-    result || "unknown"
-  ).toLowerCase();
-
-  if (
-    normalized === "verified" ||
-    normalized === "success"
-  ) {
-    return "aa-verification aa-verification-success";
-  }
-
-  if (normalized === "manual") {
-    return "aa-verification aa-verification-manual";
-  }
-
-  if (
-    normalized === "failed" ||
-    normalized === "rejected"
-  ) {
-    return "aa-verification aa-verification-danger";
-  }
-
-  if (normalized === "flagged") {
-    return "aa-verification aa-verification-warning";
-  }
-
-  return "aa-verification aa-verification-neutral";
-}
-
-function getEmptyForm() {
-  const now = new Date();
-
-  return {
-    userId: "",
-    status: "present",
-    authMethod: "Manual",
-    deviceId: "Admin Portal",
-    verificationResult: "manual",
-    date: dateToInputValue(now),
-    time: timeToInputValue(now),
-    source: "manual",
-    notes: "",
-  };
-}
-
-function AttendanceFormModal({
-  mode,
+function RecordForm({
   record,
-  users,
+  students,
+  studentsLoading,
+  studentsError,
+  busy,
   onClose,
-  onSubmit,
-  saving,
+  onSave,
 }) {
-  const [formData, setFormData] =
-    useState(getEmptyForm());
+  const editing = Boolean(record);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (
-      mode === "edit" &&
-      record
-    ) {
-      setFormData({
-        userId: record.userId || "",
-        status:
-          record.status || "present",
-        authMethod:
-          record.authMethod || "Manual",
-        deviceId:
-          record.deviceId ||
-          "Admin Portal",
-        verificationResult:
-          record.verificationResult ||
-          "manual",
-        date:
-          dateToInputValue(
-            record.timestamp
-          ) ||
-          dateToInputValue(
-            new Date()
-          ),
-        time:
-          timeToInputValue(
-            record.timestamp
-          ),
-        source:
-          record.source ||
-          "manual",
-        notes:
-          record.notes || "",
-      });
-    } else {
-      setFormData(
-        getEmptyForm()
-      );
-    }
-  }, [mode, record]);
+  const [form, setForm] = useState(() => ({
+    userId: record?.userId || "",
+    status: record?.status || "present",
+    date: inputDate(record?.timestamp || new Date()),
+    time: inputTime(record?.timestamp || new Date()),
+    notes: record?.notes || "",
+  }));
 
-  function updateField(event) {
-    const {
-      name,
-      value,
-    } = event.target;
+  const change = (event) => {
+    const { name, value } = event.target;
+    setForm((previous) => ({ ...previous, [name]: value }));
+    setError("");
+  };
 
-    setFormData(
-      (previous) => ({
-        ...previous,
-        [name]: value,
-      })
-    );
-  }
-
-  function handleSubmit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
 
-    if (!formData.userId) {
-      Swal.fire({
-        icon: "warning",
-        title: "Select a student",
-        text: "A student must be selected before saving.",
-      });
-
+    if (!form.userId || !form.date || !form.time || !form.notes.trim()) {
+      setError("Choose a student, date, time, and enter a reason.");
       return;
     }
 
-    onSubmit(formData);
+    if (
+      !editing &&
+      !students.some((student) => student.userId === form.userId)
+    ) {
+      setError("This student is no longer available. Choose another student.");
+      return;
+    }
+
+    const payload = {
+      ...form,
+      notes: form.notes.trim(),
+      // Preserve original authentication evidence when correcting a record.
+      authMethod: editing ? record.authMethod || "Manual" : "Manual",
+      deviceId: editing ? record.deviceId || "Admin Portal" : "Admin Portal",
+      verificationResult: editing
+        ? record.verificationResult || "manual"
+        : "manual",
+      source: editing ? record.source || "manual" : "manual",
+    };
+
+    try {
+      await onSave(payload);
+    } catch (saveError) {
+      setError(saveError.message || "The record could not be saved.");
+    }
   }
 
   return (
-    <div
-      className="bs-modal-overlay"
-      onMouseDown={onClose}
+    <Dialog
+      title={editing ? "Edit Attendance" : "Add Manual Attendance"}
+      onClose={onClose}
+      busy={busy}
     >
-      <form
-        className="bs-modal bs-modal-lg"
-        onSubmit={handleSubmit}
-        onMouseDown={(event) =>
-          event.stopPropagation()
-        }
-      >
-        <div className="bs-modal-header">
-          <div>
-            <h2 className="bs-modal-title">
-              {mode === "edit"
-                ? "Edit Attendance"
-                : "Add Manual Attendance"}
-            </h2>
+      <form onSubmit={submit}>
+        <div className="aa-dialog-body">
+          <p className="aa-notice">
+            {editing
+              ? "Correct the attendance details. Original authentication information is preserved."
+              : "This entry will be recorded as Manual, with Admin Portal as its source device."}
+          </p>
 
-            <p className="bs-modal-subtitle">
-              {mode === "edit"
-                ? "Correct the selected attendance record."
-                : "Create an administrator-entered attendance record."}
-            </p>
-          </div>
+          {error && <p className="aa-error" role="alert">{error}</p>}
 
-          <button
-            type="button"
-            className="bs-modal-close"
-            onClick={onClose}
-          >
-            <X size={22} />
-          </button>
-        </div>
-
-        <div className="bs-modal-content">
-          <div className="bs-form-grid">
-            <div className="bs-form-group bs-form-span-2">
-              <label>
-                Student
-              </label>
-
-              <select
-                name="userId"
-                value={formData.userId}
-                onChange={updateField}
-                required
-                disabled={
-                  mode === "edit"
-                }
-              >
-                <option value="">
-                  Select student
-                </option>
-
-                {users.map(
-                  (student) => (
-                    <option
-                      key={
-                        student.userId
-                      }
-                      value={
-                        student.userId
-                      }
-                    >
-                      {
-                        student.studentName
-                      }{" "}
-                      —{" "}
-                      {
-                        student.studentId
-                      }
+          <div className="aa-form-grid">
+            <label className="aa-span">
+              Student
+              {editing ? (
+                <input
+                  value={`${record.studentName || "Student"} — ${record.studentId || record.userId}`}
+                  readOnly
+                />
+              ) : (
+                <select
+                  name="userId"
+                  value={form.userId}
+                  onChange={change}
+                  disabled={busy || studentsLoading || Boolean(studentsError)}
+                  required
+                >
+                  <option value="">
+                    {studentsLoading ? "Loading students…" : "Select a student"}
+                  </option>
+                  {students.map((student) => (
+                    <option key={student.userId} value={student.userId}>
+                      {student.studentName} — {student.studentId}
                     </option>
-                  )
-                )}
-              </select>
-            </div>
+                  ))}
+                </select>
+              )}
+            </label>
 
-            <div className="bs-form-group">
-              <label>Status</label>
+            {!editing && studentsError && (
+              <p className="aa-error aa-span" role="alert">
+                Unable to load students: {studentsError}
+              </p>
+            )}
 
+            {!editing && !studentsLoading && !studentsError && !students.length && (
+              <p className="aa-notice aa-span">
+                No active student accounts were found in the users collection.
+              </p>
+            )}
+
+            <label>
+              Attendance status
               <select
                 name="status"
-                value={formData.status}
-                onChange={updateField}
+                value={form.status}
+                onChange={change}
+                disabled={busy}
               >
-                <option value="present">
-                  Present
-                </option>
-                <option value="late">
-                  Late
-                </option>
-                <option value="absent">
-                  Absent
-                </option>
-                <option value="excused">
-                  Excused
-                </option>
+                {STATUSES.map((status) => (
+                  <option key={status} value={status}>{titleCase(status)}</option>
+                ))}
               </select>
-            </div>
+            </label>
 
-            <div className="bs-form-group">
-              <label>
-                Authentication method
-              </label>
-
-              <select
-                name="authMethod"
-                value={
-                  formData.authMethod
-                }
-                onChange={updateField}
-              >
-                <option value="Manual">
-                  Manual
-                </option>
-                <option value="Fingerprint">
-                  Fingerprint
-                </option>
-                <option value="Face">
-                  Face
-                </option>
-                <option value="RFID">
-                  RFID
-                </option>
-              </select>
-            </div>
-
-            <div className="bs-form-group">
-              <label>Date</label>
-
+            <label>
+              Authentication
               <input
-                name="date"
+                value={editing ? record.authMethod || "Manual" : "Manual"}
+                readOnly
+              />
+            </label>
+
+            <label>
+              Date
+              <input
                 type="date"
-                value={formData.date}
-                onChange={updateField}
+                name="date"
+                value={form.date}
+                onChange={change}
                 required
+                disabled={busy}
               />
-            </div>
+            </label>
 
-            <div className="bs-form-group">
-              <label>Time</label>
-
+            <label>
+              Time
               <input
-                name="time"
                 type="time"
-                value={formData.time}
-                onChange={updateField}
+                name="time"
+                value={form.time}
+                onChange={change}
                 required
+                disabled={busy}
               />
-            </div>
+            </label>
 
-            <div className="bs-form-group">
-              <label>
-                Device or terminal
-              </label>
-
-              <input
-                name="deviceId"
-                value={
-                  formData.deviceId
-                }
-                onChange={updateField}
-              />
-            </div>
-
-            <div className="bs-form-group">
-              <label>
-                Verification result
-              </label>
-
-              <select
-                name="verificationResult"
-                value={
-                  formData.verificationResult
-                }
-                onChange={updateField}
-              >
-                <option value="manual">
-                  Manual
-                </option>
-                <option value="verified">
-                  Verified
-                </option>
-                <option value="flagged">
-                  Flagged
-                </option>
-                <option value="failed">
-                  Failed
-                </option>
-              </select>
-            </div>
-
-            <div className="bs-form-group bs-form-span-2">
-              <label>
-                Notes or reason
-              </label>
-
+            <label className="aa-span">
+              Reason / notes
               <textarea
                 name="notes"
-                rows="4"
-                value={
-                  formData.notes
-                }
-                onChange={updateField}
-                placeholder="Explain why this record was added or changed."
+                value={form.notes}
+                onChange={change}
+                placeholder="Explain why this record is being added or corrected."
+                rows={4}
+                maxLength={1000}
+                required
+                disabled={busy}
               />
-            </div>
+            </label>
           </div>
+
+          <small className="aa-muted">
+            Date and time use your browser’s timezone, following the existing attendance service.
+          </small>
         </div>
 
-        <div className="bs-modal-footer">
+        <footer className="aa-dialog-footer">
+          <button type="button" onClick={onClose} disabled={busy}>Cancel</button>
           <button
-            type="button"
-            className="bs-btn bs-btn-secondary"
-            onClick={onClose}
-            disabled={saving}
-          >
-            Cancel
-          </button>
-
-          <button
+            className="aa-primary"
             type="submit"
-            className="bs-btn bs-btn-primary"
-            disabled={saving}
+            disabled={
+              busy ||
+              (!editing && (studentsLoading || Boolean(studentsError) || !students.length))
+            }
           >
-            {saving
-              ? "Saving..."
-              : mode === "edit"
-                ? "Save Changes"
-                : "Add Attendance"}
+            {busy ? "Saving…" : editing ? "Save Changes" : "Add Record"}
           </button>
-        </div>
+        </footer>
       </form>
-    </div>
+    </Dialog>
   );
 }
 
-function AdminAttendance() {
+export default function AdminAttendance() {
   const { user } = useAuth();
 
-  const attendanceSubscription =
-    useFirestoreSubscription(
-      subscribeToAttendanceManagement,
-      []
-    );
+  const subscription = useFirestoreSubscription(
+    subscribeToAttendanceManagement,
+    []
+  );
 
-  const records =
-    attendanceSubscription.data || [];
+  const records = subscription.data || EMPTY_RECORDS;
 
-  const [searchTerm, setSearchTerm] =
-    useState("");
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
+  const [studentsError, setStudentsError] = useState("");
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+  const [sort, setSort] = useState({ key: "timestamp", direction: "desc" });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selected, setSelected] = useState(new Set());
+  const [modal, setModal] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const actionLock = useRef(false);
+  const canManage = user?.role === "admin" && user?.active !== false;
 
-  const [
-    selectedCourse,
-    setSelectedCourse,
-  ] = useState("all");
+  useEffect(() => {
+    if (!canManage) {
+      setStudents([]);
+      setStudentsLoading(false);
+      return;
+    }
 
-  const [
-    selectedDepartment,
-    setSelectedDepartment,
-  ] = useState("all");
+    setStudentsLoading(true);
+    setStudentsError("");
 
-  const [dateFrom, setDateFrom] =
-    useState("");
-
-  const [dateTo, setDateTo] =
-    useState("");
-
-  const [
-    selectedStatus,
-    setSelectedStatus,
-  ] = useState("all");
-
-  const [
-    selectedAuthMethod,
-    setSelectedAuthMethod,
-  ] = useState("all");
-
-  const [
-    selectedDevice,
-    setSelectedDevice,
-  ] = useState("all");
-
-  const [
-    selectedVerification,
-    setSelectedVerification,
-  ] = useState("all");
-
-  const [
-    sortConfig,
-    setSortConfig,
-  ] = useState({
-    key: "timestamp",
-    direction: "desc",
-  });
-
-  const [
-    selectedIds,
-    setSelectedIds,
-  ] = useState(new Set());
-
-  const [page, setPage] =
-    useState(1);
-
-  const [
-    pageSize,
-    setPageSize,
-  ] = useState(10);
-
-  const [
-    selectedModal,
-    setSelectedModal,
-  ] = useState(null);
-
-  const [
-    formModal,
-    setFormModal,
-  ] = useState(null);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const uniqueValues =
-    useMemo(() => {
-      function makeUnique(
-        field
-      ) {
-        return Array.from(
-          new Set(
-            records
-              .map(
-                (record) =>
-                  record[field]
-              )
-              .filter(
-                (value) =>
-                  value &&
-                  value !== "N/A" &&
-                  value !==
-                    "Unknown"
-              )
+    return onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const options = snapshot.docs
+          .map((document) => {
+            const data = document.data();
+            return {
+              ...data,
+              userId: document.id,
+              studentName:
+                data.fullName ||
+                [data.firstName, data.lastName].filter(Boolean).join(" ") ||
+                data.email ||
+                "Unnamed student",
+              studentId: data.studentId || document.id,
+            };
+          })
+          .filter(
+            (student) =>
+              student.role === "student" && student.active !== false
           )
-        ).sort();
+          .sort((a, b) => a.studentName.localeCompare(b.studentName));
+
+        setStudents(options);
+        setStudentsLoading(false);
+        setStudentsError("");
+      },
+      (error) => {
+        setStudents([]);
+        setStudentsLoading(false);
+        setStudentsError(error.message || "Firebase permission error.");
       }
-
-      return {
-        courses:
-          makeUnique("course"),
-        departments:
-          makeUnique(
-            "department"
-          ),
-        authMethods:
-          makeUnique(
-            "authMethod"
-          ),
-        devices:
-          makeUnique(
-            "deviceId"
-          ),
-        verificationResults:
-          makeUnique(
-            "verificationResult"
-          ),
-      };
-    }, [records]);
-
-  const studentOptions =
-    useMemo(() => {
-      const map =
-        new Map();
-
-      records.forEach(
-        (record) => {
-          if (!record.userId) {
-            return;
-          }
-
-          if (
-            !map.has(
-              record.userId
-            )
-          ) {
-            map.set(
-              record.userId,
-              {
-                userId:
-                  record.userId,
-                studentName:
-                  record.studentName,
-                studentId:
-                  record.studentId,
-              }
-            );
-          }
-        }
-      );
-
-      return Array.from(
-        map.values()
-      ).sort(
-        (
-          first,
-          second
-        ) =>
-          first.studentName.localeCompare(
-            second.studentName
-          )
-      );
-    }, [records]);
-
-  const filteredRecords =
-    useMemo(() => {
-      const queryText =
-        searchTerm
-          .trim()
-          .toLowerCase();
-
-      return records.filter(
-        (record) => {
-          const searchableText =
-            [
-              record.studentName,
-              record.studentId,
-              record.email,
-              record.course,
-              record.department,
-              record.authMethod,
-              record.deviceId,
-              record.rfidCardId,
-              record.verificationResult,
-            ]
-              .filter(Boolean)
-              .join(" ")
-              .toLowerCase();
-
-          const matchesSearch =
-            !queryText ||
-            searchableText.includes(
-              queryText
-            );
-
-          const matchesCourse =
-            selectedCourse ===
-              "all" ||
-            record.course ===
-              selectedCourse;
-
-          const matchesDepartment =
-            selectedDepartment ===
-              "all" ||
-            record.department ===
-              selectedDepartment;
-
-          const matchesStatus =
-            selectedStatus ===
-              "all" ||
-            record.status ===
-              selectedStatus;
-
-          const matchesMethod =
-            selectedAuthMethod ===
-              "all" ||
-            record.authMethod ===
-              selectedAuthMethod;
-
-          const matchesDevice =
-            selectedDevice ===
-              "all" ||
-            record.deviceId ===
-              selectedDevice;
-
-          const matchesVerification =
-            selectedVerification ===
-              "all" ||
-            record.verificationResult ===
-              selectedVerification;
-
-          let matchesDateFrom =
-            true;
-
-          let matchesDateTo =
-            true;
-
-          if (
-            record.timestamp
-          ) {
-            const recordDate =
-              dateToInputValue(
-                record.timestamp
-              );
-
-            if (dateFrom) {
-              matchesDateFrom =
-                recordDate >=
-                dateFrom;
-            }
-
-            if (dateTo) {
-              matchesDateTo =
-                recordDate <=
-                dateTo;
-            }
-          } else if (
-            dateFrom ||
-            dateTo
-          ) {
-            matchesDateFrom =
-              false;
-            matchesDateTo =
-              false;
-          }
-
-          return (
-            matchesSearch &&
-            matchesCourse &&
-            matchesDepartment &&
-            matchesStatus &&
-            matchesMethod &&
-            matchesDevice &&
-            matchesVerification &&
-            matchesDateFrom &&
-            matchesDateTo
-          );
-        }
-      );
-    }, [
-      records,
-      searchTerm,
-      selectedCourse,
-      selectedDepartment,
-      selectedStatus,
-      selectedAuthMethod,
-      selectedDevice,
-      selectedVerification,
-      dateFrom,
-      dateTo,
-    ]);
-
-  const sortedRecords =
-    useMemo(() => {
-      return [
-        ...filteredRecords,
-      ].sort(
-        (
-          first,
-          second
-        ) => {
-          const comparison =
-            compareValues(
-              first[
-                sortConfig.key
-              ],
-              second[
-                sortConfig.key
-              ]
-            );
-
-          return sortConfig.direction ===
-            "asc"
-            ? comparison
-            : -comparison;
-        }
-      );
-    }, [
-      filteredRecords,
-      sortConfig,
-    ]);
-
-  const totalPages =
-    Math.max(
-      1,
-      Math.ceil(
-        sortedRecords.length /
-          pageSize
-      )
     );
+  }, [canManage]);
 
-  const paginatedRecords =
-    useMemo(() => {
-      const start =
-        (page - 1) *
-        pageSize;
+  const choices = useMemo(() => ({
+    departments: [...new Set(records.map((r) => r.department).filter(Boolean))].sort(),
+    methods: [...new Set(records.map((r) => r.authMethod).filter(Boolean))].sort(),
+  }), [records]);
 
-      return sortedRecords.slice(
-        start,
-        start + pageSize
+  const invalidRange = Boolean(
+    filters.from && filters.to && filters.from > filters.to
+  );
+
+  const filtered = useMemo(() => {
+    if (invalidRange) return [];
+
+    const search = filters.search.trim().toLowerCase();
+
+    return records.filter((record) => {
+      const text = [
+        record.studentName,
+        record.studentId,
+        record.email,
+        record.course,
+        record.department,
+        record.deviceId,
+        record.authMethod,
+        record.rfidCardId,
+        record.verificationResult,
+        record.notes,
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      const day = inputDate(record.timestamp);
+
+      return (
+        (!search || text.includes(search)) &&
+        (filters.department === "all" || record.department === filters.department) &&
+        (filters.status === "all" || record.status === filters.status) &&
+        (filters.method === "all" || record.authMethod === filters.method) &&
+        (!filters.from || (day && day >= filters.from)) &&
+        (!filters.to || (day && day <= filters.to))
       );
-    }, [
-      sortedRecords,
-      page,
-      pageSize,
-    ]);
+    });
+  }, [records, filters, invalidRange]);
+
+  const sorted = useMemo(() => [...filtered].sort((a, b) => {
+    const first = sort.key === "timestamp"
+      ? asDate(a.timestamp)?.getTime()
+      : a[sort.key];
+
+    const second = sort.key === "timestamp"
+      ? asDate(b.timestamp)?.getTime()
+      : b[sort.key];
+
+    if (first == null && second == null) return String(a.id).localeCompare(String(b.id));
+    if (first == null) return 1;
+    if (second == null) return -1;
+
+    const comparison = typeof first === "number" && typeof second === "number"
+      ? first - second
+      : String(first).localeCompare(String(second), undefined, { numeric: true });
+
+    return (sort.direction === "asc" ? comparison : -comparison) ||
+      String(a.id).localeCompare(String(b.id));
+  }), [filtered, sort]);
+
+  const counts = useMemo(() => {
+    const result = { present: 0, late: 0, absent: 0, excused: 0 };
+    filtered.forEach((record) => {
+      if (Object.prototype.hasOwnProperty.call(result, record.status)) {
+        result[record.status] += 1;
+      }
+    });
+    return result;
+  }, [filtered]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const visible = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const selectedRecords = sorted.filter((record) => selected.has(record.id));
+  const allVisibleSelected = visible.length > 0 &&
+    visible.every((record) => selected.has(record.id));
+
+  const detailRecord = modal?.mode === "view"
+    ? records.find((record) => record.id === modal.id)
+    : null;
 
   useEffect(() => {
     setPage(1);
-  }, [
-    searchTerm,
-    selectedCourse,
-    selectedDepartment,
-    selectedStatus,
-    selectedAuthMethod,
-    selectedDevice,
-    selectedVerification,
-    dateFrom,
-    dateTo,
-    pageSize,
-  ]);
+    setSelected(new Set());
+  }, [filters, pageSize]);
 
   useEffect(() => {
-    if (
-      page > totalPages
-    ) {
-      setPage(totalPages);
-    }
-  }, [
-    page,
-    totalPages,
-  ]);
+    setSelected((previous) => {
+      const existing = new Set(records.map((record) => record.id));
+      const next = new Set([...previous].filter((id) => existing.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [records]);
 
-  const summary =
-    useMemo(() => {
-      const total =
-        filteredRecords.length;
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
-      const present =
-        filteredRecords.filter(
-          (record) =>
-            record.status ===
-            "present"
-        ).length;
-
-      const late =
-        filteredRecords.filter(
-          (record) =>
-            record.status ===
-            "late"
-        ).length;
-
-      const absent =
-        filteredRecords.filter(
-          (record) =>
-            record.status ===
-            "absent"
-        ).length;
-
-      const attended =
-        present + late;
-
-      const percentage =
-        total > 0
-          ? (
-              (attended /
-                total) *
-              100
-            ).toFixed(1)
-          : "0.0";
-
-      return {
-        total,
-        present,
-        late,
-        absent,
-        percentage,
-      };
-    }, [
-      filteredRecords,
-    ]);
-
-  const allVisibleSelected =
-    paginatedRecords.length >
-      0 &&
-    paginatedRecords.every(
-      (record) =>
-        selectedIds.has(
-          record.id
-        )
-    );
-
-  const selectedRecords =
-    useMemo(
-      () =>
-        sortedRecords.filter(
-          (record) =>
-            selectedIds.has(
-              record.id
-            )
-        ),
-      [
-        sortedRecords,
-        selectedIds,
-      ]
-    );
-
-  function toggleSort(key) {
-    setSortConfig(
-      (previous) => ({
-        key,
-        direction:
-          previous.key ===
-            key &&
-          previous.direction ===
-            "asc"
-            ? "desc"
-            : "asc",
-      })
-    );
+  function changeFilter(key, value) {
+    setFilters((previous) => ({ ...previous, [key]: value }));
   }
 
-  function renderSortIcon(
-    key
-  ) {
-    if (
-      sortConfig.key !== key
-    ) {
-      return (
-        <ArrowUpDown
-          size={13}
-        />
-      );
-    }
-
-    return sortConfig.direction ===
-      "asc" ? (
-      <ArrowUp size={13} />
-    ) : (
-      <ArrowDown size={13} />
-    );
+  function toggle(id) {
+    setSelected((previous) => {
+      const next = new Set(previous);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
-  function toggleRecord(
-    recordId
-  ) {
-    setSelectedIds(
-      (previous) => {
-        const next =
-          new Set(previous);
-
-        if (
-          next.has(recordId)
-        ) {
-          next.delete(
-            recordId
-          );
-        } else {
-          next.add(recordId);
-        }
-
-        return next;
-      }
-    );
-  }
-
-  function toggleVisibleRecords() {
-    setSelectedIds(
-      (previous) => {
-        const next =
-          new Set(previous);
-
-        if (
-          allVisibleSelected
-        ) {
-          paginatedRecords.forEach(
-            (record) =>
-              next.delete(
-                record.id
-              )
-          );
-        } else {
-          paginatedRecords.forEach(
-            (record) =>
-              next.add(
-                record.id
-              )
-          );
-        }
-
-        return next;
-      }
-    );
-  }
-
-  function clearFilters() {
-    setSearchTerm("");
-    setSelectedCourse("all");
-    setSelectedDepartment(
-      "all"
-    );
-    setSelectedStatus("all");
-    setSelectedAuthMethod(
-      "all"
-    );
-    setSelectedDevice("all");
-    setSelectedVerification(
-      "all"
-    );
-    setDateFrom("");
-    setDateTo("");
-    setSelectedIds(
-      new Set()
-    );
-  }
-
-  function handleExport(
-    format
-  ) {
-    const exportRecords =
-      selectedRecords.length >
-      0
-        ? selectedRecords
-        : sortedRecords;
-
-    if (
-      format === "csv"
-    ) {
-      exportToCSV(
-        exportRecords,
-        "attendance"
-      );
-    } else {
-      exportToPDF(
-        exportRecords,
-        "BioSync Attendance Report"
-      );
-    }
-  }
-
-  async function handleDelete(
-    record
-  ) {
-    const result =
-      await Swal.fire({
-        icon: "warning",
-        title:
-          "Delete attendance?",
-        html: `This will permanently delete the record for <strong>${record.studentName}</strong>.`,
-        showCancelButton: true,
-        confirmButtonText:
-          "Delete",
-        cancelButtonText:
-          "Cancel",
-        confirmButtonColor:
-          "#ef4444",
+  function togglePage() {
+    setSelected((previous) => {
+      const next = new Set(previous);
+      visible.forEach((record) => {
+        allVisibleSelected ? next.delete(record.id) : next.add(record.id);
       });
+      return next;
+    });
+  }
 
-    if (
-      !result.isConfirmed
-    ) {
-      return;
+  function sortBy(key) {
+    setSort((previous) => ({
+      key,
+      direction: previous.key === key && previous.direction === "asc" ? "desc" : "asc",
+    }));
+  }
+
+  async function saveRecord(payload) {
+    if (!canManage) throw new Error("An active administrator account is required.");
+    if (actionLock.current) throw new Error("Another action is still running.");
+
+    const editing = modal.mode === "edit";
+    const recordId = modal.record?.id;
+
+    if (editing && !records.some((record) => record.id === recordId)) {
+      throw new Error("This record was deleted. Close the form and refresh your view.");
     }
+
+    actionLock.current = true;
+    setBusy(true);
 
     try {
-      await deleteAttendanceRecord(
-        record.id,
-        user
-      );
-
-      setSelectedIds(
-        (previous) => {
-          const next =
-            new Set(
-              previous
-            );
-
-          next.delete(
-            record.id
-          );
-
-          return next;
-        }
-      );
-
-      await Swal.fire({
-        icon: "success",
-        title:
-          "Attendance deleted",
-        timer: 1400,
-        showConfirmButton:
-          false,
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title:
-          "Unable to delete",
-        text:
-          error.message ||
-          "The attendance record could not be deleted.",
-      });
-    }
-  }
-
-  async function handleBulkDelete() {
-    if (
-      selectedRecords.length ===
-      0
-    ) {
-      return;
-    }
-
-    const result =
-      await Swal.fire({
-        icon: "warning",
-        title: `Delete ${selectedRecords.length} records?`,
-        text:
-          "This action cannot be undone.",
-        showCancelButton: true,
-        confirmButtonText:
-          "Delete selected",
-        cancelButtonText:
-          "Cancel",
-        confirmButtonColor:
-          "#ef4444",
-      });
-
-    if (
-      !result.isConfirmed
-    ) {
-      return;
-    }
-
-    try {
-      await deleteAttendanceRecords(
-        selectedRecords.map(
-          (record) =>
-            record.id
-        ),
-        user
-      );
-
-      setSelectedIds(
-        new Set()
-      );
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title:
-          "Unable to delete records",
-        text:
-          error.message ||
-          "The selected records could not be deleted.",
-      });
-    }
-  }
-
-  async function handleFormSubmit(
-    formData
-  ) {
-    setSaving(true);
-
-    try {
-      if (
-        formModal.mode ===
-        "edit"
-      ) {
-        await updateAttendanceRecord(
-          formModal.record.id,
-          formData,
-          user
-        );
+      if (editing) {
+        await updateAttendanceRecord(recordId, payload, user);
       } else {
-        await addManualAttendance(
-          formData,
-          user
-        );
+        await addManualAttendance(payload, user);
       }
 
-      setFormModal(null);
+      setModal(null);
+    } finally {
+      actionLock.current = false;
+      setBusy(false);
+    }
+  }
 
-      await Swal.fire({
-        icon: "success",
-        title:
-          formModal.mode ===
-          "edit"
-            ? "Attendance updated"
-            : "Attendance added",
-        timer: 1400,
-        showConfirmButton:
-          false,
+  async function deleteRecords(targets) {
+    if (!canManage || !targets.length || actionLock.current) return;
+
+    actionLock.current = true;
+    setBusy(true);
+
+    try {
+      const confirmation = await notify({
+        icon: "warning",
+        title: targets.length === 1 ? "Delete attendance?" : `Delete ${targets.length} records?`,
+        text: targets.length === 1
+          ? `Permanently delete the record for ${targets[0].studentName || "this student"}?`
+          : "The selected records will be permanently deleted.",
+        showCancelButton: true,
+        confirmButtonText: "Delete",
+        confirmButtonColor: "#b94352",
+        focusCancel: true,
       });
+
+      if (!confirmation.isConfirmed) return;
+
+      if (targets.length === 1) {
+        await deleteAttendanceRecord(targets[0].id, user);
+      } else {
+        await deleteAttendanceRecords(targets.map((record) => record.id), user);
+      }
+
+      setSelected(new Set());
     } catch (error) {
-      Swal.fire({
+      await notify({
         icon: "error",
-        title:
-          "Unable to save",
-        text:
-          error.message ||
-          "The attendance record could not be saved.",
+        title: "Unable to delete",
+        text: error.message || "Check your connection and Firebase permissions.",
       });
     } finally {
-      setSaving(false);
+      actionLock.current = false;
+      setBusy(false);
     }
   }
 
-  if (
-    attendanceSubscription.loading
-  ) {
-    return (
-      <div className="admin-attendance-page aa-loading-page">
-        <div className="aa-loader" />
-        <p>
-          Loading attendance
-          management...
-        </p>
-      </div>
-    );
+  async function exportRecords(format) {
+    const targets = selectedRecords.length ? selectedRecords : sorted;
+    if (!targets.length) return;
+
+    try {
+      if (format === "csv") {
+        await exportToCSV(targets, "attendance");
+      } else {
+        await exportToPDF(targets, "BioSync Attendance Report");
+      }
+    } catch (error) {
+      await notify({
+        icon: "error",
+        title: "Export failed",
+        text: error.message || "The report could not be generated.",
+      });
+    }
   }
 
-  if (
-    attendanceSubscription.error
-  ) {
+  const summaryCards = [
+    { key: "all", label: "Total Records", value: filtered.length, icon: Users, tone: "cyan" },
+    { key: "present", label: "Present", value: counts.present, icon: CheckCircle, tone: "green" },
+    { key: "late", label: "Late", value: counts.late, icon: Clock, tone: "amber" },
+    { key: "absent", label: "Absent", value: counts.absent, icon: XCircle, tone: "red" },
+    { key: "excused", label: "Excused", value: counts.excused, icon: ShieldCheck, tone: "cyan" },
+  ];
+
+  function sortHeading(key, label) {
     return (
-      <div className="admin-attendance-page">
-        <div className="aa-error-card">
-          <AlertCircle
-            size={30}
-          />
-
-          <div>
-            <h2>
-              Unable to load
-              attendance
-            </h2>
-
-            <p>
-              {
-                attendanceSubscription
-                  .error.message
-              }
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              attendanceSubscription.retry
-            }
-          >
-            <RefreshCw
-              size={15}
-            />
-            Retry
-          </button>
-        </div>
-      </div>
+      <button type="button" className="aa-sort" onClick={() => sortBy(key)}>
+        {label}
+        {sort.key === key && (
+          sort.direction === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+        )}
+      </button>
     );
   }
-
-  const firstVisible =
-    sortedRecords.length ===
-    0
-      ? 0
-      : (page - 1) *
-          pageSize +
-        1;
-
-  const lastVisible =
-    Math.min(
-      page * pageSize,
-      sortedRecords.length
-    );
 
   return (
     <div className="admin-attendance-page">
       <section className="aa-hero">
-        <div className="aa-hero-grid" />
-
         <div>
-          <span className="aa-eyebrow">
-            <ShieldCheck
-              size={14}
-            />
-            Administrator Control
-          </span>
-
-          <h1>
-            Attendance Management
-          </h1>
-
-          <p>
-            Monitor, correct,
-            export and manage
-            attendance records
-            across the BioSync
-            Sentinel system.
-          </p>
+          <span className="aa-eyebrow"><ShieldCheck size={14} /> ADMINISTRATOR WORKSPACE</span>
+          <h1>Attendance <span>Management</span></h1>
+          <p>Review attendance, manage corrections, and export your records.</p>
+          <div className="aa-hero-tags">
+            <span>Firebase-connected records</span>
+            <span>Manual corrections</span>
+          </div>
         </div>
 
         <button
           type="button"
-          className="aa-add-button"
-          onClick={() =>
-            setFormModal({
-              mode: "add",
-              record: null,
-            })
-          }
+          className="aa-primary"
+          disabled={!canManage || busy || Boolean(subscription.loading) || Boolean(subscription.error)}
+          onClick={() => setModal({ mode: "add" })}
         >
-          <FilePlus2
-            size={17}
-          />
-          Add Attendance
+          <FilePlus2 size={17} /> Add Manual Record
         </button>
       </section>
 
-      <section className="aa-summary-grid">
-        <SummaryCard
-          icon={Users}
-          label="Total Records"
-          value={summary.total}
-          tone="primary"
-        />
-
-        <SummaryCard
-          icon={CheckCircle}
-          label="Present"
-          value={
-            summary.present
-          }
-          tone="success"
-        />
-
-        <SummaryCard
-          icon={Clock}
-          label="Late"
-          value={summary.late}
-          tone="warning"
-        />
-
-        <SummaryCard
-          icon={XCircle}
-          label="Absent"
-          value={
-            summary.absent
-          }
-          tone="danger"
-        />
-
-        <SummaryCard
-          icon={BarChart3}
-          label="Attendance %"
-          value={`${summary.percentage}%`}
-          tone="info"
-        />
-      </section>
-
-      <section className="aa-filter-panel">
-        <div className="aa-filter-heading">
-          <div>
-            <span>
-              <Filter
-                size={15}
-              />
-              Advanced Filters
-            </span>
-
-            <p>
-              Refine attendance
-              records using student,
-              course, device and
-              verification details.
-            </p>
-          </div>
-
-          <div className="aa-export-actions">
-            <button
-              type="button"
-              onClick={() =>
-                handleExport(
-                  "csv"
-                )
-              }
-            >
-              <Download
-                size={14}
-              />
-              CSV
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                handleExport(
-                  "pdf"
-                )
-              }
-            >
-              <Download
-                size={14}
-              />
-              PDF
-            </button>
-          </div>
-        </div>
-
-        <div className="aa-search">
-          <Search size={17} />
-
-          <input
-            value={searchTerm}
-            onChange={(
-              event
-            ) =>
-              setSearchTerm(
-                event.target
-                  .value
-              )
-            }
-            placeholder="Search student, ID, email, RFID, course, department, method or device..."
-          />
-        </div>
-
-        <div className="aa-filter-grid">
-          <select
-            value={
-              selectedCourse
-            }
-            onChange={(
-              event
-            ) =>
-              setSelectedCourse(
-                event.target
-                  .value
-              )
-            }
-          >
-            <option value="all">
-              All Courses
-            </option>
-
-            {uniqueValues.courses.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value}
-                </option>
-              )
-            )}
-          </select>
-
-          <select
-            value={
-              selectedDepartment
-            }
-            onChange={(
-              event
-            ) =>
-              setSelectedDepartment(
-                event.target
-                  .value
-              )
-            }
-          >
-            <option value="all">
-              All Departments
-            </option>
-
-            {uniqueValues.departments.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value}
-                </option>
-              )
-            )}
-          </select>
-
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(
-              event
-            ) =>
-              setDateFrom(
-                event.target
-                  .value
-              )
-            }
-          />
-
-          <input
-            type="date"
-            value={dateTo}
-            min={
-              dateFrom ||
-              undefined
-            }
-            onChange={(
-              event
-            ) =>
-              setDateTo(
-                event.target
-                  .value
-              )
-            }
-          />
-
-          <select
-            value={
-              selectedStatus
-            }
-            onChange={(
-              event
-            ) =>
-              setSelectedStatus(
-                event.target
-                  .value
-              )
-            }
-          >
-            <option value="all">
-              All Statuses
-            </option>
-            <option value="present">
-              Present
-            </option>
-            <option value="late">
-              Late
-            </option>
-            <option value="absent">
-              Absent
-            </option>
-            <option value="excused">
-              Excused
-            </option>
-          </select>
-
-          <select
-            value={
-              selectedAuthMethod
-            }
-            onChange={(
-              event
-            ) =>
-              setSelectedAuthMethod(
-                event.target
-                  .value
-              )
-            }
-          >
-            <option value="all">
-              All Methods
-            </option>
-
-            {uniqueValues.authMethods.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value}
-                </option>
-              )
-            )}
-          </select>
-
-          <select
-            value={
-              selectedDevice
-            }
-            onChange={(
-              event
-            ) =>
-              setSelectedDevice(
-                event.target
-                  .value
-              )
-            }
-          >
-            <option value="all">
-              All Devices
-            </option>
-
-            {uniqueValues.devices.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value}
-                </option>
-              )
-            )}
-          </select>
-
-          <select
-            value={
-              selectedVerification
-            }
-            onChange={(
-              event
-            ) =>
-              setSelectedVerification(
-                event.target
-                  .value
-              )
-            }
-          >
-            <option value="all">
-              All Verification
-            </option>
-
-            {uniqueValues.verificationResults.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {verificationLabel(
-                    value
-                  )}
-                </option>
-              )
-            )}
-          </select>
-        </div>
-
-        <button
-          type="button"
-          className="aa-clear-button"
-          onClick={clearFilters}
-        >
-          <X size={14} />
-          Clear Filters
-        </button>
-      </section>
-
-      {selectedRecords.length >
-        0 && (
-        <section className="aa-selection-bar">
-          <strong>
-            {
-              selectedRecords.length
-            }{" "}
-            selected
-          </strong>
-
-          <div>
-            <button
-              onClick={() =>
-                handleExport(
-                  "csv"
-                )
-              }
-            >
-              <Download
-                size={14}
-              />
-              Export
-            </button>
-
-            <button
-              className="aa-delete-selected"
-              onClick={
-                handleBulkDelete
-              }
-            >
-              <Trash2
-                size={14}
-              />
-              Delete
-            </button>
-          </div>
+      {subscription.error ? (
+        <section className="aa-panel aa-error" role="alert">
+          <h2>Unable to load attendance</h2>
+          <p>{subscription.error.message || "Check your Firebase connection and permissions."}</p>
+          <button type="button" onClick={subscription.retry}>Retry</button>
         </section>
+      ) : subscription.loading ? (
+        <section className="aa-panel aa-empty" role="status">
+          <span className="aa-spinner" />
+          <h2>Loading attendance…</h2>
+          <p>Fetching records from Firebase.</p>
+        </section>
+      ) : (
+        <>
+          <section className="aa-summary-grid" aria-label="Attendance summary">
+            {summaryCards.map(({ key, label, value, icon: Icon, tone }) => (
+              <button
+                type="button"
+                key={key}
+                className={`aa-stat aa-tone-${tone} ${filters.status === key ? "is-active" : ""}`}
+                aria-pressed={filters.status === key}
+                onClick={() => changeFilter("status", key)}
+              >
+                <span className="aa-stat-top">{label}<Icon size={18} /></span>
+                <strong>{value.toLocaleString()}</strong>
+                <small>{key === "all" ? "Matching records" : "Click to filter"}</small>
+              </button>
+            ))}
+          </section>
+
+          <section className="aa-panel">
+            <div className="aa-section-heading">
+              <div>
+                <span className="aa-eyebrow">FIND YOUR RECORDS</span>
+                <h2><Filter size={18} /> Attendance Filters</h2>
+                <p>Summary counts reflect the current filters.</p>
+              </div>
+              <div className="aa-actions">
+                <button
+                  type="button"
+                  onClick={() => setFilters({ ...DEFAULT_FILTERS, from: inputDate(), to: inputDate() })}
+                >Today</button>
+                <button type="button" onClick={() => setFilters({ ...DEFAULT_FILTERS })}>Reset</button>
+              </div>
+            </div>
+
+            <label className="aa-search">
+              <Search size={18} />
+              <input
+                type="search"
+                aria-label="Search attendance records"
+                placeholder="Search student, ID, device, RFID, or notes…"
+                value={filters.search}
+                onChange={(event) => changeFilter("search", event.target.value)}
+              />
+            </label>
+
+            <div className="aa-filter-grid">
+              <label>
+                Department
+                <select value={filters.department} onChange={(e) => changeFilter("department", e.target.value)}>
+                  <option value="all">All departments</option>
+                  {choices.departments.map((value) => <option key={value} value={value}>{value}</option>)}
+                </select>
+              </label>
+
+              <label>
+                Status
+                <select value={filters.status} onChange={(e) => changeFilter("status", e.target.value)}>
+                  <option value="all">All statuses</option>
+                  {STATUSES.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}
+                </select>
+              </label>
+
+              <label>
+                Method
+                <select value={filters.method} onChange={(e) => changeFilter("method", e.target.value)}>
+                  <option value="all">All methods</option>
+                  {choices.methods.map((value) => <option key={value} value={value}>{value}</option>)}
+                </select>
+              </label>
+
+              <label>
+                From date
+                <input type="date" value={filters.from} onChange={(e) => changeFilter("from", e.target.value)} />
+              </label>
+
+              <label>
+                To date
+                <input type="date" value={filters.to} onChange={(e) => changeFilter("to", e.target.value)} />
+              </label>
+            </div>
+
+            {invalidRange && (
+              <p className="aa-error" role="alert">The end date must be on or after the start date.</p>
+            )}
+          </section>
+
+          <section className="aa-panel aa-record-panel">
+            <div className="aa-section-heading">
+              <div>
+                <span className="aa-eyebrow">ATTENDANCE REGISTER</span>
+                <h2>Student Records <span className="aa-count">{sorted.length}</span></h2>
+                <p>Exports include selected records, or all filtered records across every page.</p>
+              </div>
+
+              <div className="aa-actions">
+                <button type="button" disabled={!sorted.length || invalidRange} onClick={() => exportRecords("csv")}>
+                  <Download size={15} /> CSV
+                </button>
+                <button type="button" disabled={!sorted.length || invalidRange} onClick={() => exportRecords("pdf")}>
+                  <Download size={15} /> PDF
+                </button>
+              </div>
+            </div>
+
+            {selectedRecords.length > 0 && (
+              <div className="aa-selection">
+                <span>{selectedRecords.length} record(s) selected</span>
+                <div className="aa-actions">
+                  <button type="button" onClick={() => setSelected(new Set())}>Clear selection</button>
+                  <button
+                    type="button"
+                    className="aa-danger"
+                    disabled={!canManage || busy}
+                    onClick={() => deleteRecords(selectedRecords)}
+                  ><Trash2 size={14} /> Delete selected</button>
+                </div>
+              </div>
+            )}
+
+            <div className="aa-table-scroll">
+              <table className="aa-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        aria-label="Select records on this page"
+                        checked={allVisibleSelected}
+                        disabled={!visible.length || busy}
+                        onChange={togglePage}
+                      />
+                    </th>
+                    <th aria-sort={sort.key === "studentName" ? sort.direction === "asc" ? "ascending" : "descending" : "none"}>
+                      {sortHeading("studentName", "Student")}
+                    </th>
+                    <th>Department / Course</th>
+                    <th aria-sort={sort.key === "timestamp" ? sort.direction === "asc" ? "ascending" : "descending" : "none"}>
+                      {sortHeading("timestamp", "Date & Time")}
+                    </th>
+                    <th>Status</th>
+                    <th>Authentication</th>
+                    <th>Device</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {!visible.length ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="aa-empty">
+                          <Search size={30} />
+                          <h3>No matching attendance records</h3>
+                          <p>Try resetting your filters or add a manual record.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : visible.map((record) => (
+                    <tr key={record.id} className={selected.has(record.id) ? "is-selected" : ""}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select attendance for ${record.studentName || record.studentId || "student"}`}
+                          checked={selected.has(record.id)}
+                          disabled={busy}
+                          onChange={() => toggle(record.id)}
+                        />
+                      </td>
+                      <td>
+                        <div className="aa-student">
+                          <span className="aa-avatar">{String(record.studentName || "S").slice(0, 1).toUpperCase()}</span>
+                          <div>
+                            <strong>{record.studentName || "Unknown student"}</strong>
+                            <small>{record.studentId || record.userId || "No student ID"}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <strong>{record.department || "—"}</strong>
+                        <small>{record.course || "—"}</small>
+                      </td>
+                      <td>
+                        <strong>{displayDate(record.timestamp)}</strong>
+                        <small>{displayTime(record.timestamp)}</small>
+                      </td>
+                      <td>
+                        <span className={`aa-badge aa-status-${STATUSES.includes(record.status) ? record.status : "unknown"}`}>
+                          {titleCase(record.status)}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{record.authMethod || "Unknown"}</strong>
+                        <small>{titleCase(record.verificationResult)}</small>
+                      </td>
+                      <td>{record.deviceId || "—"}</td>
+                      <td>
+                        <div className="aa-row-actions">
+                          <button type="button" className="aa-icon-button" aria-label="View attendance details" onClick={() => setModal({ mode: "view", id: record.id })}>
+                            <Eye size={16} />
+                          </button>
+                          <button type="button" className="aa-icon-button" aria-label="Edit attendance record" disabled={!canManage || busy} onClick={() => setModal({ mode: "edit", record })}>
+                            <Edit3 size={16} />
+                          </button>
+                          <button type="button" className="aa-icon-button aa-danger" aria-label="Delete attendance record" disabled={!canManage || busy} onClick={() => deleteRecords([record])}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <footer className="aa-pagination">
+              <span>
+                Showing {sorted.length ? (currentPage - 1) * pageSize + 1 : 0}
+                –{Math.min(currentPage * pageSize, sorted.length)} of {sorted.length}
+              </span>
+
+              <div className="aa-actions">
+                <label className="aa-page-size">
+                  Rows
+                  <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                    {[10, 20, 50].map((size) => <option key={size} value={size}>{size}</option>)}
+                  </select>
+                </label>
+
+                <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>
+                  <ChevronLeft size={16} />
+                </button>
+                <span>{currentPage} / {totalPages}</span>
+                <button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </footer>
+          </section>
+
+          <p className="aa-footnote">
+            Counts represent saved records, not unique students. Absent records must be explicitly recorded;
+            missing scans are not automatically counted as absences.
+          </p>
+        </>
       )}
 
-      <section className="aa-table-panel">
-        <div className="aa-table-heading">
-          <div>
-            <h2>
-              Attendance Records
-            </h2>
-
-            <p>
-              Showing{" "}
-              {firstVisible}–
-              {lastVisible} of{" "}
-              {
-                sortedRecords.length
-              }{" "}
-              records
-            </p>
-          </div>
-
-          <div>
-            <span>
-              Rows
-            </span>
-
-            <select
-              value={pageSize}
-              onChange={(
-                event
-              ) =>
-                setPageSize(
-                  Number(
-                    event.target
-                      .value
-                  )
-                )
-              }
-            >
-              {PAGE_SIZE_OPTIONS.map(
-                (size) => (
-                  <option
-                    key={size}
-                    value={size}
-                  >
-                    {size}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-        </div>
-
-        <div className="aa-table-scroll">
-          <table className="aa-table">
-            <thead>
-              <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    checked={
-                      allVisibleSelected
-                    }
-                    onChange={
-                      toggleVisibleRecords
-                    }
-                  />
-                </th>
-
-                <th>
-                  <button
-                    onClick={() =>
-                      toggleSort(
-                        "studentName"
-                      )
-                    }
-                  >
-                    Student
-                    {renderSortIcon(
-                      "studentName"
-                    )}
-                  </button>
-                </th>
-
-                <th>
-                  Student ID
-                </th>
-
-                <th>
-                  Course
-                </th>
-
-                <th>
-                  <button
-                    onClick={() =>
-                      toggleSort(
-                        "timestamp"
-                      )
-                    }
-                  >
-                    Date & Time
-                    {renderSortIcon(
-                      "timestamp"
-                    )}
-                  </button>
-                </th>
-
-                <th>
-                  Status
-                </th>
-
-                <th>
-                  Method
-                </th>
-
-                <th>
-                  Device
-                </th>
-
-                <th>
-                  Verification
-                </th>
-
-                <th>
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {paginatedRecords.length ===
-              0 ? (
-                <tr>
-                  <td
-                    colSpan="10"
-                    className="aa-empty"
-                  >
-                    No attendance
-                    records match
-                    the current
-                    filters.
-                  </td>
-                </tr>
-              ) : (
-                paginatedRecords.map(
-                  (record) => {
-                    const date =
-                      record.timestamp;
-
-                    return (
-                      <tr
-                        key={
-                          record.id
-                        }
-                      >
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(
-                              record.id
-                            )}
-                            onChange={() =>
-                              toggleRecord(
-                                record.id
-                              )
-                            }
-                          />
-                        </td>
-
-                        <td>
-                          <div className="aa-student">
-                            <span>
-                              {record.studentName
-                                .charAt(
-                                  0
-                                )
-                                .toUpperCase()}
-                            </span>
-
-                            <div>
-                              <strong>
-                                {
-                                  record.studentName
-                                }
-                              </strong>
-
-                              <small>
-                                {record.email ||
-                                  "No email"}
-                              </small>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td>
-                          {
-                            record.studentId
-                          }
-                        </td>
-
-                        <td>
-                          <strong>
-                            {
-                              record.course
-                            }
-                          </strong>
-
-                          <small className="aa-department">
-                            {
-                              record.department
-                            }
-                          </small>
-                        </td>
-
-                        <td>
-                          <strong>
-                            {date
-                              ? date.toLocaleDateString(
-                                  "en-MY"
-                                )
-                              : "N/A"}
-                          </strong>
-
-                          <small className="aa-date-time">
-                            {date
-                              ? date.toLocaleTimeString(
-                                  "en-MY",
-                                  {
-                                    hour:
-                                      "2-digit",
-                                    minute:
-                                      "2-digit",
-                                  }
-                                )
-                              : "N/A"}
-                          </small>
-                        </td>
-
-                        <td>
-                          <StatusBadge
-                            status={
-                              record.status
-                            }
-                          />
-                        </td>
-
-                        <td>
-                          <span className="aa-method">
-                            {
-                              record.authMethod
-                            }
-                          </span>
-                        </td>
-
-                        <td>
-                          {
-                            record.deviceId
-                          }
-                        </td>
-
-                        <td>
-                          <span
-                            className={verificationClass(
-                              record.verificationResult
-                            )}
-                          >
-                            {verificationLabel(
-                              record.verificationResult
-                            )}
-                          </span>
-                        </td>
-
-                        <td>
-                          <div className="aa-actions">
-                            <button
-                              title="View"
-                              onClick={() =>
-                                setSelectedModal(
-                                  record
-                                )
-                              }
-                            >
-                              <Eye
-                                size={
-                                  14
-                                }
-                              />
-                            </button>
-
-                            <button
-                              title="Edit"
-                              onClick={() =>
-                                setFormModal(
-                                  {
-                                    mode:
-                                      "edit",
-                                    record,
-                                  }
-                                )
-                              }
-                            >
-                              <Edit3
-                                size={
-                                  14
-                                }
-                              />
-                            </button>
-
-                            <button
-                              title="Delete"
-                              className="aa-danger-action"
-                              onClick={() =>
-                                handleDelete(
-                                  record
-                                )
-                              }
-                            >
-                              <Trash2
-                                size={
-                                  14
-                                }
-                              />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="aa-pagination">
-          <span>
-            Page {page} of{" "}
-            {totalPages}
-          </span>
-
-          <div>
-            <button
-              disabled={
-                page === 1
-              }
-              onClick={() =>
-                setPage(
-                  (previous) =>
-                    Math.max(
-                      1,
-                      previous -
-                        1
-                    )
-                )
-              }
-            >
-              <ChevronLeft
-                size={15}
-              />
-              Previous
-            </button>
-
-            <button
-              disabled={
-                page ===
-                totalPages
-              }
-              onClick={() =>
-                setPage(
-                  (previous) =>
-                    Math.min(
-                      totalPages,
-                      previous +
-                        1
-                    )
-                )
-              }
-            >
-              Next
-              <ChevronRight
-                size={15}
-              />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {selectedModal && (
-        <AttendanceDetailsModal
-          record={
-            selectedModal
-          }
-          onClose={() =>
-            setSelectedModal(
-              null
-            )
-          }
+      {(modal?.mode === "add" || modal?.mode === "edit") && (
+        <RecordForm
+          key={modal.record?.id || "new"}
+          record={modal.record || null}
+          students={students}
+          studentsLoading={studentsLoading}
+          studentsError={studentsError}
+          busy={busy}
+          onClose={() => { if (!busy) setModal(null); }}
+          onSave={saveRecord}
         />
       )}
 
-      {formModal && (
-        <AttendanceFormModal
-          mode={formModal.mode}
-          record={
-            formModal.record
-          }
-          users={
-            studentOptions
-          }
-          saving={saving}
-          onClose={() =>
-            !saving &&
-            setFormModal(null)
-          }
-          onSubmit={
-            handleFormSubmit
-          }
-        />
+      {modal?.mode === "view" && (
+        <Dialog title="Attendance Details" onClose={() => setModal(null)}>
+          <div className="aa-dialog-body">
+            {detailRecord ? (
+              <dl className="aa-details">
+                {[
+                  ["Student", detailRecord.studentName],
+                  ["Student ID", detailRecord.studentId || detailRecord.userId],
+                  ["Department", detailRecord.department],
+                  ["Course", detailRecord.course],
+                  ["Date", displayDate(detailRecord.timestamp)],
+                  ["Time", displayTime(detailRecord.timestamp)],
+                  ["Status", titleCase(detailRecord.status)],
+                  ["Authentication", detailRecord.authMethod],
+                  ["Verification", titleCase(detailRecord.verificationResult)],
+                  ["Device", detailRecord.deviceId],
+                  ["Source", detailRecord.source],
+                  ["RFID card", detailRecord.rfidCardId],
+                  ["Notes", detailRecord.notes],
+                  ["Record ID", detailRecord.id],
+                ].map(([label, value]) => (
+                  <div key={label}><dt>{label}</dt><dd>{String(value || "—")}</dd></div>
+                ))}
+              </dl>
+            ) : (
+              <p className="aa-notice">This record is no longer available.</p>
+            )}
+          </div>
+          <footer className="aa-dialog-footer">
+            <button type="button" onClick={() => setModal(null)}>Close</button>
+          </footer>
+        </Dialog>
       )}
     </div>
   );
 }
-
-export default AdminAttendance;

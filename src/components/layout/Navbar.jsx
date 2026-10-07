@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   collection,
@@ -8,915 +8,410 @@ import {
 } from "firebase/firestore";
 
 import {
-  signOut,
-} from "firebase/auth";
-
-import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
 
-import {
-  Bell,
-  CalendarDays,
-  GraduationCap,
-  LogOut,
-  ShieldCheck,
-  Users,
-  Wifi,
-} from "lucide-react";
+import { Bell, Menu, Wifi } from "lucide-react";
 
-import {
-  auth,
-  db,
-} from "../../firebase/firebase";
-
-import {
-  useAuth,
-} from "../../contexts/AuthContext";
+import { db } from "../../firebase/firebase";
+import { useAuth } from "../../contexts/AuthContext";
 
 import "./Navbar.css";
 
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function capitalize(value) {
-  const text = String(value || "").trim();
-
-  if (!text) {
-    return "User";
-  }
-
-  return (
-    text.charAt(0).toUpperCase() +
-    text.slice(1)
-  );
-}
-
-
-function getInitials(user) {
-  const fullName =
-    user?.fullName ||
-    [
-      user?.firstName,
-      user?.lastName,
-    ]
-      .filter(Boolean)
-      .join(" ") ||
-    user?.displayName ||
-    "User";
-
-  return fullName
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-
-function getDisplayName(user) {
-  return (
-    user?.fullName ||
-    [
-      user?.firstName,
-      user?.lastName,
-    ]
-      .filter(Boolean)
-      .join(" ") ||
-    user?.displayName ||
-    "BioSync User"
-  );
-}
-
-
 function getPageName(pathname) {
-  if (pathname.includes("account-center")) {
-    return "Account Center";
-  }
-
-  if (pathname.includes("attendance")) {
-    return "Attendance";
-  }
-
-  if (pathname.includes("disputes")) {
-    return "Disputes";
-  }
-
-  if (pathname.includes("analytics")) {
-    return "Analytics";
-  }
-
-  if (pathname.includes("devices")) {
-    return "Devices";
-  }
-
-  if (pathname.includes("users")) {
-    return "User Management";
-  }
+  if (pathname.includes("/timetable")) return "CID Timetable";
+  if (pathname.includes("/account-center")) return "Account Center";
+  if (pathname.includes("/attendance")) return "Attendance";
+  if (pathname.includes("/disputes")) return "Disputes";
+  if (pathname.includes("/analytics")) return "Analytics";
+  if (pathname.includes("/devices")) return "Devices";
+  if (pathname.includes("/users")) return "User Management";
 
   return "Dashboard";
 }
 
+function capitalize(value) {
+  return value
+    ? value.charAt(0).toUpperCase() + value.slice(1)
+    : "";
+}
 
-/* =========================================================
-   DATE HELPERS
-========================================================= */
+const dateFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Kuala_Lumpur",
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
 
-function isToday(value) {
-  if (!value) {
-    return false;
+const navbarStyles = `
+  .db-shell .db-navbar.bs-navbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    min-height: 76px;
+    padding: 14px 24px;
+
+    border-bottom: 1px solid rgba(109, 217, 236, 0.16);
+    background: #061820;
+    box-shadow: none;
+
+    font-family: "Inter", sans-serif;
   }
 
-  let date = null;
+  .db-shell .bs-navbar .db-navbar-title-block {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
 
-  try {
-    if (typeof value?.toDate === "function") {
-      date = value.toDate();
-    } else if (value instanceof Date) {
-      date = value;
-    } else if (typeof value === "string") {
-      date = new Date(value);
-    } else if (typeof value === "number") {
-      date = new Date(value);
+    width: auto;
+    min-width: 0;
+  }
+
+.db-shell .bs-navbar .db-navbar-title {
+  margin: 0;
+
+  font-family: "Inter", sans-serif !important;
+  font-size: 20px;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+
+  color: #edf8fc;
+  text-shadow: none;
+}
+
+.db-shell .bs-navbar .db-navbar-title-kicker {
+  margin: 0;
+
+  font-family: "Inter", sans-serif !important;
+  font-size: 11px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.5;
+  letter-spacing: 0.025em;
+  text-transform: none;
+
+  color: #89adbd;
+}
+  .db-shell .bs-navbar .bs-navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-left: auto;
+  }
+
+  .db-shell .bs-navbar .bs-navbar-date {
+    color: #a3bfcb;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .db-shell .bs-navbar .db-navbar-sync {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    min-width: 105px;
+    padding: 7px 10px;
+
+    border: 1px solid #294752;
+    border-radius: 999px;
+
+    background: #0a2029;
+    color: #a9c5d1;
+
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .db-shell .bs-navbar .db-navbar-sync-live {
+    border-color: #206b55;
+    background: #09261f;
+    color: #77e3b5;
+  }
+
+  .db-shell .bs-navbar .db-navbar-sync-error {
+    border-color: #854447;
+    background: #321b21;
+    color: #fca5a5;
+  }
+
+  .db-shell .bs-navbar .db-navbar-icon-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    overflow: visible;
+
+    border: 1px solid #2b5562;
+    border-radius: 9px;
+
+    background: #0c2530;
+    color: #c4e4ee;
+    cursor: pointer;
+  }
+
+  .db-shell .bs-navbar .db-navbar-icon-btn:hover {
+    background: #123743;
+    border-color: #64c8da;
+  }
+
+  .db-shell .bs-navbar .db-navbar-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .db-shell .bs-navbar .db-navbar-notification-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+
+    display: grid;
+    place-items: center;
+
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+
+    border: 2px solid #061820;
+    border-radius: 999px;
+
+    background: #f43f5e;
+    color: #ffffff;
+
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .db-shell .bs-navbar .bs-navbar-menu {
+    display: none;
+    place-items: center;
+
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    padding: 0;
+
+    border: 1px solid #2b5562;
+    border-radius: 9px;
+
+    background: #0c2530;
+    color: #c4e4ee;
+    cursor: pointer;
+  }
+
+  .db-shell .bs-navbar button:focus-visible {
+    outline: 2px solid #78dce9;
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 1000px) {
+    .db-shell .bs-navbar .bs-navbar-date {
+      display: none;
     }
-  } catch {
-    return false;
   }
 
-  if (!date || Number.isNaN(date.getTime())) {
-    return false;
+  @media (max-width: 700px) {
+    .db-shell .db-navbar.bs-navbar {
+      padding: 12px 14px;
+      gap: 10px;
+    }
+
+    .db-shell .bs-navbar .bs-navbar-menu {
+      display: grid;
+    }
+
+    .db-shell .bs-navbar .db-navbar-title {
+      font-size: 18px;
+    }
+
+    .db-shell .bs-navbar .db-navbar-title-kicker {
+      font-size: 10px;
+    }
+
+    .db-shell .bs-navbar .db-navbar-sync {
+      display: none;
+    }
+
+    .db-shell .bs-navbar .bs-navbar-right {
+      gap: 9px;
+    }
   }
+`;
 
-  const now = new Date();
-
-  return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate()
-  );
-}
-
-
-function attendanceIsToday(record) {
-  return (
-    isToday(record?.timestamp) ||
-    isToday(record?.createdAt) ||
-    isToday(record?.checkInTime) ||
-    isToday(record?.date) ||
-    isToday(record?.attendanceDate)
-  );
-}
-
-
-/* =========================================================
-   NAVBAR
-========================================================= */
-
-function Navbar() {
+export default function Navbar({ onOpenMenu }) {
   const { user } = useAuth();
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [usersCount, setUsersCount] = useState(0);
-  const [attendanceToday, setAttendanceToday] = useState(0);
   const [pendingDisputes, setPendingDisputes] = useState(0);
-
   const [syncState, setSyncState] = useState("loading");
+  const [currentDate, setCurrentDate] = useState(() => new Date());
 
-  const roleRaw =
-    String(user?.role || "")
-      .trim()
-      .toLowerCase();
+  const role = String(user?.role || "").trim().toLowerCase();
+  const department = String(user?.department || "").trim();
+  const userId = user?.uid;
 
-  const role = capitalize(roleRaw);
-
-  const displayName = getDisplayName(user);
-
-  const pageName = getPageName(
-    location.pathname
-  );
-
-
-  /* =========================================================
-     LIVE FIRESTORE DATA
-  ========================================================= */
+  const validRole = ["admin", "teacher", "student"].includes(role);
+  const pageName = getPageName(location.pathname);
 
   useEffect(() => {
-    if (!user?.uid) {
-      return undefined;
-    }
+    const timer = window.setInterval(() => {
+      setCurrentDate(new Date());
+    }, 60_000);
 
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // Sync status reflects this notification data listener.
+  useEffect(() => {
+    setPendingDisputes(0);
     setSyncState("loading");
 
-    const unsubscribers = [];
+    if (!userId || !role) return undefined;
 
-    let usersReady = false;
-    let attendanceReady = false;
-    let disputesReady = false;
+    let source;
 
-    const updateSyncState = () => {
-      if (
-        usersReady &&
-        attendanceReady &&
-        disputesReady
-      ) {
-        setSyncState("live");
-      }
-    };
-
-
-    /* ---------------------------------------------------------
-       ADMIN
-    --------------------------------------------------------- */
-
-    if (roleRaw === "admin") {
-      const unsubscribeUsers = onSnapshot(
-        collection(db, "users"),
-
-        (snapshot) => {
-          setUsersCount(snapshot.size);
-
-          usersReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar users listener error:",
-            error
-          );
-
-          usersReady = true;
-          setSyncState("error");
-        }
-      );
-
-      unsubscribers.push(unsubscribeUsers);
-
-
-      const unsubscribeAttendance = onSnapshot(
-        collection(db, "attendance"),
-
-        (snapshot) => {
-          const todayCount =
-            snapshot.docs.filter((docSnap) =>
-              attendanceIsToday(
-                docSnap.data()
-              )
-            ).length;
-
-          setAttendanceToday(todayCount);
-
-          attendanceReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar attendance listener error:",
-            error
-          );
-
-          attendanceReady = true;
-          setSyncState("error");
-        }
-      );
-
-      unsubscribers.push(
-        unsubscribeAttendance
-      );
-
-
-      const unsubscribeDisputes = onSnapshot(
-        collection(db, "disputes"),
-
-        (snapshot) => {
-          const count =
-            snapshot.docs.filter((docSnap) => {
-              const data = docSnap.data();
-
-              return (
-                String(
-                  data?.status || ""
-                ).toLowerCase() === "pending"
-              );
-            }).length;
-
-          setPendingDisputes(count);
-
-          disputesReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar disputes listener error:",
-            error
-          );
-
-          disputesReady = true;
-          setSyncState("error");
-        }
-      );
-
-      unsubscribers.push(
-        unsubscribeDisputes
-      );
-    }
-
-
-    /* ---------------------------------------------------------
-       TEACHER
-    --------------------------------------------------------- */
-
-    else if (roleRaw === "teacher") {
-      const department =
-        String(
-          user?.department || ""
-        ).trim();
-
+    if (role === "admin") {
+      source = collection(db, "disputes");
+    } else if (role === "teacher") {
       if (!department) {
-        setUsersCount(0);
-        setAttendanceToday(0);
-        setPendingDisputes(0);
-        setSyncState("live");
-
+        setSyncState("error");
         return undefined;
       }
 
-
-      /*
-       * IMPORTANT:
-       * Teacher queries are department-scoped.
-       * This matches your Firestore security model.
-       */
-
-      const studentsQuery = query(
-        collection(db, "users"),
-        where(
-          "department",
-          "==",
-          department
-        ),
-        where(
-          "role",
-          "==",
-          "student"
-        )
-      );
-
-      const unsubscribeStudents = onSnapshot(
-        studentsQuery,
-
-        (snapshot) => {
-          setUsersCount(snapshot.size);
-
-          usersReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar teacher student listener error:",
-            error
-          );
-
-          usersReady = true;
-          setSyncState("error");
-        }
-      );
-
-      unsubscribers.push(
-        unsubscribeStudents
-      );
-
-
-      /*
-       * Teacher attendance must also be allowed
-       * by your Firestore rules.
-       *
-       * If attendance documents contain department,
-       * this query is safe and efficient.
-       */
-
-      const attendanceQuery = query(
-        collection(db, "attendance"),
-        where(
-          "department",
-          "==",
-          department
-        )
-      );
-
-      const unsubscribeAttendance = onSnapshot(
-        attendanceQuery,
-
-        (snapshot) => {
-          const todayCount =
-            snapshot.docs.filter((docSnap) =>
-              attendanceIsToday(
-                docSnap.data()
-              )
-            ).length;
-
-          setAttendanceToday(todayCount);
-
-          attendanceReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar teacher attendance listener error:",
-            error
-          );
-
-          /*
-           * Do not break the entire navbar if
-           * department is not stored on attendance.
-           */
-
-          setAttendanceToday(0);
-
-          attendanceReady = true;
-          updateSyncState();
-        }
-      );
-
-      unsubscribers.push(
-        unsubscribeAttendance
-      );
-
-
-      const disputesQuery = query(
+      source = query(
         collection(db, "disputes"),
-        where(
-          "department",
-          "==",
-          department
-        )
+        where("department", "==", department)
       );
-
-      const unsubscribeDisputes = onSnapshot(
-        disputesQuery,
-
-        (snapshot) => {
-          const count =
-            snapshot.docs.filter((docSnap) => {
-              const data = docSnap.data();
-
-              return (
-                String(
-                  data?.status || ""
-                ).toLowerCase() === "pending"
-              );
-            }).length;
-
-          setPendingDisputes(count);
-
-          disputesReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar teacher disputes listener error:",
-            error
-          );
-
-          disputesReady = true;
-          setSyncState("error");
-        }
-      );
-
-      unsubscribers.push(
-        unsubscribeDisputes
-      );
-    }
-
-
-    /* ---------------------------------------------------------
-       STUDENT
-    --------------------------------------------------------- */
-
-    else {
-      /*
-       * For students, "Users" becomes their own
-       * personal account indicator.
-       */
-
-      setUsersCount(1);
-      usersReady = true;
-
-
-      const attendanceQuery = query(
-        collection(db, "attendance"),
-        where(
-          "userId",
-          "==",
-          user.uid
-        )
-      );
-
-      const unsubscribeAttendance = onSnapshot(
-        attendanceQuery,
-
-        (snapshot) => {
-          const todayCount =
-            snapshot.docs.filter((docSnap) =>
-              attendanceIsToday(
-                docSnap.data()
-              )
-            ).length;
-
-          setAttendanceToday(todayCount);
-
-          attendanceReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar student attendance listener error:",
-            error
-          );
-
-          attendanceReady = true;
-          setSyncState("error");
-        }
-      );
-
-      unsubscribers.push(
-        unsubscribeAttendance
-      );
-
-
-      const disputesQuery = query(
+    } else if (role === "student") {
+      source = query(
         collection(db, "disputes"),
-        where(
-          "userId",
-          "==",
-          user.uid
-        )
+        where("userId", "==", userId)
       );
-
-      const unsubscribeDisputes = onSnapshot(
-        disputesQuery,
-
-        (snapshot) => {
-          const count =
-            snapshot.docs.filter((docSnap) => {
-              const data = docSnap.data();
-
-              return (
-                String(
-                  data?.status || ""
-                ).toLowerCase() === "pending"
-              );
-            }).length;
-
-          setPendingDisputes(count);
-
-          disputesReady = true;
-          updateSyncState();
-        },
-
-        (error) => {
-          console.error(
-            "Navbar student disputes listener error:",
-            error
-          );
-
-          disputesReady = true;
-          setSyncState("error");
-        }
-      );
-
-      unsubscribers.push(
-        unsubscribeDisputes
-      );
-
-
-      updateSyncState();
+    } else {
+      setSyncState("error");
+      return undefined;
     }
 
+    return onSnapshot(
+      source,
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        const count = snapshot.docs.reduce((total, document) => {
+          const status = String(document.data().status || "")
+            .trim()
+            .toLowerCase();
 
-    return () => {
-      unsubscribers.forEach(
-        (unsubscribe) => {
-          if (
-            typeof unsubscribe === "function"
-          ) {
-            unsubscribe();
-          }
-        }
-      );
-    };
-  }, [
-    user?.uid,
-    user?.department,
-    roleRaw,
-  ]);
+          return total + (status === "pending" ? 1 : 0);
+        }, 0);
 
+        setPendingDisputes(count);
 
-  /* =========================================================
-     NAVBAR DATA
-  ========================================================= */
-
-  const statusItems = useMemo(() => {
-    if (roleRaw === "student") {
-      return [
-        {
-          id: "account",
-          label: "Account",
-          value: "Student",
-          icon: GraduationCap,
-        },
-        {
-          id: "attendance",
-          label: "Attendance Today",
-          value: attendanceToday,
-          icon: CalendarDays,
-        },
-        {
-          id: "disputes",
-          label: "Pending Disputes",
-          value: pendingDisputes,
-          icon: Bell,
-          alert: pendingDisputes > 0,
-        },
-      ];
-    }
-
-
-    if (roleRaw === "teacher") {
-      return [
-        {
-          id: "students",
-          label: "Students",
-          value: usersCount,
-          icon: Users,
-        },
-        {
-          id: "attendance",
-          label: "Attendance Today",
-          value: attendanceToday,
-          icon: CalendarDays,
-        },
-        {
-          id: "disputes",
-          label: "Pending Disputes",
-          value: pendingDisputes,
-          icon: Bell,
-          alert: pendingDisputes > 0,
-        },
-      ];
-    }
-
-
-    return [
-      {
-        id: "users",
-        label: "Users",
-        value: usersCount,
-        icon: Users,
+        setSyncState(
+          snapshot.metadata.fromCache ? "cached" : "live"
+        );
       },
-      {
-        id: "attendance",
-        label: "Attendance Today",
-        value: attendanceToday,
-        icon: CalendarDays,
-      },
-      {
-        id: "disputes",
-        label: "Pending Disputes",
-        value: pendingDisputes,
-        icon: Bell,
-        alert: pendingDisputes > 0,
-      },
-    ];
-  }, [
-    roleRaw,
-    usersCount,
-    attendanceToday,
-    pendingDisputes,
-  ]);
+      (error) => {
+        console.error("Navbar notification listener failed:", error);
+        setSyncState("error");
+      }
+    );
+  }, [userId, role, department]);
 
+  const syncLabel = {
+    loading: "Connecting",
+    cached: "Cached Data",
+    live: "Live Sync",
+    error: "Sync Error",
+  }[syncState];
 
-  /* =========================================================
-     LOGOUT
-  ========================================================= */
-
-  async function handleLogout() {
-    try {
-      await signOut(auth);
-
-      navigate(
-        "/login",
-        {
-          replace: true,
-        }
-      );
-    } catch (error) {
-      console.error(
-        "Logout failed:",
-        error
-      );
-    }
-  }
-
-
-  /* =========================================================
-     NOTIFICATION CLICK
-  ========================================================= */
-
-  function handleNotifications() {
-    if (roleRaw === "admin") {
-      navigate("/admin/disputes");
-      return;
-    }
-
-    if (roleRaw === "teacher") {
-      navigate("/teacher/disputes");
-      return;
-    }
-
-    if (roleRaw === "student") {
-      navigate("/student/disputes");
-    }
-  }
-
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  const syncClassName = [
+    "db-navbar-sync",
+    syncState === "live" ? "db-navbar-sync-live" : "",
+    syncState === "error" ? "db-navbar-sync-error" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <header className="db-navbar">
+    <>
+      <style>{navbarStyles}</style>
 
-      {/* ===============================================
-          PAGE TITLE
-      =============================================== */}
+      <header className="db-navbar bs-navbar bs-navbar-dark">
+        <button
+          type="button"
+          className="bs-navbar-menu"
+          onClick={onOpenMenu}
+          aria-label="Open navigation"
+        >
+          <Menu size={20} aria-hidden="true" />
+        </button>
 
-      <div className="db-navbar-title-block">
-
-        <div className="db-navbar-title-row">
-          <ShieldCheck
-            size={16}
-            className="db-navbar-brand-icon"
-          />
-
+        <div className="db-navbar-title-block">
           <h2 className="db-navbar-title">
             {pageName}
           </h2>
-        </div>
 
-        <span className="db-navbar-title-kicker">
-          BioSync Sentinel · {role} Portal
-        </span>
-
-      </div>
-
-
-      {/* ===============================================
-          LIVE STATUS AREA
-      =============================================== */}
-
-      <div className="db-navbar-status-area">
-
-        <div
-          className={
-            syncState === "error"
-              ? "db-navbar-sync db-navbar-sync-error"
-              : syncState === "live"
-                ? "db-navbar-sync db-navbar-sync-live"
-                : "db-navbar-sync"
-          }
-        >
-          <Wifi size={13} />
-
-          <span>
-            {syncState === "error"
-              ? "Sync Error"
-              : syncState === "live"
-                ? "Live Sync"
-                : "Connecting"}
+          <span className="db-navbar-title-kicker">
+            BioSync Sentinel · {capitalize(role)} Portal
           </span>
-
-          <i />
         </div>
 
+        <div className="bs-navbar-right">
+          <time
+            className="bs-navbar-date"
+            dateTime={currentDate.toISOString()}
+          >
+            {dateFormatter.format(currentDate)}
+          </time>
 
-        <div className="db-navbar-status-strip">
+          <div
+            className={syncClassName}
+            role="status"
+            aria-live="polite"
+            title="Connection status of the dispute notification listener"
+          >
+            <Wifi size={14} aria-hidden="true" />
+            <span>{syncLabel}</span>
+          </div>
 
-          {statusItems.map((item) => {
-            const Icon = item.icon;
+          <button
+            type="button"
+            className="db-navbar-icon-btn"
+            disabled={!validRole}
+            onClick={() => navigate(`/${role}/disputes`)}
+            aria-label={
+              pendingDisputes > 0
+                ? `Open disputes: ${pendingDisputes} pending`
+                : "Open disputes"
+            }
+            title="Pending disputes"
+          >
+            <Bell size={19} aria-hidden="true" />
 
-            return (
-              <div
-                key={item.id}
-                className={
-                  item.alert
-                    ? "db-navbar-status-item db-navbar-status-alert"
-                    : "db-navbar-status-item"
-                }
+            {pendingDisputes > 0 && (
+              <span
+                className="db-navbar-notification-count"
+                aria-hidden="true"
               >
-
-                <div className="db-navbar-status-icon">
-                  <Icon size={14} />
-                </div>
-
-                <div>
-                  <small>
-                    {item.label}
-                  </small>
-
-                  <strong>
-                    {item.value}
-                  </strong>
-                </div>
-
-              </div>
-            );
-          })}
-
+                {pendingDisputes > 99 ? "99+" : pendingDisputes}
+              </span>
+            )}
+          </button>
         </div>
-
-      </div>
-
-
-      {/* ===============================================
-          RIGHT ACTIONS
-      =============================================== */}
-
-      <div className="db-navbar-actions">
-
-        <button
-          type="button"
-          className="db-navbar-icon-btn"
-          aria-label="Notifications"
-          title="Dispute notifications"
-          onClick={handleNotifications}
-        >
-          <Bell size={17} />
-
-          {pendingDisputes > 0 && (
-            <span className="db-navbar-notification-count">
-              {pendingDisputes > 99
-                ? "99+"
-                : pendingDisputes}
-            </span>
-          )}
-        </button>
-
-
-        <div className="db-navbar-user">
-
-          <div className="db-navbar-avatar">
-            {getInitials(user)}
-          </div>
-
-          <div className="db-navbar-user-details">
-
-            <span className="db-navbar-username">
-              {displayName}
-            </span>
-
-            <span className="db-navbar-role">
-              {role}
-
-              {user?.department
-                ? ` · ${user.department}`
-                : ""}
-            </span>
-
-          </div>
-
-        </div>
-
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="db-navbar-logout"
-        >
-          <LogOut size={15} />
-
-          <span className="db-navbar-logout-text">
-            Logout
-          </span>
-        </button>
-
-      </div>
-
-    </header>
+      </header>
+    </>
   );
 }
-
-
-export default Navbar;
