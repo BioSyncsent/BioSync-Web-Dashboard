@@ -32,6 +32,8 @@ import bioSyncShield from "../assets/BioSync_Login_Shield.png";
 import ColorBends from "../components/ColorBends";
 import "./LandingPage.css";
 
+const colorBendsColors = ["#359FA0", "#8AD6D1", "#425B9A"];
+
 const navigationItems = [
   ["Overview", "#overview"],
   ["Why BioSync", "#problems"],
@@ -290,13 +292,19 @@ export default function LandingPage() {
     <div className="biosync-landing" ref={rootRef}>
       <div className="lp-color-bends-background" aria-hidden="true">
         <ColorBends
+          colors={colorBendsColors}
+          rotation={90}
           speed={0.2}
           scale={1}
+          frequency={1}
           warpStrength={1}
-          mouseInfluence={0.5}
-          parallax={0.4}
-          intensity={1.6}
-          bandWidth={8}
+          mouseInfluence={0}
+          noise={0.15}
+          parallax={0}
+          iterations={1}
+          intensity={1.5}
+          bandWidth={6}
+          transparent
         />
       </div>
 

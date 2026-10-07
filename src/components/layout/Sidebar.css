@@ -1,5 +1,5 @@
 /* =========================================================
-   BIOSYNC SIDEBAR
+   BIOSYNC SIDEBAR (profile layout, dark navy theme)
 ========================================================= */
 
 .db-sidebar {
@@ -18,7 +18,7 @@
 
   flex: 0 0 252px;
 
-  padding: 18px 14px 16px;
+  padding: 0;
 
   overflow: hidden;
 
@@ -37,8 +37,9 @@
       #071321 100%
     );
 
-  box-shadow:
-    12px 0 32px rgba(2, 8, 23, 0.1);
+  color: #c9d5e6;
+
+  box-shadow: 12px 0 32px rgba(2, 8, 23, 0.1);
 }
 
 /* =========================================================
@@ -58,113 +59,102 @@
 
   border-radius: 50%;
 
-  background:
-    radial-gradient(
-      circle,
-      rgba(59, 130, 246, 0.18),
-      transparent 70%
-    );
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.18),
+    transparent 70%
+  );
 
   pointer-events: none;
 }
 
 /* =========================================================
-   BIOSYNC LOGO AREA
+   PROFILE (top)
 ========================================================= */
 
-.db-sidebar-brand {
+.db-sidebar-profile {
   position: relative;
   z-index: 1;
 
   display: flex;
 
-  width: 100%;
   min-width: 0;
-  min-height: 66px;
+
+  flex-shrink: 0;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 18px 16px;
+
+  color: inherit;
+  text-decoration: none;
+}
+
+.db-sidebar-avatar {
+  display: flex;
+
+  width: 44px;
+  height: 44px;
+
+  flex-shrink: 0;
 
   align-items: center;
   justify-content: center;
 
-  padding: 4px 4px 8px;
+  overflow: hidden;
 
-  margin: 0;
+  border: none;
+  border-radius: 50%;
 
-  background: transparent !important;
+  background: #91a3ba;
 
-  border: none !important;
-  border-radius: 0 !important;
+  color: #0f172a;
 
-  box-shadow: none !important;
-
-  overflow: visible;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
 }
 
-/* =========================================================
-   LOGO BASE
-========================================================= */
+.db-sidebar-avatar-img {
+  width: 100%;
+  height: 100%;
 
-.db-sidebar-logo {
-  display: block;
-
-  height: auto;
-
-  padding: 0;
-  margin: 0;
-
-  object-fit: contain;
-  object-position: center;
-
-  background: transparent !important;
-
-  border: none !important;
-  border-radius: 0 !important;
-
-  box-shadow: none !important;
-
-  filter: none;
-
-  transform: none;
-
-  image-rendering: auto;
-
-  pointer-events: none;
-  user-select: none;
+  object-fit: cover;
 }
 
-/* =========================================================
-   FULL BIOSYNC LOGO
-========================================================= */
+.db-sidebar-profile-copy {
+  display: flex;
 
-.db-sidebar-logo-full {
-  display: block;
+  min-width: 0;
 
-  width: 180px;
-  max-width: 180px;
-  height: auto;
-
-  object-fit: contain;
-  object-position: center;
-
-  transform: scale(1.65);
-  transform-origin: center center;
-
-  background: transparent !important;
-
-  image-rendering: auto;
+  flex-direction: column;
 }
 
-/* =========================================================
-   SHIELD LOGO
-========================================================= */
+.db-sidebar-profile-copy strong {
+  overflow: hidden;
 
-.db-sidebar-logo-shield {
-  display: none;
+  color: #ffffff;
 
-  width: 44px;
-  max-width: 44px;
-  height: auto;
+  font-size: 14px;
+  font-weight: 600;
 
-  background: transparent !important;
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-sidebar-profile-copy span {
+  overflow: hidden;
+
+  color: #91a3ba;
+
+  font-size: 12px;
+
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* =========================================================
@@ -178,15 +168,14 @@
   width: 100%;
   height: 1px;
 
-  margin: 8px 5px 19px;
+  flex-shrink: 0;
 
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(148, 163, 184, 0.27),
-      transparent
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(148, 163, 184, 0.27),
+    transparent
+  );
 }
 
 /* =========================================================
@@ -209,7 +198,7 @@
   overflow-x: hidden;
   overflow-y: auto;
 
-  padding-right: 1px;
+  padding: 16px 14px;
 }
 
 .db-sidebar-nav::-webkit-scrollbar {
@@ -223,8 +212,7 @@
 .db-sidebar-nav::-webkit-scrollbar-thumb {
   border-radius: 999px;
 
-  background:
-    rgba(148, 163, 184, 0.25);
+  background: rgba(148, 163, 184, 0.25);
 }
 
 /* =========================================================
@@ -258,7 +246,7 @@
 
   color: #c9d5e6;
 
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 
   text-decoration: none;
@@ -298,16 +286,22 @@
 .db-sidebar-link:hover {
   border-color: rgba(96, 165, 250, 0.15);
 
-  background:
-    linear-gradient(
-      135deg,
-      rgba(59, 130, 246, 0.13),
-      rgba(6, 182, 212, 0.05)
-    );
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.13),
+    rgba(6, 182, 212, 0.05)
+  );
 
   color: #ffffff;
 
   transform: translateX(2px);
+}
+
+.db-sidebar-link:focus-visible,
+.db-sidebar-profile:focus-visible,
+.db-sidebar-profile-button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
 }
 
 .db-sidebar-icon {
@@ -335,7 +329,6 @@
   overflow: hidden;
 
   text-overflow: ellipsis;
-
   white-space: nowrap;
 }
 
@@ -343,15 +336,11 @@
    ACTIVE LINK
 ========================================================= */
 
-.db-sidebar-link-active {
+.db-sidebar-link-active,
+.db-sidebar-link-active:hover {
   border-color: rgba(96, 165, 250, 0.3);
 
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb 0%,
-      #1d4ed8 100%
-    );
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 
   color: #ffffff;
 
@@ -366,13 +355,11 @@
   transform: scaleY(1);
 }
 
-.db-sidebar-link-active .db-sidebar-icon {
+.db-sidebar-link-active .db-sidebar-icon,
+.db-sidebar-link-active:hover .db-sidebar-icon {
   color: #ffffff;
 
-  filter:
-    drop-shadow(
-      0 2px 4px rgba(0, 0, 0, 0.15)
-    );
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
 }
 
 /* =========================================================
@@ -400,17 +387,11 @@
 
   border-radius: 999px;
 
-  background:
-    linear-gradient(
-      135deg,
-      #ef4444,
-      #dc2626
-    );
+  background: linear-gradient(135deg, #ef4444, #dc2626);
 
   color: #ffffff;
 
-  box-shadow:
-    0 6px 13px rgba(220, 38, 38, 0.32);
+  box-shadow: 0 6px 13px rgba(220, 38, 38, 0.32);
 
   font-size: 8px;
   font-weight: 800;
@@ -439,17 +420,13 @@
   from {
     opacity: 0;
 
-    transform:
-      translateX(5px)
-      scale(0.78);
+    transform: translateX(5px) scale(0.78);
   }
 
   to {
     opacity: 1;
 
-    transform:
-      translateX(0)
-      scale(1);
+    transform: translateX(0) scale(1);
   }
 }
 
@@ -468,79 +445,73 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .db-dispute-notification {
+    animation: none;
+  }
+}
+
 /* =========================================================
-   FOOTER
+   FOOTER (View profile button)
 ========================================================= */
 
 .db-sidebar-footer {
   position: relative;
   z-index: 1;
 
+  flex-shrink: 0;
+
+  padding: 16px 14px;
+
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.db-sidebar-profile-button {
   display: flex;
 
-  flex-shrink: 0;
+  width: 100%;
+  min-height: 44px;
 
   align-items: center;
+  justify-content: center;
 
-  gap: 10px;
+  gap: 8px;
 
-  margin-top: 17px;
+  padding: 10px 12px;
 
-  padding: 13px 14px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
 
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
 
-  border-radius: 13px;
-
-  background:
-    rgba(255, 255, 255, 0.04);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.db-sidebar-footer-dot {
-  width: 7px;
-  height: 7px;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #22c55e;
-
-  box-shadow:
-    0 0 0 4px rgba(34, 197, 94, 0.09);
-}
-
-.db-sidebar-footer-copy {
-  display: flex;
-
-  min-width: 0;
-
-  flex-direction: column;
-}
-
-.db-sidebar-footer-copy strong {
-  overflow: hidden;
+  background: rgba(59, 130, 246, 0.14);
 
   color: #dbeafe;
 
-  font-size: 9px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
 
-  text-overflow: ellipsis;
+  text-decoration: none;
 
-  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  transition:
+    background 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease;
 }
 
-.db-sidebar-footer-copy span {
-  margin-top: 3px;
+.db-sidebar-profile-button:hover {
+  border-color: rgba(96, 165, 250, 0.4);
 
-  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.26);
 
-  font-size: 8px;
-  font-weight: 600;
+  color: #ffffff;
+}
+
+.db-sidebar-profile-button-icon {
+  display: none;
+
+  flex-shrink: 0;
 }
 
 /* =========================================================
@@ -555,11 +526,6 @@
 
     flex-basis: 224px;
   }
-
-  .db-sidebar-logo-full {
-    width: 140px;
-    max-width: 140px;
-  }
 }
 
 /* =========================================================
@@ -573,46 +539,20 @@
     max-width: 84px;
 
     flex-basis: 84px;
-
-    padding:
-      18px
-      10px
-      16px;
   }
 
-  .db-sidebar-brand {
-    min-height: 54px;
-
-    align-items: center;
+  .db-sidebar-profile {
     justify-content: center;
 
-    padding:
-      2px
-      0
-      8px;
+    padding: 18px 8px;
   }
 
-  .db-sidebar-logo-full {
+  .db-sidebar-profile-copy {
     display: none;
   }
 
-  .db-sidebar-logo-shield {
-    display: block;
-
-    width: 43px;
-    max-width: 43px;
-    height: auto;
-
-    object-fit: contain;
-
-    background: transparent !important;
-  }
-
-  .db-sidebar-separator {
-    margin:
-      14px
-      3px
-      19px;
+  .db-sidebar-nav {
+    padding: 14px 10px;
   }
 
   .db-sidebar-link {
@@ -620,18 +560,16 @@
 
     gap: 0;
 
-    padding:
-      11px
-      8px;
-  }
-
-  .db-sidebar-label {
-    display: none;
+    padding: 11px 8px;
   }
 
   .db-sidebar-link::before {
     top: 9px;
     bottom: 9px;
+  }
+
+  .db-sidebar-label {
+    display: none;
   }
 
   .db-dispute-notification {
@@ -645,8 +583,6 @@
     height: 20px;
 
     padding: 0;
-
-    border-width: 2px;
   }
 
   .db-dispute-notification-dot {
@@ -664,15 +600,15 @@
   }
 
   .db-sidebar-footer {
-    justify-content: center;
-
-    padding:
-      13px
-      8px;
+    padding: 16px 10px;
   }
 
-  .db-sidebar-footer-copy {
+  .db-sidebar-profile-button-label {
     display: none;
+  }
+
+  .db-sidebar-profile-button-icon {
+    display: block;
   }
 }
 
@@ -687,13 +623,11 @@
     max-width: 70px;
 
     flex-basis: 70px;
-
-    padding-right: 8px;
-    padding-left: 8px;
   }
 
-  .db-sidebar-logo-shield {
-    width: 38px;
-    max-width: 38px;
+  .db-sidebar-nav,
+  .db-sidebar-footer {
+    padding-right: 8px;
+    padding-left: 8px;
   }
 }

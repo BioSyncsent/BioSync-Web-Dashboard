@@ -1,16 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  NavLink,
-} from "react-router-dom";
-
-import bioSyncLogo from "../../assets/BioSync_Logo_Navbar.png";
-import bioSyncShield from "../../assets/BioSync_Shield_Sidebar.png";
+import { NavLink } from "react-router-dom";
 
 import {
   AlertTriangle,
@@ -18,13 +8,12 @@ import {
   CalendarCheck,
   LayoutDashboard,
   MonitorSmartphone,
+  User,
   UserCog,
   UsersRound,
 } from "lucide-react";
 
-import {
-  useAuth,
-} from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 import {
   subscribeToAdminDisputeNotificationCount,
@@ -39,41 +28,13 @@ import "./Sidebar.css";
 ========================================================= */
 
 const adminNavItems = [
-  {
-    to: "/admin/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    to: "/admin/attendance",
-    label: "Attendance",
-    icon: CalendarCheck,
-  },
-  {
-    to: "/admin/disputes",
-    label: "Disputes",
-    icon: AlertTriangle,
-  },
-  {
-    to: "/admin/devices",
-    label: "Devices",
-    icon: MonitorSmartphone,
-  },
-  {
-    to: "/admin/analytics",
-    label: "Analytics",
-    icon: BarChart3,
-  },
-  {
-    to: "/admin/users",
-    label: "User Management",
-    icon: UsersRound,
-  },
-  {
-    to: "/admin/account-center",
-    label: "Account Center",
-    icon: UserCog,
-  },
+  { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck },
+  { to: "/admin/disputes", label: "Disputes", icon: AlertTriangle },
+  { to: "/admin/devices", label: "Devices", icon: MonitorSmartphone },
+  { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/admin/users", label: "User Management", icon: UsersRound },
+  { to: "/admin/account-center", label: "Account Center", icon: UserCog },
 ];
 
 /* =========================================================
@@ -81,31 +42,11 @@ const adminNavItems = [
 ========================================================= */
 
 const teacherNavItems = [
-  {
-    to: "/teacher/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    to: "/teacher/attendance",
-    label: "Attendance",
-    icon: CalendarCheck,
-  },
-  {
-    to: "/teacher/disputes",
-    label: "Disputes",
-    icon: AlertTriangle,
-  },
-  {
-    to: "/teacher/analytics",
-    label: "Analytics",
-    icon: BarChart3,
-  },
-  {
-    to: "/teacher/account-center",
-    label: "Account Center",
-    icon: UserCog,
-  },
+  { to: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/teacher/attendance", label: "Attendance", icon: CalendarCheck },
+  { to: "/teacher/disputes", label: "Disputes", icon: AlertTriangle },
+  { to: "/teacher/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/teacher/account-center", label: "Account Center", icon: UserCog },
 ];
 
 /* =========================================================
@@ -113,70 +54,33 @@ const teacherNavItems = [
 ========================================================= */
 
 const studentNavItems = [
-  {
-    to: "/student/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    to: "/student/attendance",
-    label: "My Attendance",
-    icon: CalendarCheck,
-  },
-  {
-    to: "/student/disputes",
-    label: "Disputes",
-    icon: AlertTriangle,
-  },
-  {
-    to: "/student/analytics",
-    label: "Analytics",
-    icon: BarChart3,
-  },
-  {
-    to: "/student/account-center",
-    label: "Account Center",
-    icon: UserCog,
-  },
+  { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/student/attendance", label: "My Attendance", icon: CalendarCheck },
+  { to: "/student/disputes", label: "Disputes", icon: AlertTriangle },
+  { to: "/student/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/student/account-center", label: "Account Center", icon: UserCog },
 ];
 
 /* =========================================================
    STORAGE
 ========================================================= */
 
-function createStorageKey(
-  role,
-  userId
-) {
-  if (
-    !role ||
-    !userId
-  ) {
+function createStorageKey(role, userId) {
+  if (!role || !userId) {
     return "";
   }
 
   return `biosync:dispute-notifications:${role}:${userId}`;
 }
 
-function readLastSeenTime(
-  key
-) {
+function readLastSeenTime(key) {
   if (!key) {
     return 0;
   }
 
-  const value =
-    Number(
-      localStorage.getItem(
-        key
-      )
-    );
+  const value = Number(localStorage.getItem(key));
 
-  return Number.isFinite(
-    value
-  )
-    ? value
-    : 0;
+  return Number.isFinite(value) ? value : 0;
 }
 
 /* =========================================================
@@ -184,137 +88,104 @@ function readLastSeenTime(
 ========================================================= */
 
 function Sidebar() {
-  const {
-    user,
-  } = useAuth();
+  const { user } = useAuth();
 
-  const [
-    notificationCount,
-    setNotificationCount,
-  ] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [lastSeenAt, setLastSeenAt] = useState(0);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
-  const [
-    lastSeenAt,
-    setLastSeenAt,
-  ] = useState(0);
+  const role = String(user?.role || "").trim().toLowerCase();
 
-  const role =
-    String(
-      user?.role ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
+  /* =======================================================
+     PROFILE (name / email / photo)
+  ======================================================= */
+
+  const email = user?.email || "";
+
+  const displayName =
+    user?.displayName ||
+    user?.name ||
+    user?.fullName ||
+    (email ? email.split("@")[0] : "") ||
+    "User";
+
+  const photoURL = user?.photoURL || user?.photoUrl || user?.avatar || "";
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [photoURL]);
 
   /* =======================================================
      STORAGE KEY
   ======================================================= */
 
-  const storageKey =
-    useMemo(
-      () =>
-        createStorageKey(
-          role,
-          user?.uid
-        ),
-      [
-        role,
-        user?.uid,
-      ]
-    );
+  const storageKey = useMemo(
+    () => createStorageKey(role, user?.uid),
+    [role, user?.uid]
+  );
 
   /* =======================================================
      NAV ITEMS
   ======================================================= */
 
-  const navItems =
-    useMemo(() => {
-      if (
-        role === "admin"
-      ) {
-        return adminNavItems;
-      }
+  const navItems = useMemo(() => {
+    if (role === "admin") {
+      return adminNavItems;
+    }
 
-      if (
-        role === "teacher"
-      ) {
-        return teacherNavItems;
-      }
+    if (role === "teacher") {
+      return teacherNavItems;
+    }
 
-      if (
-        role === "student"
-      ) {
-        return studentNavItems;
-      }
+    if (role === "student") {
+      return studentNavItems;
+    }
 
-      return [];
-    }, [
-      role,
-    ]);
+    return [];
+  }, [role]);
+
+  const profilePath = `/${role}/account-center`;
 
   /* =======================================================
      LOAD LAST-SEEN TIME
   ======================================================= */
 
   useEffect(() => {
-    if (
-      !storageKey
-    ) {
+    if (!storageKey) {
       setLastSeenAt(0);
       setNotificationCount(0);
 
       return;
     }
 
-    setLastSeenAt(
-      readLastSeenTime(
-        storageKey
-      )
-    );
-
+    setLastSeenAt(readLastSeenTime(storageKey));
     setNotificationCount(0);
-  }, [
-    storageKey,
-  ]);
+  }, [storageKey]);
 
   /* =======================================================
      DISPUTE NOTIFICATION LISTENER
   ======================================================= */
 
   useEffect(() => {
-    if (
-      !user?.uid ||
-      !role
-    ) {
+    if (!user?.uid || !role) {
       setNotificationCount(0);
 
       return undefined;
     }
 
-    function handleCount(
-      count
-    ) {
-      setNotificationCount(
-        Number(count) || 0
-      );
+    function handleCount(count) {
+      setNotificationCount(Number(count) || 0);
     }
 
-    function handleError(
-      error
-    ) {
-      console.error(
-        "Dispute notification error:",
-        error
-      );
+    function handleError(error) {
+      console.error("Dispute notification error:", error);
 
       setNotificationCount(0);
     }
 
     /* ADMIN */
 
-    if (
-      role === "admin"
-    ) {
+    if (role === "admin") {
       return subscribeToAdminDisputeNotificationCount(
         lastSeenAt,
         handleCount,
@@ -324,12 +195,8 @@ function Sidebar() {
 
     /* TEACHER */
 
-    if (
-      role === "teacher"
-    ) {
-      if (
-        !user?.department
-      ) {
+    if (role === "teacher") {
+      if (!user?.department) {
         setNotificationCount(0);
 
         return undefined;
@@ -345,9 +212,7 @@ function Sidebar() {
 
     /* STUDENT */
 
-    if (
-      role === "student"
-    ) {
+    if (role === "student") {
       return subscribeToStudentResponseNotificationCount(
         user.uid,
         lastSeenAt,
@@ -359,75 +224,45 @@ function Sidebar() {
     setNotificationCount(0);
 
     return undefined;
-  }, [
-    user?.uid,
-    user?.department,
-    role,
-    lastSeenAt,
-  ]);
+  }, [user?.uid, user?.department, role, lastSeenAt]);
 
   /* =======================================================
      MARK DISPUTES AS SEEN
   ======================================================= */
 
-  const markDisputesAsSeen =
-    useCallback(() => {
-      if (
-        !storageKey
-      ) {
-        return;
-      }
+  const markDisputesAsSeen = useCallback(() => {
+    if (!storageKey) {
+      return;
+    }
 
-      const now =
-        Date.now();
+    const now = Date.now();
 
-      localStorage.setItem(
-        storageKey,
-        String(now)
-      );
+    localStorage.setItem(storageKey, String(now));
 
-      setLastSeenAt(now);
-      setNotificationCount(0);
-    }, [
-      storageKey,
-    ]);
+    setLastSeenAt(now);
+    setNotificationCount(0);
+  }, [storageKey]);
 
   /* =======================================================
      NOTIFICATION DISPLAY
   ======================================================= */
 
-  const displayedCount =
-    notificationCount > 99
-      ? "99+"
-      : notificationCount;
+  const displayedCount = notificationCount > 99 ? "99+" : notificationCount;
 
-  const plural =
-    notificationCount === 1
-      ? ""
-      : "s";
+  const plural = notificationCount === 1 ? "" : "s";
 
-  let notificationTitle =
-    "";
+  let notificationTitle = "";
 
-  if (
-    role === "admin"
-  ) {
-    notificationTitle =
-      `${notificationCount} new student dispute${plural}`;
+  if (role === "admin") {
+    notificationTitle = `${notificationCount} new student dispute${plural}`;
   }
 
-  if (
-    role === "teacher"
-  ) {
-    notificationTitle =
-      `${notificationCount} new department dispute${plural}`;
+  if (role === "teacher") {
+    notificationTitle = `${notificationCount} new department dispute${plural}`;
   }
 
-  if (
-    role === "student"
-  ) {
-    notificationTitle =
-      `${notificationCount} new teacher response${plural}`;
+  if (role === "student") {
+    notificationTitle = `${notificationCount} new teacher response${plural}`;
   }
 
   /* =======================================================
@@ -436,28 +271,35 @@ function Sidebar() {
 
   return (
     <aside className="db-sidebar">
-
       {/* ===================================================
-          BRAND
+          PROFILE
       =================================================== */}
 
-      <div className="db-sidebar-brand">
-        <img
-          src={
-            bioSyncLogo
-          }
-          alt="BioSync Sentinel"
-          className="db-sidebar-logo db-sidebar-logo-full"
-        />
+      <NavLink
+        to={profilePath}
+        className="db-sidebar-profile"
+        title={`${displayName}${email ? ` (${email})` : ""}`}
+      >
+        <span className="db-sidebar-avatar">
+          {photoURL && !avatarFailed ? (
+            <img
+              src={photoURL}
+              alt={displayName}
+              className="db-sidebar-avatar-img"
+              referrerPolicy="no-referrer"
+              onError={() => setAvatarFailed(true)}
+            />
+          ) : (
+            <User size={22} strokeWidth={1.8} />
+          )}
+        </span>
 
-        <img
-          src={
-            bioSyncShield
-          }
-          alt="BioSync Sentinel"
-          className="db-sidebar-logo db-sidebar-logo-shield"
-        />
-      </div>
+        <span className="db-sidebar-profile-copy">
+          <strong>{displayName}</strong>
+
+          {email && <span>{email}</span>}
+        </span>
+      </NavLink>
 
       <div className="db-sidebar-separator" />
 
@@ -466,69 +308,38 @@ function Sidebar() {
       =================================================== */}
 
       <nav className="db-sidebar-nav">
-        {navItems.map(
-          ({
-            to,
-            label,
-            icon: Icon,
-          }) => {
-            const isDisputes =
-              label ===
-              "Disputes";
+        {navItems.map(({ to, label, icon: Icon }) => {
+          const isDisputes = label === "Disputes";
 
-            const showNotification =
-              isDisputes &&
-              notificationCount > 0;
+          const showNotification = isDisputes && notificationCount > 0;
 
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={
-                  isDisputes
-                    ? markDisputesAsSeen
-                    : undefined
-                }
-                className={({
-                  isActive,
-                }) =>
-                  `db-sidebar-link${
-                    isActive
-                      ? " db-sidebar-link-active"
-                      : ""
-                  }`
-                }
-              >
-                <Icon
-                  size={18}
-                  className="db-sidebar-icon"
-                />
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={isDisputes ? markDisputesAsSeen : undefined}
+              className={({ isActive }) =>
+                `db-sidebar-link${isActive ? " db-sidebar-link-active" : ""}`
+              }
+            >
+              <Icon size={20} strokeWidth={1.8} className="db-sidebar-icon" />
 
-                <span className="db-sidebar-label">
-                  {label}
+              <span className="db-sidebar-label">{label}</span>
+
+              {showNotification && (
+                <span
+                  className="db-dispute-notification"
+                  title={notificationTitle}
+                  aria-label={notificationTitle}
+                >
+                  <span className="db-dispute-notification-dot" />
+
+                  <span>{displayedCount} new</span>
                 </span>
-
-                {showNotification && (
-                  <span
-                    className="db-dispute-notification"
-                    title={
-                      notificationTitle
-                    }
-                    aria-label={
-                      notificationTitle
-                    }
-                  >
-                    <span className="db-dispute-notification-dot" />
-
-                    <span>
-                      {displayedCount} new
-                    </span>
-                  </span>
-                )}
-              </NavLink>
-            );
-          }
-        )}
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* ===================================================
@@ -536,17 +347,11 @@ function Sidebar() {
       =================================================== */}
 
       <div className="db-sidebar-footer">
-        <span className="db-sidebar-footer-dot" />
+        <NavLink to={profilePath} className="db-sidebar-profile-button">
+          <User size={18} strokeWidth={1.8} className="db-sidebar-profile-button-icon" />
 
-        <div className="db-sidebar-footer-copy">
-          <strong>
-            BioSecure Enterprise
-          </strong>
-
-          <span>
-            Version 2.0.0
-          </span>
-        </div>
+          <span className="db-sidebar-profile-button-label">View profile</span>
+        </NavLink>
       </div>
     </aside>
   );

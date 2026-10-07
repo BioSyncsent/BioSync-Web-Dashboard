@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import './ColorBends.css';
@@ -111,7 +109,7 @@ void main() {
 
 export default function ColorBends({
   className = '',
-  style,
+  style = {},
   rotation = 90,
   speed = 0.2,
   colors = [],
@@ -140,6 +138,8 @@ export default function ColorBends({
 
   useEffect(() => {
     const container = containerRef.current;
+    if (!container) return;
+
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
@@ -298,13 +298,9 @@ export default function ColorBends({
   ]);
 
   useEffect(() => {
-    const material = materialRef.current;
     const container = containerRef.current;
-    if (!material || !container) return;
+    if (!container) return;
 
-    // Listens on window (not the container) so the effect still follows the
-    // cursor when the container sits behind content or has pointer-events: none,
-    // as it does as a full-page background.
     const handlePointerMove = e => {
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / (rect.width || 1)) * 2 - 1;

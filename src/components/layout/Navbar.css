@@ -736,3 +736,43 @@
     display: none;
   }
 }
+
+/* =========================================================
+   ICON CENTERING FIX
+========================================================= */
+
+.db-navbar-icon-btn,
+.db-navbar-status-icon,
+.db-navbar-avatar,
+.db-navbar-notification-count {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  line-height: 1;
+}
+
+.db-navbar-notification-count {
+  padding: 0 4px;
+}
+
+.db-navbar-icon-btn svg,
+.db-navbar-status-icon svg,
+.db-navbar-sync svg,
+.db-navbar-logout svg,
+.db-navbar-brand-icon {
+  display: block;
+
+  flex-shrink: 0;
+
+  margin: 0;
+}
+
+.db-navbar-sync,
+.db-navbar-logout,
+.db-navbar-title-row {
+  line-height: 1;
+}

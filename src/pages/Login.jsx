@@ -118,11 +118,12 @@ export default function Login() {
       {/* Same black aurora as the landing page */}
       <div className="bs-login-aurora" aria-hidden="true">
         <ColorBends
+          colors={["#359FA0", "#8AD6D1", "#425B9A"]}
           speed={0.2}
           scale={1}
           warpStrength={1}
-          mouseInfluence={0.5}
-          parallax={0.4}
+          mouseInfluence={0}
+          parallax={0}
           intensity={1.6}
           bandWidth={8}
         />
