@@ -1,11 +1,5 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
+import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import {
   Activity,
   AlertTriangle,
@@ -14,8 +8,6 @@ import {
   BookOpen,
   Check,
   CheckCircle2,
-  ChevronRight,
-  Clock,
   Cpu,
   CreditCard,
   Database,
@@ -36,96 +28,140 @@ import {
 } from "lucide-react";
 
 import bioSyncLogo from "../assets/BioSync_Logo_Navbar.png";
-
+import bioSyncShield from "../assets/BioSync_Login_Shield.png";
+import ColorBends from "../components/ColorBends";
 import "./LandingPage.css";
 
-/* =========================================================
-   DATA
-========================================================= */
-
 const navigationItems = [
+  ["Overview", "#overview"],
+  ["Why BioSync", "#problems"],
+  ["How It Works", "#workflow"],
+  ["Architecture", "#architecture"],
+  ["Dashboard", "#preview"],
+  ["Security", "#security"],
+];
+
+const overviewCards = [
   {
-    label: "Overview",
-    target: "#overview",
+    icon: CreditCard,
+    title: "RFID Identity",
+    text: "The RFID card identifies the account requesting attendance verification.",
   },
   {
-    label: "Why BioSync",
-    target: "#problems",
+    icon: ScanFace,
+    title: "Face + Liveness",
+    text: "Facial recognition verifies identity while liveness checks strengthen protection against spoofing.",
   },
   {
-    label: "How It Works",
-    target: "#workflow",
+    icon: Fingerprint,
+    title: "Fingerprint Fallback",
+    text: "Fingerprint authentication provides a secondary biometric path when facial verification cannot succeed.",
   },
   {
-    label: "Architecture",
-    target: "#architecture",
-  },
-  {
-    label: "Dashboard",
-    target: "#preview",
-  },
-  {
-    label: "Security",
-    target: "#security",
+    icon: LayoutDashboard,
+    title: "Central Dashboard",
+    text: "Authorized users can monitor attendance, disputes, analytics and biometric registration information.",
   },
 ];
 
 const problemCards = [
   {
-    icon: Clock,
+    icon: Activity,
     title: "Manual Attendance",
-    description:
-      "Traditional attendance consumes teaching time, creates repetitive administrative work and makes historical records harder to manage.",
+    text: "Traditional attendance consumes teaching time, creates repetitive administrative work and makes historical records harder to manage.",
   },
   {
     icon: AlertTriangle,
     title: "Proxy Attendance",
-    description:
-      "Cards, signatures and basic identification methods can be shared between users without proving the real account owner is physically present.",
+    text: "Cards, signatures and basic identification methods can be shared without proving that the real account owner is physically present.",
   },
   {
     icon: Lock,
     title: "Weak Verification",
-    description:
-      "Single-factor attendance systems provide limited protection against impersonation, spoofing and unauthorized attendance submissions.",
+    text: "Single-factor attendance provides limited protection against impersonation, spoofing and unauthorized attendance submissions.",
   },
 ];
 
 const workflowSteps = [
   {
-    number: "01",
     icon: CreditCard,
-    title: "RFID Identification",
-    description:
-      "The user presents an assigned RFID card to identify their BioSync account.",
+    title: "RFID Identity Claim",
+    text: "The assigned RFID card identifies the BioSync account requesting attendance verification.",
   },
   {
-    number: "02",
     icon: ScanFace,
-    title: "Face Verification",
-    description:
-      "The terminal captures the user's face and performs identity matching.",
+    title: "Face + Liveness",
+    text: "Face matching verifies the claimed identity. Liveness checks help confirm that a real person is physically present.",
   },
   {
-    number: "03",
-    icon: Eye,
-    title: "Liveness Detection",
-    description:
-      "Anti-spoofing checks help confirm that a real person is physically present.",
-  },
-  {
-    number: "04",
-    icon: Fingerprint,
-    title: "Fingerprint Fallback",
-    description:
-      "Fingerprint verification provides an alternative biometric method when required.",
-  },
-  {
-    number: "05",
     icon: Database,
     title: "Attendance Recorded",
-    description:
-      "Verified attendance is stored and made available to the appropriate dashboard.",
+    text: "After successful verification, the attendance result is recorded and becomes available to authorized dashboard users.",
+  },
+];
+
+const architectureNodes = [
+  {
+    icon: Cpu,
+    title: "Terminal",
+    text: "RFID reader, camera and fingerprint sensor.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Verification",
+    text: "Identity matching, face verification and liveness.",
+  },
+  {
+    icon: Server,
+    title: "Firebase",
+    text: "Authentication, Firestore and application data.",
+  },
+  {
+    icon: LayoutDashboard,
+    title: "Dashboard",
+    text: "Role-based attendance management and monitoring.",
+  },
+];
+
+const roles = [
+  {
+    icon: ShieldCheck,
+    label: "Full Oversight",
+    title: "Administrator",
+    text: "Manage users, attendance, devices and system-wide operations.",
+    items: [
+      "User Management",
+      "Attendance Control",
+      "Dispute Oversight",
+      "Device Monitoring",
+      "System Analytics",
+    ],
+  },
+  {
+    icon: BookOpen,
+    label: "Department Focus",
+    title: "Teacher",
+    text: "Monitor students and attendance within the assigned department.",
+    items: [
+      "Student Monitoring",
+      "Attendance Review",
+      "Dispute Resolution",
+      "Department Access",
+      "Attendance Analytics",
+    ],
+  },
+  {
+    icon: GraduationCap,
+    label: "Personal Access",
+    title: "Student",
+    text: "Review personal attendance information and biometric registration status.",
+    items: [
+      "Attendance History",
+      "Submit Disputes",
+      "Personal Analytics",
+      "Biometric Status",
+      "Account Center",
+    ],
   },
 ];
 
@@ -133,1750 +169,736 @@ const securityFeatures = [
   {
     icon: Eye,
     title: "Liveness Detection",
-    description:
-      "Facial verification is supported by liveness checks designed to reduce simple spoofing attempts.",
+    text: "Facial verification is supported by liveness checks designed to reduce basic photo and screen spoofing attempts.",
   },
   {
     icon: Fingerprint,
     title: "Biometric Verification",
-    description:
-      "Fingerprint and facial verification provide stronger identity confirmation than attendance cards alone.",
+    text: "Face and fingerprint verification provide stronger identity confirmation than an attendance card alone.",
   },
   {
     icon: ShieldCheck,
     title: "Role-Based Access",
-    description:
-      "Administrators, teachers and students receive different dashboard permissions based on their assigned role.",
+    text: "Administrators, teachers and students receive different permissions according to their assigned BioSync role.",
   },
   {
     icon: FileText,
     title: "Audit Visibility",
-    description:
-      "Attendance actions, disputes and administrative activity can be monitored through centralized system records.",
+    text: "Attendance activity, disputes and administrative actions can be reviewed through centralized system records.",
   },
 ];
 
-/* =========================================================
-   LANDING PAGE
-========================================================= */
-
-function LandingPage() {
+export default function LandingPage() {
   const navigate = useNavigate();
+  const rootRef = useRef(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const layoutRef = useRef(null);
+ useEffect(() => {
+  const root = rootRef.current;
+  if (!root) return;
 
-  const [
-    mobileMenuOpen,
-    setMobileMenuOpen,
-  ] = useState(false);
+  const motion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  );
 
-  /* =======================================================
-     SCROLL REVEAL
-  ======================================================= */
+  if (motion.matches || !("IntersectionObserver" in window)) {
+    return;
+  }
 
-  useEffect(() => {
-    const elements =
-      document.querySelectorAll(
-        ".lp-reveal"
-      );
+  const elements = Array.from(
+    root.querySelectorAll("[data-reveal]")
+  );
 
-    if (!elements.length) {
-      return undefined;
+  const reset = () => {
+    elements.forEach((element) => {
+      element.classList.remove("lp-reveal-ready", "lp-enter");
+      element.style.removeProperty("--lp-reveal-delay");
+    });
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+
+        entry.target.classList.add("lp-enter");
+        observer.unobserve(entry.target);
+      });
+    },
+    {
+      threshold: 0,
+      rootMargin: "0px 0px -70px 0px",
+    }
+  );
+
+  elements.forEach((element) => {
+    // Keep anything already on screen visible.
+    if (element.getBoundingClientRect().top < window.innerHeight) {
+      return;
     }
 
-    const observer =
-      new IntersectionObserver(
-        (entries) => {
-          entries.forEach(
-            (entry) => {
-              if (
-                entry.isIntersecting
-              ) {
-                entry.target.classList.add(
-                  "is-visible"
-                );
+    const siblings = Array.from(
+      element.parentElement.children
+    ).filter((child) => child.matches("[data-reveal]"));
 
-                observer.unobserve(
-                  entry.target
-                );
-              }
-            }
-          );
-        },
-        {
-          threshold: 0.12,
-          rootMargin:
-            "0px 0px -50px 0px",
-        }
-      );
+    const index = Math.max(0, siblings.indexOf(element));
 
-    elements.forEach(
-      (element) => {
-        observer.observe(
-          element
-        );
-      }
+    element.style.setProperty(
+      "--lp-reveal-delay",
+      `${Math.min(index, 4) * 140}ms`
     );
 
-    return () => {
+    element.classList.add("lp-reveal-ready");
+    observer.observe(element);
+  });
+
+  const handleMotionChange = () => {
+    if (motion.matches) {
       observer.disconnect();
-    };
-  }, []);
-
-  /* =======================================================
-     MOUSE SPOTLIGHT
-  ======================================================= */
-
-  useEffect(() => {
-    const layout =
-      layoutRef.current;
-
-    if (!layout) {
-      return undefined;
+      reset();
     }
+  };
 
-    function handleMouseMove(
-      event
-    ) {
-      const x =
-        (event.clientX /
-          window.innerWidth) *
-        100;
+  motion.addEventListener("change", handleMotionChange);
 
-      const y =
-        (event.clientY /
-          window.innerHeight) *
-        100;
+  return () => {
+    observer.disconnect();
+    motion.removeEventListener("change", handleMotionChange);
+    reset();
+  };
+}, []);
 
-      layout.style.setProperty(
-        "--mouse-x",
-        `${x}%`
-      );
-
-      layout.style.setProperty(
-        "--mouse-y",
-        `${y}%`
-      );
-    }
-
-    window.addEventListener(
-      "mousemove",
-      handleMouseMove
-    );
-
-    return () => {
-      window.removeEventListener(
-        "mousemove",
-        handleMouseMove
-      );
-    };
-  }, []);
-
-  /* =======================================================
-     ACTIONS
-  ======================================================= */
-
-function handleGetStarted() {
-  setMobileMenuOpen(false);
-
-  navigate("/login");
-}
+  function handleGetStarted() {
+    setMobileMenuOpen(false);
+    navigate("/login");
+  }
 
   function handleLogoClick() {
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
+      behavior: reduced ? "auto" : "smooth",
     });
 
     setMobileMenuOpen(false);
   }
 
-  function closeMobileMenu() {
-    setMobileMenuOpen(false);
-  }
-
-  /* =======================================================
-     UI
-  ======================================================= */
-
   return (
-    <div
-      ref={layoutRef}
-      className="biosync-landing"
-    >
-      {/* ===================================================
-          BACKGROUND
-      =================================================== */}
-
-      <div
-        className="lp-background"
-        aria-hidden="true"
-      >
-        <div className="lp-grid" />
-
-        <div className="lp-glow lp-glow-one" />
-        <div className="lp-glow lp-glow-two" />
-        <div className="lp-glow lp-glow-three" />
-
-        <div className="lp-mouse-light" />
+    <div className="biosync-landing" ref={rootRef}>
+      <div className="lp-color-bends-background" aria-hidden="true">
+        <ColorBends
+          speed={0.2}
+          scale={1}
+          warpStrength={1}
+          mouseInfluence={0.5}
+          parallax={0.4}
+          intensity={1.6}
+          bandWidth={8}
+        />
       </div>
-
-      {/* ===================================================
-          NAVBAR
-      =================================================== */}
 
       <header className="lp-navbar">
         <div className="lp-navbar-inner">
           <button
             type="button"
             className="lp-brand"
-            onClick={
-              handleLogoClick
-            }
-            aria-label="BioSync Sentinel home"
+            onClick={handleLogoClick}
+            aria-label="BioSync home"
           >
-            <img
-              src={bioSyncLogo}
-              alt="BioSync Sentinel"
-              className="lp-brand-logo"
-            />
+            <img src={bioSyncLogo} alt="BioSync Sentinel" />
           </button>
 
-          <nav className="lp-desktop-nav">
-            {navigationItems.map(
-              (item) => (
-                <a
-                  key={
-                    item.target
-                  }
-                  href={
-                    item.target
-                  }
-                  className="lp-nav-link"
-                >
-                  {item.label}
-                </a>
-              )
-            )}
+          <nav className="lp-desktop-nav" aria-label="Main navigation">
+            {navigationItems.map(([label, target]) => (
+              <a key={target} href={target}>
+                {label}
+              </a>
+            ))}
           </nav>
 
           <div className="lp-nav-actions">
             <button
               type="button"
-              className="lp-signin-button"
-              onClick={
-                handleGetStarted
-              }
+              className="lp-sign-in"
+              onClick={handleGetStarted}
             >
               Sign In
             </button>
-
             <button
               type="button"
-              className="lp-getstarted-button"
-              onClick={
-                handleGetStarted
-              }
+              className="lp-get-started"
+              onClick={handleGetStarted}
             >
-              Get Started
-
-              <ArrowRight
-                size={15}
-              />
+              Get Started <ArrowRight size={15} />
             </button>
           </div>
 
           <button
             type="button"
-            className="lp-mobile-menu-button"
-            aria-label="Toggle navigation menu"
-            onClick={() =>
-              setMobileMenuOpen(
-                (current) =>
-                  !current
-              )
-            }
+            className="lp-mobile-toggle"
+            aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="biosync-mobile-menu"
+            onClick={() => setMobileMenuOpen((value) => !value)}
           >
-            {mobileMenuOpen ? (
-              <X size={22} />
-            ) : (
-              <Menu size={22} />
-            )}
+            {mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
         </div>
 
         {mobileMenuOpen && (
-          <div className="lp-mobile-menu">
-            {navigationItems.map(
-              (item) => (
-                <a
-                  key={
-                    item.target
-                  }
-                  href={
-                    item.target
-                  }
-                  onClick={
-                    closeMobileMenu
-                  }
-                >
-                  {item.label}
-                </a>
-              )
-            )}
-
-            <div className="lp-mobile-divider" />
-
-            <button
-              type="button"
-              onClick={() => {
-                closeMobileMenu();
-                handleGetStarted();
-              }}
-            >
+          <nav
+            className="lp-mobile-menu"
+            id="biosync-mobile-menu"
+            aria-label="Mobile navigation"
+          >
+            {navigationItems.map(([label, target]) => (
+              <a
+                key={target}
+                href={target}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {label}
+              </a>
+            ))}
+            <button type="button" onClick={handleGetStarted}>
               Sign In
             </button>
-
             <button
               type="button"
               className="primary"
-              onClick={() => {
-                closeMobileMenu();
-                handleGetStarted();
-              }}
+              onClick={handleGetStarted}
             >
               Get Started
             </button>
-          </div>
+          </nav>
         )}
       </header>
 
       <main>
-        {/* =================================================
-            HERO
-        ================================================= */}
-
-        <section
-          id="hero"
-          className="lp-hero"
-        >
-          <div className="lp-container lp-hero-grid">
+        <section className="lp-hero">
+          <div className="lp-container lp-hero-layout">
             <div className="lp-hero-content">
-              <div className="lp-hero-badge">
-                <Sparkles
-                  size={13}
-                />
-
-                <span>
-                  Secure Biometric
-                  Attendance Platform
-                </span>
+              <div className="lp-eyebrow">
+                <Sparkles size={13} />
+                Integrated Biometric Attendance System
               </div>
 
               <h1>
-                Secure
+                Security
                 <br />
-
-                Attendance
+                Beyond
                 <br />
-
-                <span>
-                  Beyond Identity
-                </span>
+                <span>Attendance.</span>
               </h1>
 
-              <p className="lp-hero-description">
-                BioSync Sentinel
-                combines RFID
-                identification,
-                AI-powered facial
-                liveness detection,
-                fingerprint
-                verification and
-                real-time attendance
-                monitoring to deliver
-                secure, fraud-resistant
-                attendance management.
+              <p>
+                Verify identity. Prevent proxy attendance. BioSync Sentinel
+                combines RFID identity claims with face recognition, liveness
+                detection and fingerprint fallback to protect attendance
+                integrity.
               </p>
 
               <div className="lp-hero-actions">
-                <a
-                  href="#overview"
-                  className="lp-primary-button"
-                >
-                  Explore BioSync
-
-                  <ArrowRight
-                    size={16}
-                  />
+                <a href="#overview" className="lp-primary-button">
+                  Explore System <ArrowRight size={16} />
                 </a>
-
-                <a
-                  href="#architecture"
-                  className="lp-secondary-button"
+                <button
+                  type="button"
+                  className="lp-outline-button"
+                  onClick={handleGetStarted}
                 >
-                  View Architecture
-                </a>
+                  Access Dashboard
+                </button>
               </div>
 
-              <div className="lp-trust-strip">
+              <div className="lp-trust-row">
                 <div>
-                  <strong>
-                    Multi-Factor
-                  </strong>
-
-                  <span>
-                    Verification
-                  </span>
+                  <strong>Multi-Factor</strong>
+                  <span>Verification</span>
                 </div>
-
                 <i />
-
                 <div>
-                  <strong>
-                    Real-Time
-                  </strong>
-
-                  <span>
-                    Monitoring
-                  </span>
+                  <strong>Anti-Proxy</strong>
+                  <span>Protection</span>
                 </div>
-
                 <i />
-
                 <div>
-                  <strong>
-                    Role-Based
-                  </strong>
-
-                  <span>
-                    Access Control
-                  </span>
+                  <strong>Real-Time</strong>
+                  <span>Monitoring</span>
                 </div>
               </div>
             </div>
 
-            {/* =============================================
-                HERO VISUAL
-            ============================================= */}
+            <IdentityOrb />
+          </div>
+        </section>
 
-            <div className="lp-hero-visual">
-              <div className="lp-system-card">
-                <div className="lp-system-card-grid" />
+        <section id="overview" className="lp-section">
+          <div className="lp-container">
+            <SectionHeader
+              label="Platform Overview"
+              title="Attendance that verifies more than a card"
+              description="BioSync Sentinel combines identity claims, biometric verification and centralized monitoring into one attendance platform."
+            />
+            <div className="lp-four-grid">
+              {overviewCards.map((card) => (
+                <FeatureCard key={card.title} {...card} />
+              ))}
+            </div>
+          </div>
+        </section>
 
-                <div className="lp-system-status">
-                  <span />
+        <section id="problems" className="lp-section">
+          <div className="lp-container">
+            <SectionHeader
+              label="Why BioSync"
+              title="Traditional attendance leaves room for impersonation"
+              description="BioSync focuses on the identity weaknesses found in manual and single-factor attendance systems."
+            />
+            <div className="lp-three-grid">
+              {problemCards.map((card, index) => (
+                <FeatureCard
+                  key={card.title}
+                  {...card}
+                  warning
+                  number={`0${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
 
-                  System Online
+        <section id="workflow" className="lp-section">
+          <div className="lp-container">
+            <SectionHeader
+              label="Authentication Flow"
+              title="Identity claim first. Biometric proof second."
+              description="BioSync does not treat an RFID card as proof of physical presence. The card identifies the account, then biometrics verify the person."
+            />
+
+            <div className="lp-workflow">
+              {workflowSteps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <article
+                    className="lp-workflow-card"
+                    data-reveal
+                    key={step.title}
+                  >
+                    <span className="lp-step-number">0{index + 1}</span>
+                    <div className="lp-card-icon">
+                      <Icon size={21} />
+                    </div>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
+                    {index < workflowSteps.length - 1 && (
+                      <ArrowRight className="lp-step-arrow" size={19} />
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="lp-fallback" data-reveal>
+              <div className="lp-fallback-intro">
+                <Fingerprint size={25} />
+                <div>
+                  <strong>A second verification path</strong>
+                  <p>
+                    If face verification cannot succeed, use fingerprint
+                    authentication. Attendance is recorded only after
+                    successful verification.
+                  </p>
                 </div>
-
-                <div className="lp-system-node lp-node-face">
-                  <ScanFace
-                    size={23}
-                  />
-
-                  <span>
-                    Face + Liveness
-                  </span>
-                </div>
-
-                <div className="lp-system-node lp-node-rfid">
-                  <CreditCard
-                    size={22}
-                  />
-
-                  <span>
-                    RFID
-                  </span>
-                </div>
-
-                <div className="lp-system-node lp-node-print">
-                  <Fingerprint
-                    size={22}
-                  />
-
-                  <span>
-                    Fingerprint
-                  </span>
-                </div>
-
-                <div className="lp-system-node lp-node-database">
-                  <Database
-                    size={22}
-                  />
-
-                  <span>
-                    Firestore
-                  </span>
-                </div>
-
-                <div className="lp-system-line lp-line-top" />
-                <div className="lp-system-line lp-line-left" />
-                <div className="lp-system-line lp-line-right" />
-                <div className="lp-system-line lp-line-bottom" />
-
-                <div className="lp-system-core">
-                  <ShieldCheck
-                    size={37}
-                  />
-
-                  <strong>
-                    BioSync
-                  </strong>
-
-                  <span>
-                    Sentinel Core
-                  </span>
-                </div>
-
-                <div className="lp-system-pulse pulse-one" />
-                <div className="lp-system-pulse pulse-two" />
+              </div>
+              <div className="lp-fallback-results">
+                <span className="success">
+                  <CheckCircle2 size={16} /> Verified
+                </span>
+                <span className="denied">
+                  <Lock size={16} /> Otherwise denied
+                </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* =================================================
-            OVERVIEW
-        ================================================= */}
-
-        <section
-          id="overview"
-          className="lp-section lp-overview"
-        >
+        <section id="architecture" className="lp-section">
           <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                Platform Overview
-              </span>
-
-              <h2>
-                Attendance that verifies
-                more than a card
-              </h2>
-
-              <p>
-                BioSync Sentinel combines
-                identity, biometric
-                verification and
-                centralized dashboard
-                monitoring into one
-                attendance platform.
-              </p>
-            </div>
-
-            <div className="lp-overview-grid">
-              <article className="lp-feature-card lp-reveal">
-                <div className="lp-card-icon">
-                  <CreditCard
-                    size={22}
-                  />
-                </div>
-
-                <h3>
-                  RFID Identity
-                </h3>
-
-                <p>
-                  Quickly associate a
-                  physical RFID credential
-                  with a registered BioSync
-                  account.
-                </p>
-              </article>
-
-              <article className="lp-feature-card lp-reveal">
-                <div className="lp-card-icon">
-                  <ScanFace
-                    size={22}
-                  />
-                </div>
-
-                <h3>
-                  Face & Liveness
-                </h3>
-
-                <p>
-                  Confirm identity while
-                  adding liveness checks
-                  designed to reduce basic
-                  face spoofing.
-                </p>
-              </article>
-
-              <article className="lp-feature-card lp-reveal">
-                <div className="lp-card-icon">
-                  <Fingerprint
-                    size={22}
-                  />
-                </div>
-
-                <h3>
-                  Fingerprint Fallback
-                </h3>
-
-                <p>
-                  Provide another biometric
-                  verification method when
-                  facial recognition cannot
-                  be used.
-                </p>
-              </article>
-
-              <article className="lp-feature-card lp-reveal">
-                <div className="lp-card-icon">
-                  <LayoutDashboard
-                    size={22}
-                  />
-                </div>
-
-                <h3>
-                  Live Dashboard
-                </h3>
-
-                <p>
-                  Allow authorized users to
-                  review attendance,
-                  disputes, analytics and
-                  system information.
-                </p>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        {/* =================================================
-            PROBLEMS
-        ================================================= */}
-
-        <section
-          id="problems"
-          className="lp-section lp-problems"
-        >
-          <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                Why BioSync
-              </span>
-
-              <h2>
-                Traditional attendance has
-                weaknesses
-              </h2>
-
-              <p>
-                BioSync is designed around
-                common problems found in
-                manual and basic
-                single-factor attendance
-                systems.
-              </p>
-            </div>
-
-            <div className="lp-problem-grid">
-              {problemCards.map(
-                (item) => {
-                  const Icon =
-                    item.icon;
-
-                  return (
-                    <article
-                      key={
-                        item.title
-                      }
-                      className="lp-problem-card lp-reveal"
-                    >
-                      <div className="lp-problem-number">
-                        0
-                        {problemCards.indexOf(
-                          item
-                        ) + 1}
+            <SectionHeader
+              label="System Architecture"
+              title="From physical verification to secure dashboard access"
+              description="The terminal, biometric verification layer, Firebase services and web dashboard work together as one BioSync ecosystem."
+            />
+            <div className="lp-architecture" data-reveal>
+              {architectureNodes.map((node, index) => {
+                const Icon = node.icon;
+                return (
+                  <div className="lp-architecture-item" key={node.title}>
+                    <article className="lp-architecture-node">
+                      <div className="lp-card-icon">
+                        <Icon size={22} />
                       </div>
-
-                      <div className="lp-card-icon danger">
-                        <Icon
-                          size={22}
-                        />
-                      </div>
-
-                      <h3>
-                        {item.title}
-                      </h3>
-
-                      <p>
-                        {
-                          item.description
-                        }
-                      </p>
+                      <span>Layer 0{index + 1}</span>
+                      <h3>{node.title}</h3>
+                      <p>{node.text}</p>
                     </article>
-                  );
-                }
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* =================================================
-            WORKFLOW
-        ================================================= */}
-
-        <section
-          id="workflow"
-          className="lp-section lp-workflow"
-        >
-          <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                Verification Flow
-              </span>
-
-              <h2>
-                How BioSync works
-              </h2>
-
-              <p>
-                A structured verification
-                process moves from identity
-                detection to biometric
-                confirmation and attendance
-                recording.
-              </p>
-            </div>
-
-            <div className="lp-workflow-grid">
-              {workflowSteps.map(
-                (step,
-                index) => {
-                  const Icon =
-                    step.icon;
-
-                  return (
-                    <div
-                      key={
-                        step.number
-                      }
-                      className="lp-workflow-step lp-reveal"
-                    >
-                      <div className="lp-workflow-number">
-                        {
-                          step.number
-                        }
-                      </div>
-
-                      <div className="lp-workflow-icon">
-                        <Icon
-                          size={22}
-                        />
-                      </div>
-
-                      <h3>
-                        {
-                          step.title
-                        }
-                      </h3>
-
-                      <p>
-                        {
-                          step.description
-                        }
-                      </p>
-
-                      {index <
-                        workflowSteps.length -
-                          1 && (
-                        <ChevronRight
-                          size={20}
-                          className="lp-workflow-arrow"
-                        />
-                      )}
-                    </div>
-                  );
-                }
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* =================================================
-            ARCHITECTURE
-        ================================================= */}
-
-        <section
-          id="architecture"
-          className="lp-section lp-architecture"
-        >
-          <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                System Architecture
-              </span>
-
-              <h2>
-                From biometric terminal
-                to dashboard
-              </h2>
-
-              <p>
-                BioSync connects physical
-                attendance terminals,
-                Firebase services and
-                role-based dashboard
-                experiences.
-              </p>
-            </div>
-
-            <div className="lp-architecture-card lp-reveal">
-              <div className="lp-architecture-grid">
-                <div className="lp-architecture-node">
-                  <div>
-                    <Cpu size={25} />
-                  </div>
-
-                  <span>
-                    Layer 01
-                  </span>
-
-                  <h3>
-                    Biometric Terminal
-                  </h3>
-
-                  <p>
-                    RFID, camera and
-                    fingerprint hardware.
-                  </p>
-                </div>
-
-                <div className="lp-architecture-arrow">
-                  <ArrowRight
-                    size={24}
-                  />
-                </div>
-
-                <div className="lp-architecture-node">
-                  <div>
-                    <ShieldCheck
-                      size={25}
-                    />
-                  </div>
-
-                  <span>
-                    Layer 02
-                  </span>
-
-                  <h3>
-                    Verification
-                  </h3>
-
-                  <p>
-                    Identity matching and
-                    biometric validation.
-                  </p>
-                </div>
-
-                <div className="lp-architecture-arrow">
-                  <ArrowRight
-                    size={24}
-                  />
-                </div>
-
-                <div className="lp-architecture-node">
-                  <div>
-                    <Server
-                      size={25}
-                    />
-                  </div>
-
-                  <span>
-                    Layer 03
-                  </span>
-
-                  <h3>
-                    Firebase
-                  </h3>
-
-                  <p>
-                    Authentication,
-                    Firestore and secured
-                    account data.
-                  </p>
-                </div>
-
-                <div className="lp-architecture-arrow">
-                  <ArrowRight
-                    size={24}
-                  />
-                </div>
-
-                <div className="lp-architecture-node">
-                  <div>
-                    <LayoutDashboard
-                      size={25}
-                    />
-                  </div>
-
-                  <span>
-                    Layer 04
-                  </span>
-
-                  <h3>
-                    Dashboard
-                  </h3>
-
-                  <p>
-                    Role-based monitoring
-                    and attendance
-                    management.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =================================================
-            ROLE BASED
-        ================================================= */}
-
-        <section
-          id="roles"
-          className="lp-section lp-roles"
-        >
-          <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                Role-Based Experience
-              </span>
-
-              <h2>
-                One platform.
-                Three focused experiences.
-              </h2>
-
-              <p>
-                Every BioSync role receives
-                tools designed around its
-                responsibility.
-              </p>
-            </div>
-
-            <div className="lp-role-grid">
-              {/* ADMIN */}
-
-              <article className="lp-role-card lp-reveal">
-                <div className="lp-role-card-top">
-                  <div className="lp-role-icon admin">
-                    <ShieldCheck
-                      size={24}
-                    />
-                  </div>
-
-                  <span>
-                    Full Oversight
-                  </span>
-                </div>
-
-                <h3>
-                  Administrator
-                </h3>
-
-                <p>
-                  Manage BioSync users,
-                  attendance integrity,
-                  disputes, devices and
-                  system-level operations.
-                </p>
-
-                <ul>
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    User Management
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Attendance Control
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Dispute Review
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Device Monitoring
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    System Analytics
-                  </li>
-                </ul>
-              </article>
-
-              {/* TEACHER */}
-
-              <article className="lp-role-card lp-reveal">
-                <div className="lp-role-card-top">
-                  <div className="lp-role-icon teacher">
-                    <BookOpen
-                      size={24}
-                    />
-                  </div>
-
-                  <span>
-                    Class Focused
-                  </span>
-                </div>
-
-                <h3>
-                  Teacher
-                </h3>
-
-                <p>
-                  Monitor assigned classes,
-                  student attendance and
-                  teaching-level attendance
-                  insights.
-                </p>
-
-                <ul>
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    My Classes
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Class Attendance
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Student Monitoring
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Dispute Review
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Class Analytics
-                  </li>
-                </ul>
-              </article>
-
-              {/* STUDENT */}
-
-              <article className="lp-role-card lp-reveal">
-                <div className="lp-role-card-top">
-                  <div className="lp-role-icon student">
-                    <GraduationCap
-                      size={24}
-                    />
-                  </div>
-
-                  <span>
-                    Personal Access
-                  </span>
-                </div>
-
-                <h3>
-                  Student
-                </h3>
-
-                <p>
-                  Review personal
-                  attendance records,
-                  submit disputes and
-                  monitor attendance
-                  performance.
-                </p>
-
-                <ul>
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Attendance History
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Submit Disputes
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Personal Analytics
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Biometric Status
-                  </li>
-
-                  <li>
-                    <Check
-                      size={15}
-                    />
-                    Account Management
-                  </li>
-                </ul>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        {/* =================================================
-            DASHBOARD PREVIEW
-        ================================================= */}
-
-        <section
-          id="preview"
-          className="lp-section lp-preview"
-        >
-          <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                Centralized Dashboard
-              </span>
-
-              <h2>
-                Attendance intelligence
-                in one workspace
-              </h2>
-
-              <p>
-                BioSync transforms
-                verification records into
-                useful information for
-                administrators, teachers
-                and students.
-              </p>
-            </div>
-
-            <div className="lp-dashboard-preview lp-reveal">
-              <aside className="lp-preview-sidebar">
-                <div className="lp-preview-brand">
-                  <ShieldCheck
-                    size={22}
-                  />
-
-                  <div>
-                    <strong>
-                      BioSync
-                    </strong>
-
-                    <span>
-                      Sentinel
-                    </span>
-                  </div>
-                </div>
-
-                <div className="lp-preview-nav">
-                  <div className="active">
-                    <LayoutDashboard
-                      size={15}
-                    />
-
-                    Dashboard
-                  </div>
-
-                  <div>
-                    <Activity
-                      size={15}
-                    />
-
-                    Attendance
-                  </div>
-
-                  <div>
-                    <AlertTriangle
-                      size={15}
-                    />
-
-                    Disputes
-                  </div>
-
-                  <div>
-                    <Users
-                      size={15}
-                    />
-
-                    Users
-                  </div>
-
-                  <div>
-                    <BarChart3
-                      size={15}
-                    />
-
-                    Analytics
-                  </div>
-
-                  <div>
-                    <Settings
-                      size={15}
-                    />
-
-                    Account
-                  </div>
-                </div>
-              </aside>
-
-              <div className="lp-preview-main">
-                <div className="lp-preview-header">
-                  <div>
-                    <span>
-                      Dashboard Overview
-                    </span>
-
-                    <strong>
-                      Attendance Command
-                      Center
-                    </strong>
-                  </div>
-
-                  <div className="lp-preview-user">
-                    A
-                  </div>
-                </div>
-
-                <div className="lp-preview-kpis">
-                  <div>
-                    <span>
-                      Total Users
-                    </span>
-
-                    <strong>
-                      248
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>
-                      Present Today
-                    </span>
-
-                    <strong>
-                      216
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>
-                      Pending Disputes
-                    </span>
-
-                    <strong>
-                      04
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>
-                      Active Devices
-                    </span>
-
-                    <strong>
-                      06
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="lp-preview-panels">
-                  <div className="lp-preview-chart">
-                    <div className="lp-preview-panel-title">
-                      <span>
-                        Weekly Attendance
-                      </span>
-
-                      <small>
-                        Live overview
-                      </small>
-                    </div>
-
-                    <div className="lp-bar-chart">
-                      <div>
-                        <i
-                          style={{
-                            height:
-                              "62%",
-                          }}
-                        />
-                        <span>
-                          Mon
-                        </span>
-                      </div>
-
-                      <div>
-                        <i
-                          style={{
-                            height:
-                              "78%",
-                          }}
-                        />
-                        <span>
-                          Tue
-                        </span>
-                      </div>
-
-                      <div>
-                        <i
-                          style={{
-                            height:
-                              "70%",
-                          }}
-                        />
-                        <span>
-                          Wed
-                        </span>
-                      </div>
-
-                      <div>
-                        <i
-                          style={{
-                            height:
-                              "88%",
-                          }}
-                        />
-                        <span>
-                          Thu
-                        </span>
-                      </div>
-
-                      <div>
-                        <i
-                          style={{
-                            height:
-                              "82%",
-                          }}
-                        />
-                        <span>
-                          Fri
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="lp-preview-activity">
-                    <div className="lp-preview-panel-title">
-                      <span>
-                        Recent Activity
-                      </span>
-
-                      <small>
-                        Verification
-                      </small>
-                    </div>
-
-                    <div className="lp-activity-row">
-                      <CheckCircle2
-                        size={15}
+                    {index < architectureNodes.length - 1 && (
+                      <ArrowRight
+                        className="lp-architecture-arrow"
+                        size={18}
                       />
-
-                      <div>
-                        <strong>
-                          Face verified
-                        </strong>
-
-                        <span>
-                          Student attendance
-                        </span>
-                      </div>
-
-                      <small>
-                        Now
-                      </small>
-                    </div>
-
-                    <div className="lp-activity-row">
-                      <Fingerprint
-                        size={15}
-                      />
-
-                      <div>
-                        <strong>
-                          Fingerprint used
-                        </strong>
-
-                        <span>
-                          Fallback method
-                        </span>
-                      </div>
-
-                      <small>
-                        2m
-                      </small>
-                    </div>
-
-                    <div className="lp-activity-row">
-                      <Database
-                        size={15}
-                      />
-
-                      <div>
-                        <strong>
-                          Record synced
-                        </strong>
-
-                        <span>
-                          Firestore update
-                        </span>
-                      </div>
-
-                      <small>
-                        4m
-                      </small>
-                    </div>
+                    )}
                   </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* =================================================
-            SECURITY
-        ================================================= */}
-
-        <section
-          id="security"
-          className="lp-section lp-security"
-        >
+        <section className="lp-section" id="roles">
           <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                Security Layers
-              </span>
-
-              <h2>
-                Built around identity
-                integrity
-              </h2>
-
-              <p>
-                Multiple verification and
-                access-control layers help
-                protect the integrity of
-                attendance information.
-              </p>
-            </div>
-
-            <div className="lp-security-grid">
-              {securityFeatures.map(
-                (feature) => {
-                  const Icon =
-                    feature.icon;
-
-                  return (
-                    <article
-                      key={
-                        feature.title
-                      }
-                      className="lp-security-card lp-reveal"
-                    >
-                      <div className="lp-security-card-header">
-                        <div className="lp-security-icon">
-                          <Icon
-                            size={22}
-                          />
-                        </div>
-
-                        <span>
-                          Protected
-                        </span>
+            <SectionHeader
+              label="Role-Based Access"
+              title="One platform. Three focused experiences."
+              description="Each BioSync role receives the tools and information appropriate to its responsibilities."
+            />
+            <div className="lp-three-grid">
+              {roles.map((role) => {
+                const Icon = role.icon;
+                return (
+                  <article className="lp-role-card" data-reveal key={role.title}>
+                    <div className="lp-role-top">
+                      <div className="lp-card-icon">
+                        <Icon size={22} />
                       </div>
-
-                      <h3>
-                        {
-                          feature.title
-                        }
-                      </h3>
-
-                      <p>
-                        {
-                          feature.description
-                        }
-                      </p>
-                    </article>
-                  );
-                }
-              )}
+                      <span>{role.label}</span>
+                    </div>
+                    <h3>{role.title}</h3>
+                    <p>{role.text}</p>
+                    <ul>
+                      {role.items.map((item) => (
+                        <li key={item}>
+                          <Check size={14} />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* =================================================
-            TECHNOLOGY
-        ================================================= */}
-
-        <section className="lp-section lp-technology">
+        <section id="preview" className="lp-section">
           <div className="lp-container">
-            <div className="lp-section-heading lp-reveal">
-              <span className="lp-section-label">
-                Technology Foundation
-              </span>
-
-              <h2>
-                Built with modern
-                application technologies
-              </h2>
-            </div>
-
-            <div className="lp-tech-grid">
-              <div className="lp-tech-card lp-reveal">
-                <h3>
-                  Web Platform
-                </h3>
-
-                <div>
-                  <span>
-                    React
-                  </span>
-                  <span>
-                    Vite
-                  </span>
-                  <span>
-                    React Router
-                  </span>
-                  <span>
-                    Recharts
-                  </span>
-                </div>
-              </div>
-
-              <div className="lp-tech-card lp-reveal">
-                <h3>
-                  Firebase Services
-                </h3>
-
-                <div>
-                  <span>
-                    Authentication
-                  </span>
-                  <span>
-                    Cloud Firestore
-                  </span>
-                  <span>
-                    Storage
-                  </span>
-                  <span>
-                    Security Rules
-                  </span>
-                </div>
-              </div>
-
-              <div className="lp-tech-card lp-reveal">
-                <h3>
-                  Biometrics
-                </h3>
-
-                <div>
-                  <span>
-                    RFID
-                  </span>
-                  <span>
-                    Facial Recognition
-                  </span>
-                  <span>
-                    Liveness Detection
-                  </span>
-                  <span>
-                    Fingerprint
-                  </span>
-                </div>
-              </div>
-            </div>
+            <SectionHeader
+              label="Centralized Dashboard"
+              title="Attendance intelligence in one workspace"
+              description="BioSync converts verification activity into useful attendance information for authorized users."
+            />
+            <DashboardPreview />
           </div>
         </section>
 
-        {/* =================================================
-            FINAL CTA
-        ================================================= */}
+        <section id="security" className="lp-section">
+          <div className="lp-container">
+            <SectionHeader
+              label="Security Layers"
+              title="Built around attendance integrity"
+              description="BioSync combines biometric verification with role-based system controls to strengthen confidence in attendance records."
+            />
+            <div className="lp-four-grid">
+              {securityFeatures.map((card) => (
+                <FeatureCard key={card.title} {...card} protectedCard />
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section className="lp-final-section">
           <div className="lp-container">
-            <div className="lp-final-card lp-reveal">
+            <div className="lp-final-card" data-reveal>
               <div>
-                <span className="lp-section-label">
-                  Secure Access
-                </span>
-
-                <h2>
-                  Ready to experience
-                  BioSync Sentinel?
-                </h2>
-
+                <span className="lp-section-label">Secure Access</span>
+                <h2>Ready to access BioSync Sentinel?</h2>
                 <p>
-                  Access your secure
-                  role-based workspace for
-                  attendance, monitoring,
+                  Enter your role-based workspace for attendance, monitoring,
                   disputes and analytics.
                 </p>
               </div>
-
-              <div className="lp-final-actions">
-                <button
-                  type="button"
-                  className="lp-primary-button"
-                  onClick={
-                    handleGetStarted
-                  }
-                >
-                  Sign In to BioSync
-
-                  <ArrowRight
-                    size={16}
-                  />
-                </button>
-
-                <a
-                  href="#architecture"
-                  className="lp-secondary-button"
-                >
-                  View Architecture
-                </a>
-              </div>
+              <button
+                type="button"
+                className="lp-primary-button"
+                onClick={handleGetStarted}
+              >
+                Access Dashboard <ArrowRight size={16} />
+              </button>
             </div>
           </div>
         </section>
       </main>
 
-      {/* ===================================================
-          FOOTER
-      =================================================== */}
-
       <footer className="lp-footer">
-        <div className="lp-container lp-footer-main">
-          <div className="lp-footer-brand">
-            <button
-              type="button"
-              onClick={
-                handleLogoClick
-              }
-            >
-              <img
-                src={bioSyncLogo}
-                alt="BioSync Sentinel"
-              />
-            </button>
-
-            <p>
-              Secure biometric attendance.
-              Real-time oversight.
-            </p>
-
-            <span>
-              Built for administrators,
-              teachers and students.
-            </span>
+        <div className="lp-container lp-footer-content">
+          <div>
+            <img src={bioSyncLogo} alt="BioSync Sentinel" />
+            <p>Multi-layer biometric attendance verification.</p>
           </div>
-
-          <div className="lp-footer-links">
-            <div>
-              <strong>
-                Platform
-              </strong>
-
-              <a href="#overview">
-                Overview
-              </a>
-
-              <a href="#workflow">
-                How It Works
-              </a>
-
-              <a href="#roles">
-                User Roles
-              </a>
-            </div>
-
-            <div>
-              <strong>
-                System
-              </strong>
-
-              <a href="#architecture">
-                Architecture
-              </a>
-
-              <a href="#preview">
-                Dashboard
-              </a>
-
-              <a href="#security">
-                Security
-              </a>
-            </div>
-
-            <div>
-              <strong>
-                Access
-              </strong>
-
-              <button
-                type="button"
-                onClick={
-                  handleGetStarted
-                }
-              >
-                Sign In
-              </button>
-
-              <span>
-                BioSecure Enterprise
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="lp-footer-bottom">
-          <div className="lp-container">
-            <span>
-              ©{" "}
-              {new Date().getFullYear()}{" "}
-              BioSync Sentinel.
-            </span>
-
-            <span>
-              Secure Attendance Beyond
-              Identity.
-            </span>
-          </div>
+          <span>© {new Date().getFullYear()} BioSync Sentinel</span>
         </div>
       </footer>
     </div>
   );
 }
 
-export default LandingPage;
+function IdentityOrb() {
+  return (
+    <div className="lp-orb-visual">
+      <div
+        className="lp-diamond-panel"
+        role="img"
+        aria-label="BioSync identity verification using RFID, face and liveness, and fingerprint"
+      ><div className="lp-diamond-top-grid" aria-hidden="true" />
+        <svg
+          className="lp-diamond-connections"
+          viewBox="0 0 500 455"
+          aria-hidden="true"
+        >
+          {/* Connections */}
+          <path d="M 100 235 H 155" />
+          <path d="M 315 165 L 385 98" />
+          <path d="M 315 290 L 365 340 Q 377 352 393 352" />
+
+          {/* Moving signals */}
+          <circle className="lp-diamond-signal" r="2.6">
+            <animateMotion
+              path="M 100 235 H 155"
+              dur="3.5s"
+              repeatCount="indefinite"
+            />
+          </circle>
+
+          <circle className="lp-diamond-signal" r="2.6">
+            <animateMotion
+              path="M 385 98 L 315 165"
+              dur="4s"
+              repeatCount="indefinite"
+            />
+          </circle>
+
+          <circle className="lp-diamond-signal" r="2.6">
+            <animateMotion
+              path="M 315 290 L 365 340 Q 377 352 393 352"
+              dur="4.5s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </svg>
+
+        <div className="lp-diamond-centre">
+          <div className="lp-diamond-glass">
+            <svg
+              className="lp-diamond-edge"
+              viewBox="0 0 200 200"
+              aria-hidden="true"
+            >
+              <rect
+                className="lp-diamond-edge-base"
+                x="2"
+                y="2"
+                width="196"
+                height="196"
+                rx="15"
+              />
+              <rect
+                className="lp-diamond-edge-light"
+                x="2"
+                y="2"
+                width="196"
+                height="196"
+                rx="15"
+                pathLength="100"
+              />
+            </svg>
+          </div>
+
+          <div className="lp-diamond-brand">
+            <img src={bioSyncShield} alt="" draggable={false} />
+            <strong>BioSync</strong>
+            <span>SENTINEL</span>
+          </div>
+        </div>
+
+        <div className="lp-diamond-node lp-diamond-rfid">
+          <div className="lp-diamond-node-icon">
+            <CreditCard size={26} strokeWidth={1.4} />
+          </div>
+          <span>RFID</span>
+        </div>
+
+        <div className="lp-diamond-node lp-diamond-face">
+          <div className="lp-diamond-node-icon">
+            <ScanFace size={27} strokeWidth={1.4} />
+          </div>
+          <span>Face + Liveness</span>
+        </div>
+
+        <div className="lp-diamond-node lp-diamond-fingerprint">
+          <div className="lp-diamond-node-icon">
+            <Fingerprint size={28} strokeWidth={1.4} />
+          </div>
+          <span>Fingerprint</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ label, title, description }) {
+  return (
+    <div className="lp-section-header" data-reveal>
+      <span className="lp-section-label">{label}</span>
+      <h2>{title}</h2>
+      <p>{description}</p>
+    </div>
+  );
+}
+
+function FeatureCard({
+  icon: Icon,
+  title,
+  text,
+  warning = false,
+  number,
+  protectedCard = false,
+}) {
+  return (
+    <article className="lp-card" data-reveal>
+      {number && <span className="lp-card-number">{number}</span>}
+      <div className="lp-security-top">
+        <div className={`lp-card-icon ${warning ? "warning" : ""}`}>
+          <Icon size={21} />
+        </div>
+        {protectedCard && <span>Protected</span>}
+      </div>
+      <h3>{title}</h3>
+      <p>{text}</p>
+    </article>
+  );
+}
+
+function DashboardPreview() {
+  const nav = [
+    [LayoutDashboard, "Dashboard"],
+    [Activity, "Attendance"],
+    [AlertTriangle, "Disputes"],
+    [Users, "Users"],
+    [BarChart3, "Analytics"],
+    [Settings, "Account"],
+  ];
+
+  const stats = [
+    ["Users", "248"],
+    ["Present Today", "216"],
+    ["Pending Disputes", "04"],
+    ["Active Devices", "06"],
+  ];
+
+  return (
+    <div className="lp-dashboard-preview" data-reveal>
+      <aside>
+        <div className="lp-preview-logo">
+          <img src={bioSyncShield} alt="" />
+          <div>
+            <strong>BioSync</strong>
+            <span>Sentinel</span>
+          </div>
+        </div>
+        {nav.map(([Icon, label], index) => (
+          <div
+            key={label}
+            className={`lp-preview-nav ${index === 0 ? "active" : ""}`}
+          >
+            <Icon size={14} />
+            {label}
+          </div>
+        ))}
+      </aside>
+
+      <div className="lp-preview-content">
+        <div className="lp-preview-heading">
+          <div>
+            <span>Dashboard Overview · Sample data</span>
+            <strong>Attendance Command Center</strong>
+          </div>
+          <div className="lp-avatar">A</div>
+        </div>
+
+        <div className="lp-preview-stats">
+          {stats.map(([label, value]) => (
+            <div key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div className="lp-preview-panels">
+          <div className="lp-chart-panel">
+            <div className="lp-panel-title">
+              <strong>Weekly Attendance</strong>
+              <span>Overview</span>
+            </div>
+            <div className="lp-bars">
+              {[62, 78, 70, 88, 82].map((height, index) => (
+                <div key={index}>
+                  <i style={{ height: `${height}%` }} />
+                  <span>{["Mon", "Tue", "Wed", "Thu", "Fri"][index]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lp-activity-panel">
+            <div className="lp-panel-title">
+              <strong>Recent Activity</strong>
+              <span>Verification</span>
+            </div>
+            <ActivityRow
+              icon={CheckCircle2}
+              title="Face verified"
+              subtitle="Attendance recorded"
+            />
+            <ActivityRow
+              icon={Fingerprint}
+              title="Fingerprint used"
+              subtitle="Fallback verification"
+            />
+            <ActivityRow
+              icon={Database}
+              title="Record synced"
+              subtitle="Firestore updated"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActivityRow({ icon: Icon, title, subtitle }) {
+  return (
+    <div className="lp-activity-row">
+      <Icon size={16} />
+      <div>
+        <strong>{title}</strong>
+        <span>{subtitle}</span>
+      </div>
+    </div>
+  );
+}
