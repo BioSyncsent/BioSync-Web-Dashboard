@@ -551,9 +551,36 @@ function AdminAnalytics() {
             BioSync Intelligence
           </span>
 
-          <h1>
-            System Analytics
-          </h1>
+<h1
+  style={{
+    fontFamily: '"Space Grotesk", "Inter", sans-serif',
+    fontSize: "clamp(25px, 3vw, 35px)",
+    fontWeight: 700,
+    letterSpacing: "-0.045em",
+    lineHeight: 1.2,
+  }}
+>
+  <span
+    style={{
+      color: "#edf7fc",
+      WebkitTextFillColor: "#edf7fc",
+    }}
+  >
+    System{" "}
+  </span>
+
+  <span
+    style={{
+      backgroundImage: "linear-gradient(90deg, #bdf6fd, #00ddeb)",
+      backgroundClip: "text",
+      WebkitBackgroundClip: "text",
+      color: "transparent",
+      WebkitTextFillColor: "transparent",
+    }}
+  >
+    Analytics
+  </span>
+</h1>
 
           <p>
             Analyse attendance

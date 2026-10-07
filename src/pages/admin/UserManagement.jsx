@@ -1302,9 +1302,10 @@ function UserManagement() {
             Administration
           </div>
 
-          <h1>
-            User Management
-          </h1>
+<h1 className="biosync-user-title">
+  <span>User</span>{" "}
+  <span>Management</span>
+</h1>
 
           <p>
             Create, monitor and manage

@@ -1,192 +1,919 @@
-/* ACCOUNT CENTER — DASHBOARD THEME */
+/* BioSync teacher Account Centre */
+
+.db-shell-content:has(> .teacher-account-center-page) {
+  padding: 0;
+  max-width: none;
+  background: #04151c;
+}
 
 .teacher-account-center-page {
-  --td-dark: #04151c;
-  --td-dark-2: #061c25;
-  --td-dark-3: #071e28;
-  --td-accent: #00ddeb;
-  --td-blue: #00ddeb;
-  --td-cyan: #00ddeb;
-  --td-text: #edf7fc;
-  --td-muted: #8cabb9;
-  --td-text-2: #bdd3df;
-  --td-faint: #789ba9;
-  --td-border: rgba(0, 218, 235, 0.23);
-  --td-border-soft: rgba(125, 190, 207, 0.12);
-  --td-border-input: rgba(125, 190, 207, 0.2);
-  --td-card: #061c25;
-  --td-violet: #00ddeb;
+  --ac-bg: #04151c;
+  --ac-panel: #061c25;
+  --ac-cyan: #00ddeb;
+  --ac-text: #edf7fc;
+  --ac-muted: #8cabb9;
+  --ac-border: rgba(0, 221, 235, 0.2);
+  --ac-soft-border: rgba(125, 190, 207, 0.13);
+  --ac-green: #58dfae;
+  --ac-amber: #f2c46d;
+  --ac-red: #ff8995;
 
-  background: var(--td-dark);
-  color: var(--td-text);
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  padding: 26px;
+  background: var(--ac-bg);
+  color: var(--ac-text);
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-/* Hero — same gradient as the dashboard */
+.teacher-account-center-page,
+.teacher-account-center-page * {
+  box-sizing: border-box;
+}
 
-.teacher-account-center-page .ac-command-hero {
-  border-color: rgba(92, 216, 234, 0.3);
+.teacher-account-center-page h1,
+.teacher-account-center-page h2,
+.teacher-account-center-page h3,
+.teacher-account-center-page p {
+  margin: 0;
+}
+
+.teacher-account-center-page h1,
+.teacher-account-center-page h2,
+.teacher-account-center-page h3 {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+}
+
+.teacher-account-center-page button,
+.teacher-account-center-page a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.teacher-account-center-page button {
+  font: inherit;
+}
+
+.teacher-account-center-page button:focus-visible,
+.teacher-account-center-page a:focus-visible,
+.teacher-account-center-page summary:focus-visible {
+  outline: 2px solid var(--ac-cyan);
+  outline-offset: 4px;
+}
+
+/* Profile header */
+
+.teacher-account-center-page .ac-profile-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  overflow: hidden;
+  padding: 28px 30px;
+  border: 1px solid rgba(0, 221, 235, 0.3);
+  border-left: 4px solid var(--ac-cyan);
+  border-radius: 20px;
   background:
+    linear-gradient(rgba(0, 221, 235, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 221, 235, 0.025) 1px, transparent 1px),
     radial-gradient(
-      ellipse at 100% 15%,
-      rgba(0, 197, 221, 0.18),
-      transparent 58%
+      ellipse at top right,
+      rgba(0, 221, 235, 0.13),
+      transparent 65%
     ),
-    linear-gradient(
-      115deg,
-      #071b25 0%,
-      #082432 58%,
-      #083440 100%
-    );
-  color: #f2fbff;
+    linear-gradient(115deg, #071b25, #082a36);
+  background-size: 30px 30px, 30px 30px, auto, auto;
 }
 
-.teacher-account-center-page .ac-security-orb {
-  border-color: rgba(100, 228, 244, 0.15);
-  background: linear-gradient(145deg, #05161e, #072430);
+.teacher-account-center-page .ac-header-content {
+  min-width: 0;
+  flex: 1;
 }
 
-/* Profile and section cards */
+.teacher-account-center-page .ac-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ac-cyan);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
 
-.teacher-account-center-page .ac-profile-hero {
-  border-color: var(--td-border);
+.teacher-account-center-page .ac-profile-header h1 {
+  margin-top: 8px;
+  font-size: clamp(25px, 3vw, 35px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.2;
+}
+
+.teacher-account-center-page .ac-header-description {
+  margin-top: 8px;
+  color: #a7c4d0;
+  font-size: 13px;
+}
+
+.teacher-account-center-page .ac-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.teacher-account-center-page .ac-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 68px;
+  width: 68px;
+  height: 68px;
+  border: 1px solid rgba(0, 221, 235, 0.5);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #0b3c48, #07232e);
+  color: #bcf8fc;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 0 25px rgba(0, 221, 235, 0.08);
+}
+
+.teacher-account-center-page .ac-profile-copy {
+  min-width: 0;
+}
+
+.teacher-account-center-page .ac-profile-copy h2 {
+  font-size: 21px;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.teacher-account-center-page .ac-profile-copy > span {
+  display: block;
+  margin-top: 4px;
+  color: var(--ac-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.teacher-account-center-page .ac-profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.teacher-account-center-page .ac-header-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 185px;
+  padding: 19px;
+  border: 1px solid var(--ac-border);
+  border-radius: 17px;
+  background: rgba(2, 17, 24, 0.55);
+  text-align: center;
+}
+
+.teacher-account-center-page .ac-status-symbol {
+  display: grid;
+  place-items: center;
+  width: 55px;
+  height: 55px;
+  margin-bottom: 11px;
+  border: 1px solid currentColor;
+  border-radius: 17px;
+  background: rgba(0, 221, 235, 0.04);
+}
+
+.teacher-account-center-page .ac-tone-success {
+  color: var(--ac-green);
+}
+
+.teacher-account-center-page .ac-tone-warning {
+  color: var(--ac-amber);
+}
+
+.teacher-account-center-page .ac-tone-danger {
+  color: var(--ac-red);
+}
+
+.teacher-account-center-page .ac-status-caption {
+  color: var(--ac-muted);
+  font-size: 11px;
+}
+
+.teacher-account-center-page .ac-header-status > strong {
+  margin-top: 2px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 20px;
+}
+
+.teacher-account-center-page .ac-sync-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+  color: var(--ac-muted);
+  font-size: 10px;
+}
+
+.teacher-account-center-page .ac-sync-label > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ac-amber);
+}
+
+.teacher-account-center-page .ac-sync-label.is-live > span {
+  background: var(--ac-green);
+}
+
+/* Layout and cards */
+
+.teacher-account-center-page .ac-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+  margin-top: 22px;
+}
+
+.teacher-account-center-page .ac-column {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.teacher-account-center-page .ac-panel {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--ac-border);
+  border-radius: 18px;
   background:
-    linear-gradient(
-      135deg,
-      rgba(0, 221, 235, 0.035),
-      rgba(0, 0, 0, 0.04)
-    ),
-    var(--td-dark);
+    linear-gradient(140deg, rgba(0, 221, 235, 0.025), transparent 65%),
+    var(--ac-panel);
 }
 
-.teacher-account-center-page .ac-card {
-  border-color: var(--td-border);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(0, 221, 235, 0.018),
-      rgba(0, 0, 0, 0.025)
-    ),
-    var(--td-dark);
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+.teacher-account-center-page .ac-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
-.teacher-account-center-page .ac-card:hover {
-  border-color: rgba(0, 221, 235, 0.4);
+.teacher-account-center-page .ac-section-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 43px;
+  width: 43px;
+  height: 43px;
+  border: 1px solid var(--ac-border);
+  border-radius: 13px;
+  background: rgba(0, 221, 235, 0.07);
+  color: var(--ac-cyan);
 }
 
-/* Inner panels */
+.teacher-account-center-page .ac-section-label {
+  color: var(--ac-cyan);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
 
-.teacher-account-center-page .ac-info-item,
-.teacher-account-center-page .ac-biometric-item {
-  border-color: var(--td-border-soft);
+.teacher-account-center-page .ac-section-heading h2 {
+  margin-top: 3px;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+}
+
+.teacher-account-center-page .ac-section-heading p {
+  margin-top: 5px;
+  color: var(--ac-muted);
+  font-size: 12px;
+}
+
+/* Personal information */
+
+.teacher-account-center-page .ac-information-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.teacher-account-center-page .ac-information-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--ac-soft-border);
+  border-radius: 12px;
   background: rgba(0, 221, 235, 0.025);
 }
 
-.teacher-account-center-page .ac-biometric-item {
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+.teacher-account-center-page .ac-information-item > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #71c6d5;
 }
 
-.teacher-account-center-page .ac-biometric-item:hover {
-  border-color: rgba(0, 221, 235, 0.4);
-  background: rgba(0, 221, 235, 0.045);
+.teacher-account-center-page .ac-information-item > div {
+  min-width: 0;
 }
 
-.teacher-account-center-page .ac-account-id-block,
-.teacher-account-center-page .ac-loading-text,
-.teacher-account-center-page .ac-copy-button {
-  border-color: var(--td-border-input);
-  background: var(--td-dark-2);
+.teacher-account-center-page .ac-information-item span {
+  display: block;
+  color: var(--ac-muted);
+  font-size: 10px;
 }
 
-/* Cyan accents */
-
-.teacher-account-center-page .ac-eyebrow,
-.teacher-account-center-page .ac-role-badge,
-.teacher-account-center-page .ac-card-icon,
-.teacher-account-center-page .ac-security-icon,
-.teacher-account-center-page .ac-security-note,
-.teacher-account-center-page .ac-rfid,
-.teacher-account-center-page .ac-fingerprint,
-.teacher-account-center-page .ac-small-button {
-  border-color: rgba(0, 221, 235, 0.3);
-  background: rgba(0, 221, 235, 0.07);
-  color: var(--td-cyan);
+.teacher-account-center-page .ac-information-item strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
-.teacher-account-center-page .ac-profile-avatar {
-  border-color: rgba(0, 221, 235, 0.6);
+.teacher-account-center-page .ac-panel-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 17px;
+  padding: 12px;
+  border: 1px solid var(--ac-soft-border);
+  border-radius: 10px;
+  background: rgba(0, 221, 235, 0.035);
+  color: var(--ac-muted);
+  font-size: 11px;
+}
+
+.teacher-account-center-page .ac-panel-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ac-cyan);
+}
+
+.teacher-account-center-page .ac-note-warning,
+.teacher-account-center-page .ac-note-warning svg {
+  color: var(--ac-amber);
+}
+
+/* Security */
+
+.teacher-account-center-page .ac-security-items {
+  display: grid;
+}
+
+.teacher-account-center-page .ac-security-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--ac-soft-border);
+}
+
+.teacher-account-center-page .ac-security-item:first-child {
+  padding-top: 0;
+}
+
+.teacher-account-center-page .ac-security-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.teacher-account-center-page .ac-security-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  flex: 1 1 210px;
+}
+
+.teacher-account-center-page .ac-item-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 35px;
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
   background: rgba(0, 221, 235, 0.06);
-  color: #bdf6fd;
-  box-shadow: 0 0 28px rgba(0, 184, 211, 0.14);
+  color: var(--ac-cyan);
 }
 
-.teacher-account-center-page .ac-command-meta span {
-  border-color: rgba(140, 194, 212, 0.16);
-  background: rgba(2, 15, 22, 0.2);
-  color: #b8d0dc;
+.teacher-account-center-page .ac-security-copy h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.teacher-account-center-page .ac-security-copy p {
+  margin-top: 3px;
+  color: var(--ac-muted);
+  font-size: 11px;
+}
+
+.teacher-account-center-page .ac-security-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--ac-soft-border);
 }
 
 /* Buttons */
 
-.teacher-account-center-page .ac-button,
-.teacher-account-center-page .ac-small-button,
-.teacher-account-center-page .ac-copy-button {
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+.teacher-account-center-page .ac-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 39px;
+  padding: 9px 13px;
+  border: 1px solid var(--ac-border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.teacher-account-center-page .ac-button svg {
+  flex-shrink: 0;
 }
 
 .teacher-account-center-page .ac-button-primary {
-  border-color: rgba(100, 228, 244, 0.5);
+  border-color: rgba(0, 221, 235, 0.45);
   background: linear-gradient(135deg, #105266, #0c3d50);
   color: #e3fbff;
 }
 
 .teacher-account-center-page .ac-button-primary:hover:not(:disabled) {
-  border-color: #83e9f4;
+  border-color: var(--ac-cyan);
   background: linear-gradient(135deg, #17677c, #104d61);
-  box-shadow: 0 5px 22px rgba(0, 184, 211, 0.15);
 }
 
-.teacher-account-center-page .ac-small-button:hover:not(:disabled),
-.teacher-account-center-page .ac-copy-button:hover:not(:disabled) {
-  border-color: rgba(0, 221, 235, 0.55);
-  background: rgba(0, 221, 235, 0.14);
-  color: var(--td-cyan);
+.teacher-account-center-page .ac-button-secondary {
+  background: rgba(0, 221, 235, 0.06);
+  color: #a5f1f8;
 }
 
-/* Toggle */
-
-.teacher-account-center-page .ac-toggle-slider {
-  border-color: var(--td-border-input);
-  background: rgba(125, 190, 207, 0.18);
+.teacher-account-center-page .ac-button-secondary:hover:not(:disabled) {
+  border-color: rgba(0, 221, 235, 0.5);
+  background: rgba(0, 221, 235, 0.12);
 }
 
-.teacher-account-center-page .ac-toggle-slider::before {
-  background: var(--td-text-2);
+.teacher-account-center-page .ac-button-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ac-muted);
 }
 
-.teacher-account-center-page .ac-toggle input:checked + .ac-toggle-slider {
-  border-color: rgba(100, 228, 244, 0.5);
-  background: linear-gradient(135deg, #105266, #0c8fa6);
+.teacher-account-center-page .ac-button-quiet:hover:not(:disabled) {
+  background: rgba(0, 221, 235, 0.05);
+  color: var(--ac-cyan);
 }
 
-.teacher-account-center-page .ac-toggle input:checked + .ac-toggle-slider::before {
-  background: #e3fbff;
+.teacher-account-center-page .ac-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* Respect reduced-motion preference */
+/* Status chips */
+
+.teacher-account-center-page .ac-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.teacher-account-center-page .ac-chip svg {
+  flex-shrink: 0;
+}
+
+.teacher-account-center-page .ac-chip-cyan {
+  border-color: var(--ac-border);
+  background: rgba(0, 221, 235, 0.07);
+  color: var(--ac-cyan);
+}
+
+.teacher-account-center-page .ac-chip-neutral {
+  border-color: var(--ac-soft-border);
+  background: rgba(140, 171, 185, 0.06);
+  color: #b9d0db;
+}
+
+.teacher-account-center-page .ac-chip-success {
+  border-color: rgba(88, 223, 174, 0.23);
+  background: rgba(88, 223, 174, 0.08);
+  color: var(--ac-green);
+}
+
+.teacher-account-center-page .ac-chip-warning {
+  border-color: rgba(242, 196, 109, 0.23);
+  background: rgba(242, 196, 109, 0.08);
+  color: var(--ac-amber);
+}
+
+/* Workspace shortcuts */
+
+.teacher-account-center-page .ac-access-list {
+  display: grid;
+  gap: 10px;
+}
+
+.teacher-account-center-page .ac-access-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 13px;
+  border: 1px solid var(--ac-soft-border);
+  border-radius: 12px;
+  background: rgba(0, 221, 235, 0.025);
+  color: var(--ac-text);
+  text-decoration: none;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.teacher-account-center-page .ac-access-link:hover {
+  border-color: rgba(0, 221, 235, 0.45);
+  background: rgba(0, 221, 235, 0.06);
+}
+
+.teacher-account-center-page .ac-access-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 37px;
+  width: 37px;
+  height: 37px;
+  border-radius: 10px;
+  background: rgba(0, 221, 235, 0.08);
+  color: var(--ac-cyan);
+}
+
+.teacher-account-center-page .ac-access-link > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.teacher-account-center-page .ac-access-link strong {
+  display: block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.teacher-account-center-page .ac-access-link div > span {
+  display: block;
+  margin-top: 3px;
+  color: var(--ac-muted);
+  font-size: 11px;
+}
+
+.teacher-account-center-page .ac-access-link > svg {
+  flex-shrink: 0;
+  color: var(--ac-cyan);
+}
+
+/* Account details */
+
+.teacher-account-center-page .ac-account-details {
+  margin: 0;
+}
+
+.teacher-account-center-page .ac-account-details > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--ac-soft-border);
+}
+
+.teacher-account-center-page .ac-account-details > div:first-child {
+  padding-top: 0;
+}
+
+.teacher-account-center-page .ac-account-details > div:last-child {
+  border-bottom: none;
+}
+
+.teacher-account-center-page .ac-account-details dt {
+  color: var(--ac-muted);
+  font-size: 11px;
+}
+
+.teacher-account-center-page .ac-account-details dd {
+  margin: 0;
+  color: var(--ac-text);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.teacher-account-center-page .ac-technical-details {
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid var(--ac-soft-border);
+  border-radius: 11px;
+  background: rgba(0, 221, 235, 0.025);
+}
+
+.teacher-account-center-page .ac-technical-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px;
+  color: #b4d0dc;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.teacher-account-center-page .ac-technical-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.teacher-account-center-page .ac-technical-details[open] summary > svg {
+  transform: rotate(180deg);
+}
+
+.teacher-account-center-page .ac-id-content {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 0 13px 14px;
+}
+
+.teacher-account-center-page .ac-id-content p {
+  color: var(--ac-muted);
+  font-size: 11px;
+}
+
+.teacher-account-center-page .ac-id-content code {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--ac-soft-border);
+  border-radius: 8px;
+  background: #04151c;
+  color: #b6e8f0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* Feedback */
+
+.teacher-account-center-page .ac-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 13px 16px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.teacher-account-center-page .ac-notice-error {
+  border-color: rgba(255, 137, 149, 0.25);
+  background: rgba(255, 137, 149, 0.07);
+  color: var(--ac-red);
+}
+
+.teacher-account-center-page .ac-notice-warning {
+  border-color: rgba(242, 196, 109, 0.25);
+  background: rgba(242, 196, 109, 0.07);
+  color: var(--ac-amber);
+}
+
+.teacher-account-center-page .ac-notice-success {
+  border-color: rgba(88, 223, 174, 0.25);
+  background: rgba(88, 223, 174, 0.07);
+  color: var(--ac-green);
+}
+
+.teacher-account-center-page .ac-dismiss {
+  padding: 5px 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.teacher-account-center-page .ac-footer-note {
+  margin-top: 19px;
+  color: var(--ac-muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.teacher-account-center-page .ac-spin {
+  animation: ac-account-spin 1s linear infinite;
+}
+
+@keyframes ac-account-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive layout */
+
+@media (max-width: 1100px) {
+  .teacher-account-center-page .ac-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+    gap: 16px;
+  }
+
+  .teacher-account-center-page .ac-panel {
+    padding: 20px;
+  }
+
+  .teacher-account-center-page .ac-information-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .teacher-account-center-page {
+    padding: 18px;
+  }
+
+  .teacher-account-center-page .ac-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-account-center-page .ac-information-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teacher-account-center-page .ac-profile-header {
+    gap: 18px;
+    padding: 23px;
+  }
+
+  .teacher-account-center-page .ac-header-status {
+    flex-basis: 155px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 580px) {
+  .teacher-account-center-page {
+    padding: 13px;
+  }
+
+  .teacher-account-center-page .ac-profile-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 21px 18px;
+    border-radius: 16px;
+  }
+
+  .teacher-account-center-page .ac-header-status {
+    flex-basis: auto;
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    column-gap: 12px;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .teacher-account-center-page .ac-status-symbol {
+    grid-row: 1 / 4;
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    align-self: center;
+    border-radius: 12px;
+  }
+
+  .teacher-account-center-page .ac-header-status > strong {
+    font-size: 17px;
+  }
+
+  .teacher-account-center-page .ac-sync-label {
+    margin-top: 4px;
+  }
+
+  .teacher-account-center-page .ac-profile-copy h2 {
+    font-size: 19px;
+  }
+
+  .teacher-account-center-page .ac-avatar {
+    flex-basis: 56px;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    font-size: 21px;
+  }
+
+  .teacher-account-center-page .ac-panel {
+    padding: 18px;
+    border-radius: 15px;
+  }
+
+  .teacher-account-center-page .ac-section-heading h2 {
+    font-size: 18px;
+  }
+
+  .teacher-account-center-page .ac-security-item > .ac-button {
+    width: 100%;
+  }
+
+  .teacher-account-center-page .ac-security-actions .ac-button {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 400px) {
+  .teacher-account-center-page .ac-information-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-account-center-page .ac-account-details > div {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .teacher-account-center-page .ac-account-details dd {
+    text-align: left;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .teacher-account-center-page,
-  .teacher-account-center-page * {
-    transition: none !important;
+  .teacher-account-center-page *,
+  .teacher-account-center-page *::before,
+  .teacher-account-center-page *::after {
     animation: none !important;
+    transition: none !important;
   }
+}
+/* Fix heading visibility */
+.teacher-account-center-page .ac-profile-header h1 {
+  color: #edf7fc !important;
+}
+
+.teacher-account-center-page .ac-profile-copy h2 {
+  color: #edf7fc !important;
+}
+
+.teacher-account-center-page .ac-section-heading h2,
+.teacher-account-center-page .ac-security-copy h3 {
+  color: #edf7fc !important;
+}
+
+.teacher-account-center-page .ac-access-link strong,
+.teacher-account-center-page .ac-information-item strong,
+.teacher-account-center-page .ac-header-status > strong {
+  color: #edf7fc !important;
+}
+
+/* Keep the theme fonts consistent */
+.teacher-account-center-page h1,
+.teacher-account-center-page h2,
+.teacher-account-center-page h3 {
+  font-family: "Space Grotesk", "Inter", sans-serif !important;
+}
+/* Match the other page headings */
+.teacher-account-center-page .ac-profile-header h1 {
+  color: #edf7fc !important;
+  font-family: "Space Grotesk", "Inter", sans-serif !important;
+  font-size: clamp(25px, 3vw, 35px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.2;
+}
+
+.teacher-account-center-page .ac-profile-header h1 .ac-title-accent {
+  background: linear-gradient(90deg, #bdf6fd, #00ddeb);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
 }

@@ -1,8 +1,4 @@
-/* =========================================================
-   BIOSYNC SENTINEL
-   TEACHER ANALYTICS COMMAND CENTER
-   Themed to match the teacher dashboard (dark teal / cyan)
-========================================================= */
+/* BIOSYNC — TEACHER ANALYTICS */
 
 .teacher-analytics-page {
   --td-dark: #04151c;
@@ -13,25 +9,26 @@
   --td-cyan: #00ddeb;
   --td-text: #edf7fc;
   --td-muted: #8cabb9;
-  --td-border: rgba(0, 218, 235, 0.23);
-  --td-card: #061c25;
-
-  --td-border-soft: rgba(125, 190, 207, 0.12);
-  --td-border-input: rgba(125, 190, 207, 0.2);
   --td-text-2: #bdd3df;
   --td-faint: #789ba9;
+  --td-border: rgba(0, 221, 235, 0.23);
+  --td-border-soft: rgba(125, 190, 207, 0.13);
+  --td-border-input: rgba(125, 190, 207, 0.22);
+  --td-card: #061c25;
   --td-green: #52e3aa;
   --td-amber: #fbbf24;
   --td-red: #fb8b82;
   --td-violet: #c4b5fd;
 
   display: flex;
-  width: 100%;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  min-width: 0;
+  background: var(--td-dark);
   color: var(--td-text);
   font-family: "Inter", sans-serif;
-  animation: taaEnter 0.4s ease both;
+  line-height: 1.6;
 }
 
 .teacher-analytics-page *,
@@ -40,8 +37,15 @@
   box-sizing: border-box;
 }
 
+.teacher-analytics-page h1,
+.teacher-analytics-page h2,
+.teacher-analytics-page h3 {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  color: var(--td-text);
+}
+
 .teacher-analytics-page :where(button, input, select) {
-  font-family: "Inter", sans-serif;
+  font-family: inherit;
   color-scheme: dark;
 }
 
@@ -55,719 +59,618 @@
   color: #edf7fc;
 }
 
-@keyframes taaEnter {
-  from {
-    opacity: 0;
-    transform: translateY(7px);
-  }
+/* One grid drawn directly on the banner */
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* =========================================================
-   HERO
-========================================================= */
-
-.taa-hero {
+.teacher-analytics-page .taa-hero {
   position: relative;
   display: flex;
-  min-height: 245px;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 28px;
+  min-height: 230px;
+  padding: 28px 32px;
   overflow: hidden;
-  padding: 33px 37px;
-  border: 1px solid rgba(92, 216, 234, 0.3);
+  isolation: isolate;
+  border: 1px solid rgba(0, 221, 235, 0.3);
+  border-left: 4px solid #00ddeb;
   border-radius: 18px;
-  background:
-    radial-gradient(
-      ellipse at 100% 15%,
-      rgba(0, 197, 221, 0.18),
-      transparent 58%
-    ),
-    linear-gradient(115deg, #071b25 0%, #082432 58%, #083440 100%);
-  color: #f2fbff;
-  box-shadow:
-    inset 0 1px 0 rgba(194, 245, 255, 0.05),
-    0 12px 30px rgba(0, 0, 0, 0.12);
-}
+  color: #edf7fc;
+  box-shadow: none;
 
-.taa-hero-grid {
-  position: absolute;
-  inset: 0;
+  background-color: #082530;
   background-image:
-    linear-gradient(rgba(120, 216, 233, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 216, 233, 0.035) 1px, transparent 1px);
-  background-size: 36px 36px;
-  mask-image: linear-gradient(
-    90deg,
-    #000 0%,
-    rgba(0, 0, 0, 0.8) 55%,
-    transparent 100%
-  );
-  pointer-events: none;
+    linear-gradient(
+      to right,
+      rgba(0, 221, 235, 0.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 221, 235, 0.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(110deg, #082530, #06212a);
+
+  background-size: 36px 36px, 36px 36px, 100% 100%;
+  background-position: 0 0;
+  background-repeat: repeat, repeat, no-repeat;
 }
 
-.taa-hero-copy,
-.taa-rate {
-  position: relative;
-  z-index: 2;
+/* Disable the old separate grid and any overlay grid */
+.teacher-analytics-page .taa-hero-grid,
+.teacher-analytics-page .taa-hero::before,
+.teacher-analytics-page .taa-hero::after {
+  display: none !important;
+  content: none !important;
 }
 
-.taa-hero-copy {
+.teacher-analytics-page .taa-hero-copy {
   flex: 1;
   min-width: 0;
 }
 
-.taa-eyebrow {
+.teacher-analytics-page .taa-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 15px;
-  padding: 5px 9px;
-  border: 1px solid rgba(92, 216, 234, 0.2);
-  border-radius: 6px;
-  background: rgba(0, 221, 235, 0.045);
-  color: #7ee8f4;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  color: #00ddeb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.taa-hero h1 {
+.teacher-analytics-page .taa-hero h1 {
   margin: 0;
-  color: #f2fbff;
-  font-family: "Space Grotesk", "Inter", sans-serif;
-  font-size: clamp(31px, 3vw, 43px);
-  font-weight: 600;
+  color: #edf7fc !important;
+  font-size: clamp(25px, 3vw, 35px);
+  font-weight: 700;
   letter-spacing: -0.045em;
+  line-height: 1.2;
 }
 
-.taa-hero p {
+.teacher-analytics-page .taa-hero h1 .taa-title-accent {
+  background: linear-gradient(90deg, #bdf6fd, #00ddeb);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.teacher-analytics-page .taa-hero p {
   max-width: 650px;
-  margin: 11px 0 0;
+  margin: 12px 0 0;
   color: #a8c4d2;
   font-size: 12px;
-  line-height: 1.7;
 }
 
-.taa-hero p strong {
+.teacher-analytics-page .taa-hero p strong {
   color: #7ee8f4;
 }
 
-.taa-meta {
+.teacher-analytics-page .taa-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
-  margin-top: 21px;
+  margin-top: 20px;
 }
 
-.taa-meta span {
+.teacher-analytics-page .taa-meta span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 10px;
-  border: 1px solid rgba(140, 194, 212, 0.16);
-  border-radius: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--td-border);
+  border-radius: 8px;
   background: rgba(2, 15, 22, 0.2);
   color: #b8d0dc;
-  font-size: 9px;
-  font-weight: 500;
-  backdrop-filter: blur(10px);
+  font-size: 10px;
 }
 
-.taa-meta svg {
-  color: #7ee8f4;
+.teacher-analytics-page .taa-meta svg {
+  color: #00ddeb;
 }
 
-/* =========================================================
-   RATE
-========================================================= */
+/* Compact rate panel */
 
-.taa-rate {
+.teacher-analytics-page .taa-rate {
   display: flex;
-  width: 150px;
-  height: 150px;
-  flex-shrink: 0;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  border: 1px solid rgba(100, 228, 244, 0.15);
-  border-radius: 50%;
-  background: linear-gradient(145deg, #05161e, #072430);
-  box-shadow: 0 0 42px rgba(0, 184, 211, 0.16);
+  flex-shrink: 0;
+  width: 185px;
+  min-height: 135px;
+  padding: 20px;
+  border: 1px solid var(--td-border);
+  border-radius: 16px;
+  background: rgba(3, 24, 32, 0.8);
+  box-shadow: none;
 }
 
-.taa-rate strong {
-  color: #f2fbff;
-  font-size: 29px;
-  font-weight: 600;
-  line-height: 1;
+.teacher-analytics-page .taa-rate strong {
+  color: #edf7fc;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
-.taa-rate span {
-  margin-top: 5px;
+.teacher-analytics-page .taa-rate span {
+  margin-top: 8px;
   color: #89bdcd;
-  font-size: 8px;
-  font-weight: 500;
+  font-size: 11px;
 }
 
-/* =========================================================
-   TOOLBAR
-========================================================= */
+/* Toolbar */
 
-.taa-toolbar {
+.teacher-analytics-page .taa-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 15px 17px;
+  padding: 18px 20px;
   border: 1px solid var(--td-border);
-  border-radius: 11px;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 221, 235, 0.018),
-    rgba(0, 0, 0, 0.025)
-  );
+  border-radius: 14px;
+  background: var(--td-card);
 }
 
-.taa-toolbar strong {
+.teacher-analytics-page .taa-toolbar strong {
   display: block;
   color: var(--td-text);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.taa-toolbar span {
+.teacher-analytics-page .taa-toolbar span {
   display: block;
   margin-top: 3px;
   color: var(--td-muted);
-  font-size: 8px;
+  font-size: 11px;
 }
 
-.taa-toolbar select {
-  min-width: 150px;
-  height: 39px;
-  padding: 0 10px;
+.teacher-analytics-page .taa-toolbar select {
+  min-width: 160px;
+  height: 42px;
+  padding: 0 12px;
   border: 1px solid var(--td-border-input);
   border-radius: 9px;
-  outline: none;
-  background: rgba(2, 15, 22, 0.45);
+  background: #04151c;
   color: var(--td-text);
-  font-family: inherit;
-  font-size: 8.5px;
+  font-size: 12px;
 }
 
-.taa-toolbar select:focus {
-  border-color: rgba(0, 221, 235, 0.6);
-  box-shadow: 0 0 0 3px rgba(0, 221, 235, 0.09);
-}
+/* Summary cards */
 
-/* =========================================================
-   METRICS
-========================================================= */
-
-.taa-metrics {
+.teacher-analytics-page .taa-metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(145px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
 }
 
-.taa-metric {
+.teacher-analytics-page .taa-metric {
   position: relative;
   display: flex;
-  min-height: 118px;
   align-items: center;
   gap: 13px;
-  overflow: hidden;
+  min-width: 0;
+  min-height: 110px;
   padding: 17px;
+  overflow: hidden;
   border: 1px solid var(--td-border);
-  border-radius: 11px;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 221, 235, 0.035),
-    rgba(0, 0, 0, 0.04)
-  );
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease;
+  border-radius: 14px;
+  background: var(--td-card);
 }
 
-.taa-metric::before {
+.teacher-analytics-page .taa-metric::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0 auto 0 0;
   width: 3px;
-  height: 100%;
+  background: var(--metric-colour, #00ddeb);
 }
 
-.taa-metric:hover {
-  transform: translateY(-4px);
-  border-color: rgba(0, 221, 235, 0.55);
-  background: rgba(0, 221, 235, 0.065);
-}
-
-.taa-metric > svg {
-  width: 42px;
-  height: 42px;
+.teacher-analytics-page .taa-metric > svg {
   flex-shrink: 0;
-  padding: 11px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-}
-
-.taa-metric span {
-  color: var(--td-text-2);
-  font-size: 8.5px;
-  font-weight: 500;
-}
-
-.taa-metric strong {
-  display: block;
-  margin-top: 4px;
-  color: var(--td-text);
-  font-size: 26px;
-  font-weight: 600;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
-}
-
-.taa-blue::before {
-  background: var(--td-cyan);
-}
-
-.taa-blue > svg {
-  border-color: rgba(0, 221, 235, 0.3);
-  background: rgba(0, 221, 235, 0.07);
-  color: var(--td-cyan);
-}
-
-.taa-green::before {
-  background: var(--td-green);
-}
-
-.taa-green > svg {
-  border-color: rgba(82, 227, 170, 0.32);
-  background: rgba(82, 227, 170, 0.08);
-  color: var(--td-green);
-}
-
-.taa-amber::before {
-  background: var(--td-amber);
-}
-
-.taa-amber > svg {
-  border-color: rgba(251, 191, 36, 0.32);
-  background: rgba(251, 191, 36, 0.08);
-  color: var(--td-amber);
-}
-
-.taa-red::before {
-  background: var(--td-red);
-}
-
-.taa-red > svg {
-  border-color: rgba(251, 139, 130, 0.32);
-  background: rgba(251, 139, 130, 0.08);
-  color: var(--td-red);
-}
-
-.taa-purple::before {
-  background: var(--td-violet);
-}
-
-.taa-purple > svg {
-  border-color: rgba(196, 181, 253, 0.32);
-  background: rgba(196, 181, 253, 0.08);
-  color: var(--td-violet);
-}
-
-/* =========================================================
-   CARDS
-========================================================= */
-
-.taa-card {
-  min-width: 0;
-  padding: 20px;
-  border: 1px solid var(--td-border);
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  border: 1px solid var(--td-border-soft);
   border-radius: 11px;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 221, 235, 0.018),
-    rgba(0, 0, 0, 0.025)
-  );
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+  background: rgba(125, 190, 207, 0.05);
+  color: var(--metric-colour, #00ddeb);
 }
 
-.taa-card:hover {
-  border-color: rgba(0, 221, 235, 0.4);
+.teacher-analytics-page .taa-metric span {
+  color: var(--td-text-2);
+  font-size: 11px;
 }
 
-.taa-card-heading {
+.teacher-analytics-page .taa-metric strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--td-text);
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.teacher-analytics-page .taa-blue {
+  --metric-colour: #00ddeb;
+}
+
+.teacher-analytics-page .taa-green {
+  --metric-colour: #52e3aa;
+}
+
+.teacher-analytics-page .taa-amber {
+  --metric-colour: #fbbf24;
+}
+
+.teacher-analytics-page .taa-red {
+  --metric-colour: #fb8b82;
+}
+
+.teacher-analytics-page .taa-purple {
+  --metric-colour: #c4b5fd;
+}
+
+/* Chart and information panels */
+
+.teacher-analytics-page .taa-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--td-border);
+  border-radius: 16px;
+  background: var(--td-card);
+}
+
+.teacher-analytics-page .taa-card-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
-.taa-card-heading span {
+.teacher-analytics-page .taa-card-heading span {
   color: var(--td-cyan);
-  font-size: 7.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.taa-card-heading h2 {
-  margin: 4px 0 0;
-  color: var(--td-text);
-  font-size: 14px;
+.teacher-analytics-page .taa-card-heading h2 {
+  margin: 5px 0 0;
+  color: var(--td-text) !important;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.025em;
+  line-height: 1.3;
 }
 
-.taa-card-heading p {
-  margin: 4px 0 0;
+.teacher-analytics-page .taa-card-heading p {
+  margin: 6px 0 0;
   color: var(--td-muted);
-  font-size: 8.5px;
-  line-height: 1.5;
+  font-size: 11px;
 }
 
-.taa-card-heading > svg {
+.teacher-analytics-page .taa-card-heading > svg {
+  flex-shrink: 0;
   width: 38px;
   height: 38px;
-  flex-shrink: 0;
   padding: 9px;
-  border: 1px solid rgba(0, 221, 235, 0.3);
+  border: 1px solid var(--td-border);
   border-radius: 11px;
   background: rgba(0, 221, 235, 0.07);
   color: var(--td-cyan);
 }
 
-/* =========================================================
-   GRIDS
-========================================================= */
-
-.taa-main-grid {
+.teacher-analytics-page .taa-main-grid {
   display: grid;
-  grid-template-columns:
-    minmax(0, 1.55fr)
-    minmax(290px, 0.55fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
   gap: 18px;
 }
 
-.taa-two-grid {
+.teacher-analytics-page .taa-two-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
 
-.taa-chart {
+.teacher-analytics-page .taa-chart {
+  min-width: 0;
   min-height: 285px;
 }
 
-/* =========================================================
-   LEGEND
-========================================================= */
+/* Chart tooltips and axis labels */
 
-.taa-legend {
+.teacher-analytics-page .recharts-default-tooltip {
+  border: 1px solid rgba(0, 221, 235, 0.3) !important;
+  border-radius: 10px;
+  background-color: #061c25 !important;
+  color: #edf7fc !important;
+}
+
+.teacher-analytics-page .recharts-tooltip-label {
+  color: #edf7fc !important;
+}
+
+.teacher-analytics-page .recharts-cartesian-axis-tick-value {
+  fill: #8cabb9;
+  font-size: 11px;
+}
+
+/* Status legend */
+
+.teacher-analytics-page .taa-legend {
   display: flex;
   flex-direction: column;
 }
 
-.taa-legend > div {
+.teacher-analytics-page .taa-legend > div {
   display: grid;
   grid-template-columns: 8px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  padding: 9px 0;
+  gap: 9px;
+  padding: 11px 0;
   border-bottom: 1px solid var(--td-border-soft);
   color: var(--td-text-2);
-  font-size: 8px;
+  font-size: 11px;
 }
 
-.taa-legend > div:last-child {
+.teacher-analytics-page .taa-legend > div:last-child {
   border-bottom: 0;
 }
 
-.taa-legend-dot {
+.teacher-analytics-page .taa-legend-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
 }
 
-.taa-dot-0 {
+.teacher-analytics-page .taa-dot-0 {
   background: var(--td-green);
 }
 
-.taa-dot-1 {
+.teacher-analytics-page .taa-dot-1 {
   background: var(--td-amber);
 }
 
-.taa-dot-2 {
+.teacher-analytics-page .taa-dot-2 {
   background: var(--td-red);
 }
 
-/* =========================================================
-   RISK LIST
-========================================================= */
+/* Student attention lists */
 
-.taa-risk-list {
+.teacher-analytics-page .taa-risk-list {
   display: flex;
   flex-direction: column;
 }
 
-.taa-risk-list > div {
+.teacher-analytics-page .taa-risk-list > div {
   display: flex;
-  min-height: 52px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 0;
+  min-height: 58px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--td-border-soft);
 }
 
-.taa-risk-list > div:last-child {
+.teacher-analytics-page .taa-risk-list > div:last-child {
   border-bottom: 0;
 }
 
-.taa-risk-list strong {
+.teacher-analytics-page .taa-risk-list strong {
   display: block;
   color: var(--td-text);
-  font-size: 9px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.taa-risk-list small {
+.teacher-analytics-page .taa-risk-list small {
   display: block;
-  margin-top: 2px;
+  margin-top: 3px;
   color: var(--td-muted);
-  font-size: 7.5px;
+  font-size: 10px;
 }
 
-.taa-risk-list > div > span {
+.teacher-analytics-page .taa-risk-list > div > span {
+  flex-shrink: 0;
   padding: 4px 8px;
   border: 1px solid rgba(251, 139, 130, 0.32);
-  border-radius: 999px;
+  border-radius: 8px;
   background: rgba(251, 139, 130, 0.08);
   color: #ffb0a9;
-  font-size: 8px;
-  font-weight: 500;
+  font-size: 11px;
 }
 
-.taa-risk-list .taa-late-count {
+.teacher-analytics-page .taa-risk-list .taa-late-count {
   border-color: rgba(251, 191, 36, 0.32);
   background: rgba(251, 191, 36, 0.08);
   color: #f5d171;
 }
 
-/* =========================================================
-   AUTH METHODS
-========================================================= */
+/* Authentication methods */
 
-.taa-auth-list {
+.teacher-analytics-page .taa-auth-list {
   display: flex;
   flex-direction: column;
 }
 
-.taa-auth-list > div {
+.teacher-analytics-page .taa-auth-list > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
-  padding: 11px 0;
+  padding: 13px 0;
   border-bottom: 1px solid var(--td-border-soft);
-  font-size: 8.5px;
+  font-size: 12px;
 }
 
-.taa-auth-list > div:last-child {
+.teacher-analytics-page .taa-auth-list > div:last-child {
   border-bottom: 0;
 }
 
-.taa-auth-list span {
+.teacher-analytics-page .taa-auth-list span {
   color: var(--td-text-2);
 }
 
-.taa-auth-list strong {
-  display: inline-flex;
-  min-width: 28px;
-  justify-content: center;
-  padding: 4px 8px;
-  border: 1px solid rgba(0, 221, 235, 0.3);
-  border-radius: 999px;
+.teacher-analytics-page .taa-auth-list strong {
+  padding: 4px 9px;
+  border: 1px solid var(--td-border);
+  border-radius: 8px;
   background: rgba(0, 221, 235, 0.07);
   color: #92e7f1;
-  font-size: 8px;
-  font-weight: 500;
+  font-size: 11px;
 }
 
-/* =========================================================
-   DISPUTES
-========================================================= */
+/* Dispute summary */
 
-.taa-dispute-grid {
+.teacher-analytics-page .taa-dispute-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 9px;
 }
 
-.taa-dispute-grid > div {
-  padding: 12px 7px;
+.teacher-analytics-page .taa-dispute-grid > div {
+  padding: 16px 7px;
   border: 1px solid var(--td-border-soft);
-  border-radius: 9px;
+  border-radius: 11px;
   background: rgba(0, 221, 235, 0.025);
   text-align: center;
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
-    transform 0.18s ease;
 }
 
-.taa-dispute-grid > div:hover {
-  transform: translateY(-2px);
-  border-color: rgba(0, 221, 235, 0.55);
-  background: rgba(0, 221, 235, 0.065);
-}
-
-.taa-dispute-grid strong {
+.teacher-analytics-page .taa-dispute-grid strong {
   display: block;
   color: var(--td-text);
-  font-size: 18px;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 24px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.taa-dispute-grid span {
+.teacher-analytics-page .taa-dispute-grid span {
   display: block;
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--td-muted);
-  font-size: 7px;
+  font-size: 10px;
 }
 
-/* =========================================================
-   TABLE
-========================================================= */
+/* Student table */
 
-.taa-table-scroll {
+.teacher-analytics-page .taa-table-scroll {
   overflow-x: auto;
   border: 1px solid var(--td-border-soft);
-  border-radius: 9px;
+  border-radius: 11px;
 }
 
-.taa-table {
+.teacher-analytics-page .taa-table {
   width: 100%;
   min-width: 700px;
   border-collapse: collapse;
 }
 
-.taa-table th {
-  padding: 10px 13px;
+.teacher-analytics-page .taa-table th {
+  padding: 12px 14px;
   background: rgba(0, 221, 235, 0.045);
   color: #b4d0dd;
-  font-size: 7.5px;
-  font-weight: 500;
-  letter-spacing: 0.45px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-align: left;
   text-transform: uppercase;
 }
 
-.taa-table td {
-  padding: 11px 13px;
+.teacher-analytics-page .taa-table td {
+  padding: 14px;
   border-top: 1px solid var(--td-border-soft);
   color: var(--td-text-2);
-  font-size: 8.5px;
+  font-size: 12px;
 }
 
-.taa-table tbody tr {
-  transition: background 0.18s ease;
+.teacher-analytics-page .taa-table td strong {
+  color: var(--td-text);
+  font-weight: 600;
 }
 
-.taa-table tbody tr:hover {
-  background: rgba(0, 221, 235, 0.025);
+.teacher-analytics-page .taa-table tbody tr:hover {
+  background: rgba(0, 221, 235, 0.035);
 }
 
-.taa-risk {
+.teacher-analytics-page .taa-risk {
   display: inline-flex;
   padding: 4px 8px;
   border: 1px solid transparent;
-  border-radius: 999px;
-  font-size: 7px;
+  border-radius: 7px;
+  font-size: 10px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.taa-risk-success {
+.teacher-analytics-page .taa-risk-success {
   border-color: rgba(82, 227, 170, 0.32);
   background: rgba(82, 227, 170, 0.08);
   color: #79edbd;
 }
 
-.taa-risk-warning {
+.teacher-analytics-page .taa-risk-warning {
   border-color: rgba(251, 191, 36, 0.32);
   background: rgba(251, 191, 36, 0.08);
   color: #f5d171;
 }
 
-.taa-risk-danger {
+.teacher-analytics-page .taa-risk-danger {
   border-color: rgba(251, 139, 130, 0.32);
   background: rgba(251, 139, 130, 0.08);
   color: #ffb0a9;
 }
 
-.taa-risk-neutral {
+.teacher-analytics-page .taa-risk-neutral {
   border-color: rgba(140, 171, 185, 0.25);
   background: rgba(140, 171, 185, 0.05);
   color: #9eb9c5;
 }
 
-/* =========================================================
-   STATES
-========================================================= */
+/* Empty, error and loading states */
 
-.taa-empty {
+.teacher-analytics-page .taa-empty {
   display: grid;
-  min-height: 100px;
   place-items: center;
+  min-height: 100px;
   padding: 20px;
   color: var(--td-muted);
-  font-size: 8.5px;
+  font-size: 12px;
   text-align: center;
 }
 
-.taa-error {
+.teacher-analytics-page .taa-error {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
   border: 1px solid rgba(251, 139, 130, 0.25);
-  border-radius: 9px;
+  border-radius: 11px;
   background: rgba(251, 139, 130, 0.06);
   color: #ffc0ba;
-  font-size: 9px;
+  font-size: 12px;
 }
 
-.taa-loading {
-  display: flex;
-  min-height: 430px;
+.teacher-analytics-page.taa-loading {
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 11px;
+  min-height: 430px;
   color: var(--td-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
-.taa-spinner {
+.teacher-analytics-page .taa-spinner {
   width: 42px;
   height: 42px;
   border: 3px solid rgba(0, 221, 235, 0.15);
@@ -782,62 +685,61 @@
   }
 }
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
+/* Responsive */
 
 @media (max-width: 1100px) {
-  .taa-main-grid {
+  .teacher-analytics-page .taa-main-grid {
     grid-template-columns: 1fr;
   }
 
-  .taa-metrics {
-    grid-template-columns: repeat(3, minmax(150px, 1fr));
+  .teacher-analytics-page .taa-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 800px) {
-  .taa-two-grid {
+  .teacher-analytics-page .taa-two-grid {
     grid-template-columns: 1fr;
   }
 
-  .taa-metrics {
+  .teacher-analytics-page .taa-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .taa-hero {
-    align-items: flex-start;
+  .teacher-analytics-page .taa-hero {
     flex-direction: column;
-    padding: 27px 23px;
+    align-items: stretch;
+    padding: 23px;
   }
 
-  .taa-rate {
-    align-self: center;
+  .teacher-analytics-page .taa-rate {
+    width: 100%;
+    min-height: 100px;
   }
 }
 
 @media (max-width: 600px) {
-  .taa-toolbar {
-    align-items: flex-start;
+  .teacher-analytics-page .taa-toolbar {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .taa-toolbar select {
+  .teacher-analytics-page .taa-toolbar select {
     width: 100%;
   }
 
-  .taa-dispute-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .teacher-analytics-page .taa-dispute-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teacher-analytics-page .taa-card {
+    padding: 18px;
   }
 }
 
-@media (max-width: 500px) {
-  .taa-metrics {
+@media (max-width: 400px) {
+  .teacher-analytics-page .taa-metrics {
     grid-template-columns: 1fr;
-  }
-
-  .taa-card {
-    padding: 17px;
   }
 }
 

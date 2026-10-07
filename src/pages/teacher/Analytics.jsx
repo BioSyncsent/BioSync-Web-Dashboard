@@ -844,7 +844,7 @@ function TeacherAnalytics() {
           </span>
 
           <h1>
-            Attendance Analytics
+            Attendance <span className="taa-title-accent">Analytics</span>
           </h1>
 
           <p>

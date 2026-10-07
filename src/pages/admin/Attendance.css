@@ -691,3 +691,53 @@
   .admin-attendance-page button,
   .aa-dialog button { transition: none; }
 }
+.aa-hero {
+  border: 1px solid rgba(0, 221, 235, 0.3) !important;
+  border-left: 4px solid #00ddeb !important;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* Remove any separate stripe */
+.aa-hero::before,
+.aa-hero::after {
+  content: none !important;
+  display: none !important;
+}
+/* Restore one clean grid on Attendance Management */
+.aa-hero {
+  background:
+    linear-gradient(
+      to right,
+      rgba(0, 221, 235, 0.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 221, 235, 0.045) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      ellipse at top right,
+      rgba(0, 221, 235, 0.12),
+      transparent 65%
+    ),
+    linear-gradient(110deg, #082530, #06212a) !important;
+
+  background-size:
+    36px 36px,
+    36px 36px,
+    100% 100%,
+    100% 100% !important;
+
+  background-position: 0 0 !important;
+  background-repeat: repeat, repeat, no-repeat, no-repeat !important;
+
+  border: 1px solid rgba(0, 221, 235, 0.3) !important;
+  border-left: 4px solid #00ddeb !important;
+}
+
+/* Prevent a second grid from overlapping */
+.aa-hero-grid {
+  display: none !important;
+}

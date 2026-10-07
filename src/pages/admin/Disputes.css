@@ -2052,3 +2052,13 @@
     animation: none !important;
   }
 }
+/* Cyan outline and left stripe on the disputes banner */
+.dp-page-header {
+  border: 1px solid rgba(0, 221, 235, 0.3) !important;
+  border-left: 4px solid #00ddeb !important;
+}
+/* Target the banner containing the page heading */
+section:has(h1) {
+  border: 1px solid rgba(0, 221, 235, 0.3) !important;
+  border-left: 4px solid #00ddeb !important;
+}

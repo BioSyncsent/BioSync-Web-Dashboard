@@ -1,696 +1,635 @@
-/* =========================================================
-   BIOSYNC SENTINEL
-   TEACHER ATTENDANCE
-========================================================= */
-
-.teacher-attendance-page {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  gap: 20px;
-  animation: taEnter 0.4s ease both;
+.db-shell-content:has(> .teacher-attendance) {
+  padding: 0;
+  max-width: none;
+  background: #04151c;
 }
 
-.teacher-attendance-page *,
-.teacher-attendance-page *::before,
-.teacher-attendance-page *::after {
+.teacher-attendance,
+.ta-dialog {
+  --ta-text: #eaf7fc;
+  --ta-muted: #89a7b5;
+  --ta-border: rgba(0, 218, 235, 0.2);
+  --ta-cyan: #00ddeb;
+
+  color: var(--ta-text);
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  color-scheme: dark;
   box-sizing: border-box;
 }
 
-@keyframes taEnter {
-  from {
-    opacity: 0;
-    transform: translateY(7px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.teacher-attendance {
+  width: 100%;
+  min-height: 100%;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background:
+    radial-gradient(ellipse at top right, rgba(0, 221, 235, 0.045), transparent 50%),
+    #04151c;
 }
 
-/* =========================================================
-   HERO
-========================================================= */
+.teacher-attendance *,
+.ta-dialog * {
+  box-sizing: border-box;
+}
+
+.teacher-attendance h1,
+.teacher-attendance h2,
+.teacher-attendance h3,
+.ta-dialog h2 {
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ta-text);
+}
+
+.teacher-attendance button,
+.ta-dialog button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--ta-border);
+  border-radius: 9px;
+  background: #0a2631;
+  color: var(--ta-text);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.teacher-attendance button:hover:not(:disabled),
+.ta-dialog button:hover:not(:disabled) {
+  background: #0d3441;
+  border-color: rgba(0, 221, 235, 0.5);
+}
+
+.teacher-attendance button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.teacher-attendance :focus-visible,
+.ta-dialog :focus-visible {
+  outline: 2px solid var(--ta-cyan);
+  outline-offset: 3px;
+}
 
 .ta-hero {
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
-  min-height: 230px;
   align-items: center;
   justify-content: space-between;
-  gap: 30px;
-  overflow: hidden;
-  padding: 32px 36px;
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  border-radius: 24px;
-  background:
-    radial-gradient(
-      circle at 90% 5%,
-      rgba(56, 189, 248, 0.18),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 75% 100%,
-      rgba(37, 99, 235, 0.15),
-      transparent 34%
-    ),
-    linear-gradient(
-      135deg,
-      #061221,
-      #0a1e35 56%,
-      #0b3150
-    );
-  color: #fff;
-  box-shadow:
-    0 20px 48px rgba(2, 8, 20, 0.22);
+  gap: 24px;
+  padding: 28px 32px;
+  border: 1px solid var(--ta-border);
+  border-radius: 18px;
+  background: linear-gradient(115deg, #092734, #06212b 65%, #073039);
 }
 
 .ta-hero::before {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.42;
+  z-index: -1;
   background-image:
-    linear-gradient(
-      rgba(56, 189, 248, 0.09) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(56, 189, 248, 0.09) 1px,
-      transparent 1px
-    );
-  background-size: 38px 38px;
-  mask-image:
-    linear-gradient(
-      90deg,
-      #000 0%,
-      rgba(0, 0, 0, 0.8) 55%,
-      transparent 100%
-    );
-  pointer-events: none;
+    linear-gradient(rgba(0, 221, 235, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 221, 235, 0.035) 1px, transparent 1px);
+  background-size: 36px 36px;
 }
 
-.ta-hero > div {
-  position: relative;
-  z-index: 1;
-}
-
-.ta-hero > div:first-child {
-  flex: 1;
-  min-width: 0;
+.ta-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 24px;
+  bottom: 24px;
+  width: 3px;
+  background: var(--ta-cyan);
+  box-shadow: 0 0 18px rgba(0, 221, 235, 0.45);
 }
 
 .ta-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin-bottom: 14px;
-  padding: 7px 11px;
-  border: 1px solid rgba(103, 232, 249, 0.24);
-  border-radius: 999px;
-  background: rgba(6, 182, 212, 0.09);
-  color: #67e8f9;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.45px;
-  text-transform: uppercase;
+  color: var(--ta-cyan);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
 }
 
 .ta-hero h1 {
+  margin: 12px 0 9px;
+  font-size: clamp(27px, 2.6vw, 37px);
+  letter-spacing: -0.9px;
+  line-height: 1.2;
+}
+
+.ta-hero h1 span {
+  background: linear-gradient(90deg, #dcfbff, #00ddeb);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ta-hero p,
+.ta-section-heading p {
   margin: 0;
-  color: #fff;
-  font-family: var(--bs-font-heading, "Poppins", sans-serif);
-  font-size: clamp(31px, 3vw, 42px);
-  font-weight: 760;
-  letter-spacing: -1.2px;
-}
-
-.ta-hero p {
-  max-width: 650px;
-  margin: 10px 0 0;
-  color: #b5c8dc;
-  font-size: 12px;
+  color: var(--ta-muted);
   line-height: 1.7;
+  font-size: 12px;
 }
 
-.ta-hero p strong {
-  color: #fff;
+.ta-hero > button {
+  flex-shrink: 0;
 }
 
-.ta-hero-meta {
+.ta-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 20px;
+  gap: 8px;
+  margin-top: 17px;
 }
 
-.ta-hero-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 10px;
-  border: 1px solid rgba(148, 163, 184, 0.17);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.055);
-  color: #dbeafe;
-  font-size: 9px;
-  font-weight: 650;
+.ta-tags span {
+  padding: 5px 9px;
+  border: 1px solid var(--ta-border);
+  border-radius: 20px;
+  background: rgba(0, 221, 235, 0.035);
+  color: #9cc6d2;
+  font-size: 10px;
 }
 
-.ta-hero-meta svg {
-  color: #67e8f9;
+.ta-tags .ta-live {
+  color: #52e3aa;
 }
 
-/* =========================================================
-   RATE
-========================================================= */
+.ta-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 13px;
+}
 
-.ta-hero-rate {
+.teacher-attendance .ta-stat {
   display: flex;
-  width: 155px;
-  height: 155px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  border: 1px solid rgba(103, 232, 249, 0.18);
-  border-radius: 50%;
-  background:
-    radial-gradient(
-      circle,
-      rgba(56, 189, 248, 0.13),
-      rgba(8, 26, 46, 0.72) 68%
-    );
-  box-shadow:
-    0 0 45px rgba(56, 189, 248, 0.16);
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 18px;
+  border-left: 3px solid var(--ta-tone);
+  border-radius: 14px;
+  background: #061c25;
+  text-align: left;
 }
 
-.ta-hero-rate strong {
-  color: #fff;
-  font-size: 31px;
+.ta-tone-cyan { --ta-tone: #00ddeb; }
+.ta-tone-green { --ta-tone: #52e3aa; }
+.ta-tone-amber { --ta-tone: #fbbf24; }
+.ta-tone-red { --ta-tone: #fb8b82; }
+
+.ta-stat > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #a9c0ca;
+  font-size: 11px;
+}
+
+.ta-stat svg {
+  color: var(--ta-tone);
+  flex-shrink: 0;
+}
+
+.ta-stat strong {
+  color: var(--ta-tone);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 32px;
   line-height: 1;
 }
 
-.ta-hero-rate span {
-  margin-top: 6px;
-  color: #8fb1cf;
-  font-size: 9px;
-  font-weight: 700;
+.ta-stat small {
+  color: var(--ta-muted);
+  font-size: 10px;
+  line-height: 1.5;
 }
 
-/* =========================================================
-   SUMMARY
-========================================================= */
-
-.ta-summary-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(5, minmax(145px, 1fr));
-  gap: 14px;
+.teacher-attendance .ta-stat.is-active {
+  border-color: var(--ta-tone);
+  background: #08242e;
 }
 
-.ta-summary-grid .bs-summary-card {
-  position: relative;
-  display: flex;
-  min-height: 118px;
-  align-items: center;
-  gap: 13px;
-  overflow: hidden;
-  padding: 17px;
-  border: 1px solid #dce7f4;
-  border-radius: 17px;
-  background:
-    linear-gradient(
-      145deg,
-      #fff,
-      #fbfdff
-    );
-  box-shadow:
-    0 8px 23px rgba(15, 23, 42, 0.05);
-  transition:
-    transform 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.ta-summary-grid .bs-summary-card::after {
-  content: "";
-  position: absolute;
-  right: -35px;
-  bottom: -45px;
-  width: 115px;
-  height: 115px;
-  border-radius: 50%;
-  opacity: 0.07;
-}
-
-.ta-summary-grid .bs-summary-card:hover {
-  transform: translateY(-4px);
-  border-color: #bfdbfe;
-  box-shadow:
-    0 14px 32px rgba(37, 99, 235, 0.09);
-}
-
-.ta-summary-grid .bs-summary-icon {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  place-items: center;
-  border-radius: 12px;
-}
-
-.ta-summary-grid .bs-summary-text {
-  display: flex;
+.ta-panel {
   min-width: 0;
-  flex-direction: column;
-  gap: 4px;
+  padding: 22px;
+  border: 1px solid var(--ta-border);
+  border-radius: 16px;
+  background: #061c25;
 }
 
-.ta-summary-grid .bs-summary-label {
-  color: #64748b;
-  font-size: 8px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.ta-summary-grid .bs-summary-value {
-  color: #0f172a;
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.ta-summary-grid .bs-tone-primary .bs-summary-icon {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.ta-summary-grid .bs-tone-success .bs-summary-icon {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.ta-summary-grid .bs-tone-warning .bs-summary-icon {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.ta-summary-grid .bs-tone-danger .bs-summary-icon {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.ta-summary-grid .bs-tone-info .bs-summary-icon {
-  background: #ecfeff;
-  color: #0891b2;
-}
-
-/* =========================================================
-   CONTROLS
-========================================================= */
-
-.ta-controls {
-  display: grid;
-  grid-template-columns:
-    minmax(240px, 1.5fr)
-    minmax(140px, 0.7fr)
-    minmax(145px, 0.7fr)
-    minmax(155px, 0.8fr)
-    auto
-    auto;
-  gap: 10px;
+.ta-section-heading {
+  display: flex;
   align-items: center;
-  padding: 16px;
-  border: 1px solid #dce7f4;
-  border-radius: 17px;
-  background:
-    linear-gradient(
-      145deg,
-      #ffffff,
-      #fbfdff
-    );
-  box-shadow:
-    0 8px 24px rgba(15, 23, 42, 0.05);
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 19px;
+}
+
+.ta-section-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 8px 0 6px;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+
+.ta-section-heading h2 svg {
+  color: var(--ta-cyan);
+}
+
+.ta-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.ta-count {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 221, 235, 0.09);
+  color: var(--ta-cyan);
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+}
+
+.ta-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 15px;
+}
+
+.teacher-attendance .ta-view-switch .is-active {
+  color: var(--ta-cyan);
+  background: rgba(0, 221, 235, 0.09);
+  border-color: rgba(0, 221, 235, 0.5);
 }
 
 .ta-search {
-  position: relative;
-}
-
-.ta-search svg {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  color: #94a3b8;
-  transform: translateY(-50%);
-}
-
-.ta-search input,
-.ta-controls > input,
-.ta-controls select {
-  width: 100%;
-  height: 40px;
-  border: 1px solid #dce7f4;
-  border-radius: 9px;
-  outline: none;
-  background: #f8fbff;
-  color: #334155;
-  font-family: inherit;
-  font-size: 9px;
-}
-
-.ta-search input {
-  padding: 0 12px 0 37px;
-}
-
-.ta-controls > input,
-.ta-controls select {
-  padding: 0 10px;
-}
-
-.ta-search input:focus,
-.ta-controls > input:focus,
-.ta-controls select:focus {
-  border-color: #60a5fa;
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.07);
-}
-
-.ta-clear,
-.ta-export button {
-  display: inline-flex;
-  min-height: 40px;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 9px;
-  font-family: inherit;
-  font-size: 8px;
-  font-weight: 800;
-  cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease;
+  gap: 10px;
+  padding: 0 13px;
+  margin-bottom: 16px;
+  border: 1px solid var(--ta-border);
+  border-radius: 10px;
+  background: #041820;
+  color: var(--ta-muted);
 }
 
-.ta-clear {
-  padding: 0 11px;
-  border: 1px solid #dce7f4;
-  background: #fff;
-  color: #64748b;
+.ta-search:focus-within {
+  border-color: var(--ta-cyan);
 }
 
-.ta-clear:hover {
-  transform: translateY(-1px);
-  border-color: #fecaca;
-  background: #fff1f2;
-  color: #dc2626;
+.teacher-attendance .ta-search input {
+  min-height: 43px;
+  padding: 10px 0;
+  border: none;
+  outline: none;
+  background: transparent;
 }
 
-.ta-export {
+.ta-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.ta-filter-grid label {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 8px;
+  color: #aac1cc;
+  font-size: 11px;
 }
 
-.ta-export button {
-  padding: 0 10px;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #2563eb;
+.teacher-attendance input,
+.teacher-attendance select {
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding: 10px 11px;
+  border: 1px solid var(--ta-border);
+  border-radius: 8px;
+  background: #041820;
+  color: var(--ta-text);
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
 }
 
-.ta-export button:hover {
-  transform: translateY(-1px);
-  border-color: #60a5fa;
-  background: #dbeafe;
-}
-
-/* =========================================================
-   TABLE CARD
-========================================================= */
-
-.ta-table-card {
-  overflow: hidden;
-  border: 1px solid #dce7f4;
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      145deg,
-      #ffffff,
-      #fbfdff
-    );
-  box-shadow:
-    0 8px 26px rgba(15, 23, 42, 0.05);
-}
-
-.ta-table-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 17px 20px;
-  border-bottom: 1px solid #e7edf5;
-}
-
-.ta-table-heading span {
-  color: #2563eb;
-  font-size: 7px;
-  font-weight: 850;
-  letter-spacing: 0.9px;
-  text-transform: uppercase;
-}
-
-.ta-table-heading h2 {
-  margin: 4px 0 0;
-  color: #172033;
-  font-size: 14px;
-}
-
-.ta-table-heading small {
-  padding: 5px 8px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 7.5px;
-  font-weight: 800;
+.teacher-attendance input::placeholder {
+  color: #6f91a0;
 }
 
 .ta-table-scroll {
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #205061 #061c25;
 }
 
 .ta-table {
   width: 100%;
-  min-width: 950px;
+  min-width: 850px;
   border-collapse: collapse;
+  font-size: 12px;
 }
 
 .ta-table th {
-  padding: 11px 13px;
-  background: #f8fafc;
-  color: #94a3b8;
-  font-size: 7.2px;
-  font-weight: 850;
-  letter-spacing: 0.45px;
+  padding: 13px 11px;
+  background: #09242e;
+  color: #95bac8;
   text-align: left;
-  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
+.ta-table th:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.ta-table th:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.teacher-attendance .ta-sort {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 .ta-table td {
-  padding: 12px 13px;
-  border-top: 1px solid #edf2f7;
-  color: #475569;
-  font-size: 9px;
+  padding: 16px 11px;
+  border-bottom: 1px solid rgba(0, 221, 235, 0.08);
+  color: #bdd1db;
   vertical-align: middle;
 }
 
-.ta-table tbody tr {
-  transition:
-    background 0.18s ease;
-}
-
 .ta-table tbody tr:hover {
-  background: #f8fbff;
+  background: rgba(0, 221, 235, 0.03);
 }
 
-/* =========================================================
-   STUDENT CELL
-========================================================= */
+.ta-table td strong {
+  display: block;
+  color: #e0eef4;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ta-table td small {
+  display: block;
+  margin-top: 5px;
+  color: var(--ta-muted);
+  font-size: 10px;
+}
 
 .ta-student {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
 }
 
-.ta-student > span {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  place-items: center;
-  border-radius: 10px;
-  background:
-    linear-gradient(
-      135deg,
-      #dbeafe,
-      #e0f2fe
-    );
-  color: #2563eb;
-  font-size: 9px;
-  font-weight: 850;
-}
-
-.ta-student strong {
-  display: block;
-  color: #172033;
-  font-size: 9px;
-}
-
-.ta-student small {
-  display: block;
-  margin-top: 2px;
-  color: #94a3b8;
-  font-size: 7px;
-}
-
-/* =========================================================
-   METHOD / VIEW
-========================================================= */
-
-.ta-method {
+.ta-avatar {
   display: inline-flex;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 7.5px;
-  font-weight: 750;
-}
-
-.ta-view {
-  display: inline-flex;
-  min-height: 30px;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 0 9px;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 7.5px;
-  font-weight: 800;
-  cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    background 0.18s ease;
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+  border: 1px solid var(--ta-border);
+  border-radius: 10px;
+  background: rgba(0, 221, 235, 0.06);
+  color: var(--ta-cyan);
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
 }
 
-.ta-view:hover {
-  transform: translateY(-1px);
-  background: #dbeafe;
+.ta-badge {
+  display: inline-flex;
+  padding: 5px 9px;
+  border: 1px solid currentColor;
+  border-radius: 20px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
-/* =========================================================
-   EMPTY / LOADING
-========================================================= */
+.ta-status-present { color: #52e3aa; }
+.ta-status-late { color: #fbbf24; }
+.ta-status-absent { color: #fb8b82; }
+.ta-status-excused { color: #79c5ff; }
+.ta-status-not_recorded { color: #00ddeb; }
+.ta-status-unknown { color: #a0b4bf; }
+
+.ta-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-top: 18px;
+  color: var(--ta-muted);
+  font-size: 11px;
+}
+
+.ta-page-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teacher-attendance .ta-page-size select {
+  width: 65px;
+  min-height: 33px;
+  padding: 6px;
+}
 
 .ta-empty {
-  height: 220px;
-  color: #94a3b8 !important;
+  padding: 38px 18px;
   text-align: center;
+  color: var(--ta-muted);
 }
 
-.ta-loading {
+.ta-empty > svg { color: #59b5c4; }
+.ta-empty h3 { margin: 14px 0 7px; }
+.ta-empty p { margin: 0; font-size: 12px; }
+
+.ta-table .ta-empty-cell {
+  padding: 45px 15px;
+  text-align: center;
+  color: var(--ta-muted);
+}
+
+.ta-note,
+.ta-footnote,
+.ta-muted {
+  color: var(--ta-muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.ta-note {
+  margin: 14px 0 0;
+}
+
+.ta-footnote {
+  margin: -3px 2px 0;
+}
+
+.ta-message {
   display: flex;
-  min-height: 430px;
   align-items: center;
-  justify-content: center;
-  flex-direction: column;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
-  color: #64748b;
-  font-size: 10px;
+  padding: 14px 17px;
+  border: 1px solid var(--ta-border);
+  border-radius: 10px;
+  background: #09212c;
+  line-height: 1.7;
 }
 
-.ta-spinner {
-  width: 42px;
-  height: 42px;
-  border: 4px solid #dbeafe;
-  border-top-color: #2563eb;
-  border-radius: 50%;
-  animation: taSpin 0.8s linear infinite;
+.ta-warning {
+  color: #f7c27c;
+  font-size: 12px;
+  line-height: 1.7;
 }
 
-@keyframes taSpin {
-  to {
-    transform: rotate(360deg);
+.ta-dialog {
+  width: min(650px, calc(100vw - 30px));
+  max-height: calc(100dvh - 40px);
+  padding: 0;
+  border: 1px solid rgba(0, 221, 235, 0.35);
+  border-radius: 16px;
+  background: #061c25;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+}
+
+.ta-dialog::backdrop {
+  background: rgba(0, 10, 15, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.ta-dialog-content {
+  padding: 24px;
+}
+
+.ta-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.ta-dialog h2 {
+  margin: 9px 0 0;
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+
+.ta-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 21px;
+  margin: 25px 0;
+}
+
+.ta-details-grid dt {
+  margin-bottom: 7px;
+  color: var(--ta-muted);
+  font-size: 11px;
+}
+
+.ta-details-grid dd {
+  margin: 0;
+  color: var(--ta-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .ta-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media (max-width: 1250px) {
-  .ta-summary-grid {
-    grid-template-columns:
-      repeat(3, minmax(150px, 1fr));
+@media (max-width: 760px) {
+  .teacher-attendance {
+    padding: 17px;
+    gap: 16px;
   }
 
-  .ta-controls {
-    grid-template-columns:
-      repeat(3, 1fr);
-  }
-
-  .ta-search {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 850px) {
   .ta-hero {
-    align-items: flex-start;
     flex-direction: column;
-    padding: 27px 23px;
+    align-items: flex-start;
+    padding: 25px;
   }
 
-  .ta-hero-rate {
-    align-self: center;
+  .ta-summary,
+  .ta-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .ta-summary-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-
-  .ta-controls {
-    grid-template-columns:
-      repeat(2, 1fr);
-  }
-
-  .ta-search {
-    grid-column: 1 / -1;
+  .ta-panel {
+    padding: 18px;
   }
 }
 
-@media (max-width: 520px) {
-  .ta-summary-grid,
-  .ta-controls {
+@media (max-width: 450px) {
+  .teacher-attendance {
+    padding: 12px;
+  }
+
+  .ta-hero {
+    padding: 22px 18px;
+  }
+
+  .ta-filter-grid,
+  .ta-details-grid {
     grid-template-columns: 1fr;
   }
 
-  .ta-search {
-    grid-column: auto;
+  .teacher-attendance .ta-stat {
+    padding: 14px;
   }
 
-  .ta-export {
-    display: grid;
-    grid-template-columns:
-      repeat(2, 1fr);
+  .ta-stat strong {
+    font-size: 28px;
+  }
+
+  .ta-dialog-content {
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-attendance button,
+  .ta-dialog button {
+    transition: none;
   }
 }

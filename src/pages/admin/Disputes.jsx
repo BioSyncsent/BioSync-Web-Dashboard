@@ -500,7 +500,28 @@ function Disputes() {
           </span>
 
           <h1>
-            Attendance Disputes
+            <h1>
+  <span
+    style={{
+      color: "#edf7fc",
+      WebkitTextFillColor: "#edf7fc",
+    }}
+  >
+    Attendance{" "}
+  </span>
+
+  <span
+    style={{
+      backgroundImage: "linear-gradient(90deg, #bdf6fd, #00ddeb)",
+      backgroundClip: "text",
+      WebkitBackgroundClip: "text",
+      color: "transparent",
+      WebkitTextFillColor: "transparent",
+    }}
+  >
+    Disputes
+  </span>
+</h1>
           </h1>
 
           <p>

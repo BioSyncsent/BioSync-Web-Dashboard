@@ -1,1225 +1,792 @@
+import { useEffect, useRef, useState } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
 import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  doc,
-  onSnapshot,
-} from "firebase/firestore";
-
-import {
+  onAuthStateChanged,
+  reload,
+  sendEmailVerification,
   sendPasswordResetEmail,
 } from "firebase/auth";
-
-import toast, {
-  Toaster,
-} from "react-hot-toast";
-
 import {
-  Bell,
+  ArrowRight,
   Building2,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
+  ClipboardList,
   Copy,
-  CreditCard,
-  Fingerprint,
   GraduationCap,
   IdCard,
   KeyRound,
-  LockKeyhole,
+  LoaderCircle,
+  LogIn,
   Mail,
   Phone,
-  ScanFace,
+  RefreshCw,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-
-import {
-  useAuth,
-} from "../../contexts/AuthContext";
-
-import {
-  auth,
-  db,
-} from "../../firebase/firebase";
-
+import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { auth, db } from "../../firebase/firebase";
 import "./AccountCenter.css";
 
-/* =========================================================
-   HELPERS
-========================================================= */
+const TIME_ZONE = "Asia/Kuala_Lumpur";
 
-function capitalize(text) {
-  const value =
-    String(text || "")
-      .trim();
-
-  if (!value) {
-    return "N/A";
-  }
-
-  return (
-    value.charAt(0).toUpperCase() +
-    value.slice(1)
-  );
-}
-
-function getInitials(name) {
-  const cleanName =
-    String(name || "Teacher")
-      .trim();
-
-  return cleanName
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) =>
-      part.charAt(0)
-    )
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "Not available";
-  }
+function formatDate(value, includeTime = false) {
+  if (!value) return "Not available";
 
   try {
     const date =
-      typeof value?.toDate ===
-      "function"
+      typeof value.toDate === "function"
         ? value.toDate()
-        : value instanceof Date
-          ? value
-          : new Date(value);
+        : new Date(value);
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return "Not available";
-    }
+    if (Number.isNaN(date.getTime())) return "Not available";
 
-    return date.toLocaleDateString(
-      "en-MY",
-      {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      }
-    );
+    return new Intl.DateTimeFormat("en-MY", {
+      timeZone: TIME_ZONE,
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      ...(includeTime
+        ? { hour: "2-digit", minute: "2-digit" }
+        : {}),
+    }).format(date);
   } catch {
     return "Not available";
   }
 }
 
-function normalizeStatus(value) {
-  if (value === true) {
-    return "enrolled";
-  }
-
-  if (
-    value === false ||
-    value === null ||
-    value === undefined
-  ) {
-    return "pending";
-  }
-
-  if (
-    typeof value === "object"
-  ) {
-    return normalizeStatus(
-      value.status ??
-        value.enrollmentStatus ??
-        value.registered ??
-        value.enrolled
-    );
-  }
-
-  const clean =
-    String(value)
-      .trim()
-      .toLowerCase();
-
-  if (
-    [
-      "enrolled",
-      "registered",
-      "ready",
-      "complete",
-      "completed",
-      "active",
-    ].includes(clean)
-  ) {
-    return "enrolled";
-  }
-
-  return "pending";
+function initials(name) {
+  return String(name || "Teacher")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
-function getBiometricStatus(
-  profile,
-  type
-) {
-  if (!profile) {
-    return "pending";
-  }
+function readAuthDetails(currentUser) {
+  if (!currentUser) return null;
 
-  const candidates = [
-    profile?.[type],
-    profile?.[`${type}Status`],
-    profile?.[
-      `${type}EnrollmentStatus`
-    ],
-    profile?.biometrics?.[type],
-    profile?.authentication?.[type],
-  ];
-
-  for (
-    const candidate of candidates
-  ) {
-    if (
-      candidate !== undefined
-    ) {
-      return normalizeStatus(
-        candidate
-      );
-    }
-  }
-
-  return "pending";
+  return {
+    uid: currentUser.uid,
+    email: currentUser.email || "",
+    emailVerified: currentUser.emailVerified,
+    createdAt: currentUser.metadata?.creationTime,
+    lastSignIn: currentUser.metadata?.lastSignInTime,
+    passwordEnabled: currentUser.providerData.some(
+      (provider) => provider.providerId === "password"
+    ),
+  };
 }
 
-function statusLabel(status) {
-  return status === "enrolled"
-    ? "Enrolled"
-    : "Pending";
+function actionError(error) {
+  switch (error?.code) {
+    case "auth/too-many-requests":
+      return "Too many requests. Please try again later.";
+    case "auth/network-request-failed":
+      return "Unable to connect. Check your internet connection.";
+    case "auth/requires-recent-login":
+      return "Please sign in again before continuing.";
+    case "auth/user-disabled":
+      return "This account has been disabled.";
+    default:
+      return "Unable to complete this action. Please try again.";
+  }
 }
 
-/* =========================================================
-   PREFERENCE TOGGLE
-========================================================= */
-
-function PreferenceToggle({
-  checked,
-  onChange,
-  label,
-  description,
-}) {
+function SectionHeading({ icon: Icon, label, title, description }) {
   return (
-    <div className="ac-preference-row">
-      <div className="ac-preference-copy">
-        <strong>
-          {label}
-        </strong>
-
-        <span>
-          {description}
-        </span>
-      </div>
-
-      <label className="ac-toggle">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) =>
-            onChange(
-              event.target.checked
-            )
-          }
-        />
-
-        <span className="ac-toggle-slider" />
-      </label>
-    </div>
-  );
-}
-
-/* =========================================================
-   BIOMETRIC
-========================================================= */
-
-function BiometricRow({
-  icon: Icon,
-  title,
-  description,
-  status,
-  tone,
-}) {
-  const enrolled =
-    status === "enrolled";
-
-  return (
-    <div className="ac-biometric-item">
-      <div
-        className={`ac-biometric-visual ${tone}`}
-      >
-        <Icon size={23} />
-      </div>
-
-      <div className="ac-biometric-copy">
-        <strong>
-          {title}
-        </strong>
-
-        <span>
-          {description}
-        </span>
-      </div>
-
-      <span
-        className={`ac-biometric-status ${
-          enrolled
-            ? "registered"
-            : "not-registered"
-        }`}
-      >
-        {statusLabel(status)}
+    <div className="ac-section-heading">
+      <span className="ac-section-icon">
+        <Icon size={20} aria-hidden="true" />
       </span>
+
+      <div>
+        <span className="ac-section-label">{label}</span>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
     </div>
   );
 }
 
-/* =========================================================
-   TEACHER ACCOUNT CENTER
-========================================================= */
+function InformationItem({ icon: Icon, label, value }) {
+  return (
+    <div className="ac-information-item">
+      <Icon size={17} aria-hidden="true" />
+      <div>
+        <span>{label}</span>
+        <strong>{value || "Not available"}</strong>
+      </div>
+    </div>
+  );
+}
 
-function AccountCenter() {
-  const {
-    user,
-  } = useAuth();
+export default function AccountCenter() {
+  const { user } = useAuth();
+  const uid = user?.uid;
 
-  const [
-    authProfile,
-    setAuthProfile,
-  ] = useState(null);
-
-  const [
-    authProfileLoading,
-    setAuthProfileLoading,
-  ] = useState(true);
-
-  const [
-    passwordLoading,
-    setPasswordLoading,
-  ] = useState(false);
-
-  const [
-    preferences,
-    setPreferences,
-  ] = useState({
-    disputeAlerts: true,
-    attendanceAlerts: true,
-    studentAlerts: true,
-    emailAlerts: false,
+  const [profileState, setProfileState] = useState({
+    uid: null,
+    data: null,
+    loading: true,
+    error: "",
+    cached: true,
+    missing: false,
   });
+  const [authDetails, setAuthDetails] = useState(null);
+  const [retry, setRetry] = useState(0);
+  const [busy, setBusy] = useState("");
+  const [message, setMessage] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const actionLock = useRef(false);
+  const currentUid = useRef(uid);
+  currentUid.current = uid;
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (currentUser) => {
+      setAuthDetails(readAuthDetails(currentUser));
+    });
+  }, []);
+
+  useEffect(() => {
+    setMessage(null);
+    setCopied(false);
+
+    if (!uid) {
+      setProfileState({
+        uid: null,
+        data: null,
+        loading: false,
+        error: "",
+        cached: true,
+        missing: false,
+      });
+      return;
+    }
+
+    setProfileState({
+      uid,
+      data: null,
+      loading: true,
+      error: "",
+      cached: true,
+      missing: false,
+    });
+
+    return onSnapshot(
+      doc(db, "users", uid),
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        setProfileState({
+          uid,
+          data: snapshot.exists() ? snapshot.data() : null,
+          loading: false,
+          error: "",
+          cached: snapshot.metadata.fromCache,
+          missing: !snapshot.exists(),
+        });
+      },
+      (error) => {
+        setProfileState({
+          uid,
+          data: null,
+          loading: false,
+          error:
+            error.code === "permission-denied"
+              ? "Your account does not have permission to load this profile."
+              : "Unable to load your account profile. Please try again.",
+          cached: true,
+          missing: false,
+        });
+      }
+    );
+  }, [uid, retry]);
+
+  const matchingProfile = profileState.uid === uid;
+  const loading = Boolean(uid) && (!matchingProfile || profileState.loading);
+  const profile = matchingProfile ? profileState.data : null;
+  const profileError = matchingProfile ? profileState.error : "";
+
+  // Context provides a display fallback while the profile loads.
+  const displayProfile = profile || user || {};
+  const session =
+    authDetails?.uid === uid ? authDetails : null;
 
   const fullName =
-    user?.fullName ||
-    [
-      user?.firstName,
-      user?.lastName,
-    ]
+    displayProfile.fullName ||
+    [displayProfile.firstName, displayProfile.lastName]
       .filter(Boolean)
       .join(" ") ||
     "Teacher";
 
-  const initials =
-    useMemo(
-      () =>
-        getInitials(
-          fullName
-        ),
-      [fullName]
-    );
+  const email = session?.email || displayProfile.email || "";
+  const department = displayProfile.department || "";
 
   const teacherId =
-    user?.teacherId ||
-    user?.teacherID ||
-    user?.staffId ||
-    user?.staffID ||
-    user?.idNumber ||
-    "Not available";
+    displayProfile.teacherId ||
+    displayProfile.teacherID ||
+    displayProfile.staffId ||
+    displayProfile.staffID ||
+    displayProfile.idNumber ||
+    "";
+
+  // Only confirmed profile values determine the account status.
+  const accountStatus =
+    profile?.active === true
+      ? "Active"
+      : profile?.active === false
+        ? "Inactive"
+        : "Unknown";
+
+  const statusTone =
+    accountStatus === "Active"
+      ? "success"
+      : accountStatus === "Inactive"
+        ? "danger"
+        : "warning";
 
   const role =
-    capitalize(
-      user?.role ||
-        "teacher"
-    );
+    displayProfile.role === "teacher"
+      ? "Teacher"
+      : displayProfile.role
+        ? String(displayProfile.role)
+        : "Not available";
 
-  const isActive =
-    user?.active !== false;
+  const liveLabel = loading
+    ? "Loading profile"
+    : profileError
+      ? "Profile unavailable"
+      : profileState.missing
+        ? "Profile not found"
+        : profileState.cached
+          ? "Cached profile"
+          : "Profile synced";
 
-  const storageKey =
-    useMemo(
-      () =>
-        user?.uid
-          ? `biosync:teacher-account-preferences:${user.uid}`
-          : "",
-      [user?.uid]
-    );
+  const canUsePassword = Boolean(session?.passwordEnabled);
+  const canVerifyEmail = Boolean(session && !session.emailVerified);
 
-  /* =======================================================
-     AUTH PROFILE
-  ======================================================= */
+  async function performAction(type, callback) {
+    if (actionLock.current) return;
 
-  useEffect(() => {
-    if (!user?.uid) {
-      setAuthProfile(null);
-      setAuthProfileLoading(false);
+    const actionUid = uid;
+    const currentUser = auth.currentUser;
 
-      return undefined;
-    }
-
-    setAuthProfileLoading(true);
-
-    const profileRef =
-      doc(
-        db,
-        "authProfile",
-        user.uid
-      );
-
-    const unsubscribe =
-      onSnapshot(
-        profileRef,
-
-        (snapshot) => {
-          if (
-            snapshot.exists()
-          ) {
-            setAuthProfile({
-              id: snapshot.id,
-              ...snapshot.data(),
-            });
-          } else {
-            setAuthProfile(null);
-          }
-
-          setAuthProfileLoading(
-            false
-          );
-        },
-
-        (error) => {
-          console.error(
-            "Unable to load teacher auth profile:",
-            error
-          );
-
-          setAuthProfile(null);
-          setAuthProfileLoading(
-            false
-          );
-        }
-      );
-
-    return unsubscribe;
-  }, [user?.uid]);
-
-  const rfidStatus =
-    getBiometricStatus(
-      authProfile,
-      "rfid"
-    );
-
-  const faceStatus =
-    getBiometricStatus(
-      authProfile,
-      "face"
-    );
-
-  const fingerprintStatus =
-    getBiometricStatus(
-      authProfile,
-      "fingerprint"
-    );
-
-  /* =======================================================
-     PREFERENCES
-  ======================================================= */
-
-  useEffect(() => {
-    if (!storageKey) {
+    if (!currentUser || currentUser.uid !== actionUid) {
+      setMessage({
+        type: "error",
+        text: "Please sign in again to manage your account.",
+      });
       return;
     }
 
-    try {
-      const saved =
-        localStorage.getItem(
-          storageKey
-        );
+    actionLock.current = true;
+    setBusy(type);
+    setMessage(null);
 
-      if (!saved) {
-        return;
+    try {
+      const result = await callback(currentUser);
+
+      if (currentUid.current === actionUid && result) {
+        setMessage({ type: "success", text: result });
+      }
+    } catch (error) {
+      if (currentUid.current === actionUid) {
+        setMessage({ type: "error", text: actionError(error) });
+      }
+    } finally {
+      actionLock.current = false;
+      setBusy("");
+    }
+  }
+
+  function resetPassword() {
+    return performAction("password", async (currentUser) => {
+      const supportsPassword = currentUser.providerData.some(
+        (provider) => provider.providerId === "password"
+      );
+
+      if (!supportsPassword || !currentUser.email) {
+        return "Password reset is unavailable for this sign-in method.";
       }
 
-      setPreferences(
-        (current) => ({
-          ...current,
-          ...JSON.parse(saved),
-        })
-      );
-    } catch (error) {
-      console.error(
-        "Unable to load teacher preferences:",
-        error
-      );
-    }
-  }, [storageKey]);
-
-  useEffect(() => {
-    if (!storageKey) {
-      return;
-    }
-
-    try {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify(
-          preferences
-        )
-      );
-    } catch (error) {
-      console.error(
-        "Unable to save teacher preferences:",
-        error
-      );
-    }
-  }, [
-    preferences,
-    storageKey,
-  ]);
-
-  function updatePreference(
-    key,
-    value
-  ) {
-    setPreferences(
-      (current) => ({
-        ...current,
-        [key]: value,
-      })
-    );
-
-    toast.success(
-      "Preference updated"
-    );
+      await sendPasswordResetEmail(auth, currentUser.email);
+      return `Password reset email sent to ${currentUser.email}. Check your inbox or spam folder.`;
+    });
   }
 
-  /* =======================================================
-     PASSWORD
-  ======================================================= */
+  function verifyEmail() {
+    return performAction("verification", async (currentUser) => {
+      await reload(currentUser);
+      setAuthDetails(readAuthDetails(currentUser));
 
-  async function handleChangePassword() {
-    const email =
-      user?.email ||
-      auth.currentUser?.email;
+      if (currentUser.emailVerified) {
+        return "Your email address is already verified.";
+      }
 
-    if (!email) {
-      toast.error(
-        "No email address is connected to this account."
-      );
-
-      return;
-    }
-
-    try {
-      setPasswordLoading(true);
-
-      await sendPasswordResetEmail(
-        auth,
-        email
-      );
-
-      toast.success(
-        "Password reset email sent."
-      );
-    } catch (error) {
-      console.error(
-        "Password reset error:",
-        error
-      );
-
-      toast.error(
-        "Unable to send password reset email."
-      );
-    } finally {
-      setPasswordLoading(false);
-    }
+      await sendEmailVerification(currentUser);
+      return "Verification email sent. Open the link, then select Refresh status here.";
+    });
   }
 
-  /* =======================================================
-     COPY UID
-  ======================================================= */
+  function refreshEmailStatus() {
+    return performAction("refresh", async (currentUser) => {
+      await reload(currentUser);
 
-  async function handleCopyUid() {
-    if (!user?.uid) {
-      toast.error(
-        "Account ID unavailable"
-      );
+      if (currentUid.current !== currentUser.uid) return "";
 
-      return;
-    }
+      setAuthDetails(readAuthDetails(currentUser));
+
+      return currentUser.emailVerified
+        ? "Your email address is verified."
+        : "Your email is still unverified. Open the link in your verification email.";
+    });
+  }
+
+  async function copyAccountId() {
+    if (!uid) return;
 
     try {
-      await navigator.clipboard.writeText(
-        user.uid
-      );
-
-      toast.success(
-        "Account ID copied"
-      );
+      await navigator.clipboard.writeText(uid);
+      setCopied(true);
+      setMessage({ type: "success", text: "Account ID copied." });
     } catch {
-      toast.error(
-        "Unable to copy Account ID"
-      );
+      setMessage({
+        type: "error",
+        text: "Unable to copy automatically. You can select and copy the Account ID below.",
+      });
     }
+  }
+
+  if (!uid) {
+    return (
+      <main className="teacher-account-center-page">
+        <div className="ac-notice ac-notice-warning">
+          Please sign in to view your Account Centre.
+        </div>
+      </main>
+    );
   }
 
   return (
-    <div className="teacher-account-center-page account-center-page">
-      <Toaster position="top-right" />
-
-      {/* ===================================================
-          HERO
-      =================================================== */}
-
-      <section className="ac-command-hero">
-        <div className="ac-command-grid" />
-
-        <div className="ac-command-copy">
+    <main className="teacher-account-center-page">
+      <header className="ac-profile-header">
+        <div className="ac-header-content">
           <div className="ac-eyebrow">
-            <ShieldCheck size={14} />
-
-            Teacher Identity Center
+            <ShieldCheck size={14} aria-hidden="true" />
+            BIOSYNC SENTINEL
           </div>
 
-          <h1>
-            Account Center
-          </h1>
-
-          <p>
-            Review your teacher profile,
-            department access, BioSync
-            authentication enrollment,
-            account security and notification
-            preferences.
+          <h1>Account <span className="ac-title-accent">Centre</span></h1>
+          <p className="ac-header-description">
+            Your teacher profile, account security and dashboard access.
           </p>
 
-          <div className="ac-command-meta">
-            <span>
-              <GraduationCap size={13} />
-              Teacher Account
-            </span>
+          <div className="ac-profile-summary">
+            <div className="ac-avatar" aria-hidden="true">
+              {initials(fullName)}
+            </div>
 
-            <span>
-              <Building2 size={13} />
-              {user?.department ||
-                "Department not assigned"}
-            </span>
+            <div className="ac-profile-copy">
+              <h2>{fullName}</h2>
+              <span>{email || "Email not available"}</span>
 
-            <span>
-              <ShieldCheck size={13} />
-              Role Protected
-            </span>
+              <div className="ac-profile-tags">
+                <span className="ac-chip ac-chip-cyan">
+                  <GraduationCap size={13} aria-hidden="true" />
+                  {role}
+                </span>
+
+                <span className="ac-chip ac-chip-neutral">
+                  <Building2 size={13} aria-hidden="true" />
+                  {department || "Department not assigned"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="ac-command-status">
-          <div
-            className={`ac-security-orb ${
-              isActive
-                ? "is-active"
-                : "is-inactive"
-            }`}
-          >
-            <ShieldCheck size={30} />
-          </div>
-
-          <strong>
-            {isActive
-              ? "Account Active"
-              : "Account Inactive"}
-          </strong>
-
-          <span>
-            BioSync access status
+        <div className="ac-header-status">
+          <span className={`ac-status-symbol ac-tone-${statusTone}`}>
+            <ShieldCheck size={27} aria-hidden="true" />
           </span>
-        </div>
-      </section>
 
-      {/* ===================================================
-          PROFILE
-      =================================================== */}
-
-      <section className="ac-profile-hero">
-        <div className="ac-profile-avatar-wrap">
-          <div className="ac-profile-avatar">
-            {initials}
-          </div>
+          <span className="ac-status-caption">Account status</span>
+          <strong>{loading ? "Loading…" : accountStatus}</strong>
 
           <span
-            className={`ac-avatar-status ${
-              isActive
-                ? "is-active"
-                : "is-inactive"
+            className={`ac-sync-label ${
+              !loading &&
+              !profileError &&
+              !profileState.missing &&
+              !profileState.cached
+                ? "is-live"
+                : ""
             }`}
-          />
+          >
+            <span aria-hidden="true" />
+            {liveLabel}
+          </span>
         </div>
+      </header>
 
-        <div className="ac-profile-details">
-          <div className="ac-profile-topline">
-            <h2>
-              {fullName}
-            </h2>
-
-            <span className="ac-role-badge">
-              <GraduationCap
-                size={13}
-              />
-
-              {role}
-            </span>
-          </div>
-
-          <p className="ac-profile-email">
-            <Mail size={14} />
-
-            {user?.email ||
-              "Email not available"}
-          </p>
-
-          <p className="ac-profile-description">
-            Authorized BioSync teacher account
-            for reviewing department attendance,
-            student disputes and attendance
-            analytics.
-          </p>
-        </div>
-
-        <div className="ac-profile-actions">
+      {profileError && (
+        <div className="ac-notice ac-notice-error" role="alert">
+          <span>{profileError}</span>
           <button
             type="button"
-            className="ac-button ac-button-primary"
-            onClick={
-              handleChangePassword
-            }
-            disabled={
-              passwordLoading
-            }
+            className="ac-button ac-button-secondary"
+            onClick={() => setRetry((value) => value + 1)}
           >
-            <KeyRound size={15} />
-
-            {passwordLoading
-              ? "Sending..."
-              : "Change Password"}
+            <RefreshCw size={15} aria-hidden="true" />
+            Retry
           </button>
         </div>
-      </section>
+      )}
 
-      {/* ===================================================
-          MAIN
-      =================================================== */}
+      {!loading && matchingProfile && profileState.missing && (
+        <div className="ac-notice ac-notice-warning" role="status">
+          Your profile document was not found. Contact your administrator to
+          check your account details.
+        </div>
+      )}
 
-      <div className="ac-main-grid">
+      {message && (
+        <div
+          className={`ac-notice ${
+            message.type === "error"
+              ? "ac-notice-error"
+              : "ac-notice-success"
+          }`}
+          role={message.type === "error" ? "alert" : "status"}
+          aria-live="polite"
+        >
+          <span>{message.text}</span>
+          <button
+            type="button"
+            className="ac-dismiss"
+            onClick={() => setMessage(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
-        {/* LEFT */}
-
+      <div className="ac-layout">
         <div className="ac-column">
+          <section className="ac-panel">
+            <SectionHeading
+              icon={UserRound}
+              label="IDENTITY"
+              title="Personal Information"
+              description="Details registered to your teacher account."
+            />
 
-          {/* INFORMATION */}
-
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <UserRound size={18} />
-              </div>
-
-              <div>
-                <span>
-                  Identity
-                </span>
-
-                <h3>
-                  Personal Information
-                </h3>
-
-                <p>
-                  Information registered to
-                  your BioSync teacher profile.
-                </p>
-              </div>
+            <div className="ac-information-grid">
+              <InformationItem
+                icon={UserRound}
+                label="Full name"
+                value={fullName}
+              />
+              <InformationItem
+                icon={IdCard}
+                label="Teacher / staff ID"
+                value={teacherId}
+              />
+              <InformationItem icon={Mail} label="Email" value={email} />
+              <InformationItem
+                icon={Phone}
+                label="Phone"
+                value={displayProfile.phoneNum || displayProfile.phone}
+              />
+              <InformationItem
+                icon={Building2}
+                label="Department"
+                value={department}
+              />
+              <InformationItem
+                icon={CalendarDays}
+                label="Member since"
+                value={formatDate(
+                  displayProfile.createdAt || session?.createdAt
+                )}
+              />
             </div>
 
-            <div className="ac-info-grid">
-              <div className="ac-info-item">
-                <UserRound size={16} />
-
-                <div>
-                  <span>
-                    Full Name
-                  </span>
-
-                  <strong>
-                    {fullName}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="ac-info-item">
-                <IdCard size={16} />
-
-                <div>
-                  <span>
-                    Teacher ID
-                  </span>
-
-                  <strong>
-                    {teacherId}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="ac-info-item">
-                <Mail size={16} />
-
-                <div>
-                  <span>
-                    Email
-                  </span>
-
-                  <strong>
-                    {user?.email ||
-                      "Not available"}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="ac-info-item">
-                <Phone size={16} />
-
-                <div>
-                  <span>
-                    Phone
-                  </span>
-
-                  <strong>
-                    {user?.phoneNum ||
-                      user?.phone ||
-                      "Not available"}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="ac-info-item">
-                <Building2 size={16} />
-
-                <div>
-                  <span>
-                    Department
-                  </span>
-
-                  <strong>
-                    {user?.department ||
-                      "Not available"}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="ac-info-item">
-                <CalendarDays size={16} />
-
-                <div>
-                  <span>
-                    Member Since
-                  </span>
-
-                  <strong>
-                    {formatDate(
-                      user?.createdAt
-                    )}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="ac-security-note">
-              <ShieldCheck size={15} />
-
-              Teacher identity, role and
-              department information are managed
-              by an administrator.
+            <div className="ac-panel-note">
+              <ShieldCheck size={16} aria-hidden="true" />
+              <span>
+                Your profile, role and department are managed by an
+                administrator. Contact them if any details need correcting.
+              </span>
             </div>
           </section>
 
-          {/* SECURITY */}
+          <section className="ac-panel">
+            <SectionHeading
+              icon={KeyRound}
+              label="SECURITY"
+              title="Login & Security"
+              description="Manage your password and email verification."
+            />
 
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <LockKeyhole size={18} />
-              </div>
-
-              <div>
-                <span>
-                  Security
-                </span>
-
-                <h3>
-                  Login & Security
-                </h3>
-
-                <p>
-                  Manage account password and
-                  login security.
-                </p>
-              </div>
-            </div>
-
-            <div className="ac-security-list">
-              <div className="ac-security-row">
-                <div className="ac-security-left">
-                  <div className="ac-security-icon">
-                    <KeyRound size={16} />
-                  </div>
-
+            <div className="ac-security-items">
+              <div className="ac-security-item">
+                <div className="ac-security-copy">
+                  <span className="ac-item-icon">
+                    <KeyRound size={18} aria-hidden="true" />
+                  </span>
                   <div>
-                    <strong>
-                      Account Password
-                    </strong>
-
-                    <span>
-                      Send a Firebase password
-                      reset email.
-                    </span>
+                    <h3>Password reset</h3>
+                    <p>
+                      {canUsePassword
+                        ? "Receive a link to reset your account password."
+                        : "Password reset is unavailable for this sign-in method."}
+                    </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  className="ac-small-button"
-                  onClick={
-                    handleChangePassword
-                  }
-                  disabled={
-                    passwordLoading
-                  }
+                  className="ac-button ac-button-primary"
+                  onClick={resetPassword}
+                  disabled={!canUsePassword || Boolean(busy)}
                 >
-                  {passwordLoading
-                    ? "Sending..."
-                    : "Update"}
+                  {busy === "password" ? (
+                    <LoaderCircle
+                      size={15}
+                      className="ac-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Mail size={15} aria-hidden="true" />
+                  )}
+                  {busy === "password"
+                    ? "Sending…"
+                    : "Send Password Reset Email"}
                 </button>
               </div>
 
-              <div className="ac-security-row">
-                <div className="ac-security-left">
-                  <div className="ac-security-icon">
-                    <ShieldCheck
-                      size={16}
-                    />
-                  </div>
-
+              <div className="ac-security-item">
+                <div className="ac-security-copy">
+                  <span className="ac-item-icon">
+                    <Mail size={18} aria-hidden="true" />
+                  </span>
                   <div>
-                    <strong>
-                      Firebase Session
-                    </strong>
-
-                    <span>
-                      Current dashboard session
-                      is authenticated.
-                    </span>
+                    <h3>Email verification</h3>
+                    <p>
+                      Confirm ownership of the email linked to your account.
+                    </p>
                   </div>
                 </div>
 
-                <span className="ac-success-chip">
-                  <CheckCircle2
-                    size={12}
-                  />
-
-                  Secured
+                <span
+                  className={`ac-chip ${
+                    session?.emailVerified
+                      ? "ac-chip-success"
+                      : "ac-chip-warning"
+                  }`}
+                >
+                  {session?.emailVerified && (
+                    <CheckCircle2 size={13} aria-hidden="true" />
+                  )}
+                  {session
+                    ? session.emailVerified
+                      ? "Verified"
+                      : "Unverified"
+                    : "Unknown"}
                 </span>
               </div>
-            </div>
-          </section>
 
-          {/* PREFERENCES */}
+              {session && (
+                <div className="ac-security-actions">
+                  {canVerifyEmail && (
+                    <button
+                      type="button"
+                      className="ac-button ac-button-secondary"
+                      disabled={Boolean(busy)}
+                      onClick={verifyEmail}
+                    >
+                      <Mail size={15} aria-hidden="true" />
+                      {busy === "verification"
+                        ? "Sending…"
+                        : "Send Verification Email"}
+                    </button>
+                  )}
 
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <Bell size={18} />
-              </div>
+                  <button
+                    type="button"
+                    className="ac-button ac-button-quiet"
+                    disabled={Boolean(busy)}
+                    onClick={refreshEmailStatus}
+                  >
+                    <RefreshCw
+                      size={15}
+                      className={busy === "refresh" ? "ac-spin" : ""}
+                      aria-hidden="true"
+                    />
+                    Refresh status
+                  </button>
+                </div>
+              )}
 
-              <div>
-                <span>
-                  Preferences
+              <div className="ac-security-item">
+                <div className="ac-security-copy">
+                  <span className="ac-item-icon">
+                    <LogIn size={18} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3>Current session</h3>
+                    <p>
+                      {session
+                        ? "You are signed in to the BioSync dashboard."
+                        : "Your sign-in session could not be confirmed."}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`ac-chip ${
+                    session ? "ac-chip-success" : "ac-chip-warning"
+                  }`}
+                >
+                  {session ? "Signed in" : "Unavailable"}
                 </span>
-
-                <h3>
-                  Notifications
-                </h3>
-
-                <p>
-                  Configure teacher account
-                  notification preferences.
-                </p>
               </div>
-            </div>
-
-            <div className="ac-preferences-list">
-              <PreferenceToggle
-                label="Student Disputes"
-                description="Receive notifications for new department attendance disputes."
-                checked={
-                  preferences.disputeAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "disputeAlerts",
-                    value
-                  )
-                }
-              />
-
-              <PreferenceToggle
-                label="Attendance Alerts"
-                description="Show notifications related to department attendance activity."
-                checked={
-                  preferences.attendanceAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "attendanceAlerts",
-                    value
-                  )
-                }
-              />
-
-              <PreferenceToggle
-                label="Student Alerts"
-                description="Receive relevant student account and attendance notifications."
-                checked={
-                  preferences.studentAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "studentAlerts",
-                    value
-                  )
-                }
-              />
-
-              <PreferenceToggle
-                label="Email Notifications"
-                description="Allow email notifications when supported."
-                checked={
-                  preferences.emailAlerts
-                }
-                onChange={(value) =>
-                  updatePreference(
-                    "emailAlerts",
-                    value
-                  )
-                }
-              />
             </div>
           </section>
         </div>
 
-        {/* RIGHT */}
-
         <div className="ac-column">
+          <section className="ac-panel">
+            <SectionHeading
+              icon={GraduationCap}
+              label="TEACHER WORKSPACE"
+              title="Your Access"
+              description="Open the tools available in your teacher dashboard."
+            />
 
-          {/* ACCOUNT */}
-
-          <section className="ac-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <GraduationCap
-                  size={18}
-                />
-              </div>
-
-              <div>
-                <span>
-                  Access
+            <div className="ac-access-list">
+              <Link to="/teacher/timetable" className="ac-access-link">
+                <span className="ac-access-icon">
+                  <CalendarDays size={19} aria-hidden="true" />
                 </span>
-
-                <h3>
-                  Teacher Account
-                </h3>
-
-                <p>
-                  Role and department access
-                  information.
-                </p>
-              </div>
-            </div>
-
-            <div className="ac-account-list">
-              <div className="ac-account-row">
-                <span>
-                  Teacher ID
-                </span>
-
-                <strong>
-                  {teacherId}
-                </strong>
-              </div>
-
-              <div className="ac-account-row">
-                <span>
-                  Department
-                </span>
-
-                <strong>
-                  {user?.department ||
-                    "Not available"}
-                </strong>
-              </div>
-
-              <div className="ac-account-row">
-                <span>
-                  Role
-                </span>
-
-                <strong>
-                  {role}
-                </strong>
-              </div>
-
-              <div className="ac-account-row">
-                <span>
-                  Account Status
-                </span>
-
-                <strong
-                  className={
-                    isActive
-                      ? "ac-text-success"
-                      : "ac-text-danger"
-                  }
-                >
-                  {isActive
-                    ? "Active"
-                    : "Inactive"}
-                </strong>
-              </div>
-
-              <div className="ac-account-id-block">
                 <div>
-                  <span>
-                    Firebase Account ID
-                  </span>
-
-                  <code>
-                    {user?.uid ||
-                      "Not available"}
-                  </code>
+                  <strong>Shared Timetable</strong>
+                  <span>View the schedule maintained by the administrator.</span>
                 </div>
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
 
-                <button
-                  type="button"
-                  className="ac-copy-button"
-                  onClick={
-                    handleCopyUid
-                  }
-                  disabled={
-                    !user?.uid
-                  }
-                >
-                  <Copy size={14} />
-
-                  Copy
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* BIOMETRICS */}
-
-          <section className="ac-card ac-biometric-card">
-            <div className="ac-card-header">
-              <div className="ac-card-icon">
-                <Fingerprint
-                  size={18}
-                />
-              </div>
-
-              <div>
-                <span>
-                  BioSync Identity
+              <Link to="/teacher/attendance" className="ac-access-link">
+                <span className="ac-access-icon">
+                  <ClipboardList size={19} aria-hidden="true" />
                 </span>
+                <div>
+                  <strong>Attendance Records</strong>
+                  <span>Review attendance within your permitted department.</span>
+                </div>
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
 
-                <h3>
-                  Authentication Methods
-                </h3>
-
-                <p>
-                  Biometric enrollment status
-                  from your authentication
-                  profile.
-                </p>
-              </div>
+              <Link to="/teacher/disputes" className="ac-access-link">
+                <span className="ac-access-icon">
+                  <ShieldCheck size={19} aria-hidden="true" />
+                </span>
+                <div>
+                  <strong>Student Disputes</strong>
+                  <span>Review attendance correction requests.</span>
+                </div>
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
             </div>
 
-            {authProfileLoading ? (
-              <div className="ac-loading-text">
-                Loading authentication status...
-              </div>
-            ) : (
-              <div className="ac-biometric-grid">
-                <BiometricRow
-                  icon={CreditCard}
-                  title="RFID Card"
-                  description="Identity claim used at BioSync terminals."
-                  status={
-                    rfidStatus
-                  }
-                  tone="ac-rfid"
-                />
-
-                <BiometricRow
-                  icon={ScanFace}
-                  title="Face Recognition"
-                  description="Biometric face template for identity verification."
-                  status={
-                    faceStatus
-                  }
-                  tone="ac-face"
-                />
-
-                <BiometricRow
-                  icon={Fingerprint}
-                  title="Fingerprint"
-                  description="Fallback biometric verification method."
-                  status={
-                    fingerprintStatus
-                  }
-                  tone="ac-fingerprint"
-                />
+            {!department && (
+              <div className="ac-panel-note ac-note-warning">
+                <Building2 size={16} aria-hidden="true" />
+                <span>
+                  Ask your administrator to assign a department so attendance
+                  and dispute access can be configured.
+                </span>
               </div>
             )}
 
-            <div className="ac-security-note">
-              <ShieldCheck size={15} />
-
-              Authentication enrollment can
-              only be modified using an
-              authorized BioSync enrollment
-              terminal.
+            <div className="ac-panel-note">
+              <ShieldCheck size={16} aria-hidden="true" />
+              <span>
+                Timetable editing and user management are handled by the
+                administrator. Access follows your account permissions.
+              </span>
             </div>
+          </section>
+
+          <section className="ac-panel">
+            <SectionHeading
+              icon={IdCard}
+              label="ACCOUNT"
+              title="Account Details"
+              description="Account history and support information."
+            />
+
+            <dl className="ac-account-details">
+              <div>
+                <dt>Account created</dt>
+                <dd>{formatDate(session?.createdAt)}</dd>
+              </div>
+              <div>
+                <dt>Last sign-in</dt>
+                <dd>{formatDate(session?.lastSignIn, true)}</dd>
+              </div>
+              <div>
+                <dt>Profile updated</dt>
+                <dd>{formatDate(displayProfile.updatedAt, true)}</dd>
+              </div>
+              <div>
+                <dt>Time zone</dt>
+                <dd>Malaysia · UTC+8</dd>
+              </div>
+            </dl>
+
+            <details className="ac-technical-details">
+              <summary>
+                <span>Account ID for support</span>
+                <ChevronDown size={16} aria-hidden="true" />
+              </summary>
+
+              <div className="ac-id-content">
+                <p>
+                  Share this ID with your administrator when reporting an
+                  account issue.
+                </p>
+
+                <code>{uid}</code>
+
+                <button
+                  type="button"
+                  className="ac-button ac-button-secondary"
+                  onClick={copyAccountId}
+                >
+                  {copied ? (
+                    <CheckCircle2 size={15} aria-hidden="true" />
+                  ) : (
+                    <Copy size={15} aria-hidden="true" />
+                  )}
+                  {copied ? "Copied" : "Copy Account ID"}
+                </button>
+              </div>
+            </details>
           </section>
         </div>
       </div>
-    </div>
+
+      <p className="ac-footer-note">
+        Account dates and times are displayed in Malaysia time.
+      </p>
+    </main>
   );
 }
-
-export default AccountCenter;

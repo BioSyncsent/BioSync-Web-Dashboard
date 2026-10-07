@@ -599,10 +599,37 @@ function AccountCenter() {
 
               Administrator Identity
             </span>
-
-            <h1>
-              {fullName}
-            </h1>
+<h1
+  style={{
+    fontFamily: '"Space Grotesk", "Inter", sans-serif',
+    fontSize: "clamp(28px, 3vw, 35px)",
+    fontWeight: 700,
+    letterSpacing: "-0.045em",
+    lineHeight: 1.2,
+    margin: "8px 0 12px",
+    background: "none",
+  }}
+>
+  <span
+    style={{
+      color: "#edf7fc",
+      WebkitTextFillColor: "#edf7fc",
+    }}
+  >
+    Account
+  </span>{" "}
+  <span
+    style={{
+      background: "linear-gradient(90deg, #bdf6fd, #00ddeb)",
+      backgroundClip: "text",
+      WebkitBackgroundClip: "text",
+      color: "transparent",
+      WebkitTextFillColor: "transparent",
+    }}
+  >
+    Centre
+  </span>
+</h1>
 
             <p>
               {current.email ||
