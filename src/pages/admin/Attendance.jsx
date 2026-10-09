@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Database,
   Download,
   Edit3,
   Eye,
@@ -678,8 +679,8 @@ export default function AdminAttendance() {
           <h1>Attendance <span>Management</span></h1>
           <p>Review attendance, manage corrections, and export your records.</p>
           <div className="aa-hero-tags">
-            <span>Firebase-connected records</span>
-            <span>Manual corrections</span>
+            <span><Database size={14} /> Firebase-connected records</span>
+            <span><Edit3 size={14} /> Manual corrections</span>
           </div>
         </div>
 
@@ -716,9 +717,17 @@ export default function AdminAttendance() {
                 aria-pressed={filters.status === key}
                 onClick={() => changeFilter("status", key)}
               >
-                <span className="aa-stat-top">{label}<Icon size={18} /></span>
-                <strong>{value.toLocaleString()}</strong>
-                <small>{key === "all" ? "Matching records" : "Click to filter"}</small>
+                <span className="aa-stat-glow" aria-hidden="true" />
+
+                <span className="aa-stat-icon">
+                  <Icon size={19} />
+                </span>
+
+                <span className="aa-stat-copy">
+                  <span className="aa-stat-label">{label}</span>
+                  <strong>{value.toLocaleString()}</strong>
+                  <small>{key === "all" ? "Matching records" : "Click to filter"}</small>
+                </span>
               </button>
             ))}
           </section>

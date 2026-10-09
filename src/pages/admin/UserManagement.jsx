@@ -656,6 +656,50 @@ function UserManagement() {
 
 
   /* =======================================================
+     SUMMARY CARDS (analytics-style metric cards)
+  ======================================================= */
+
+  const summaryCards = [
+    {
+      key: "total",
+      label: "Total Users",
+      value: summary.total,
+      helper: "All registered accounts",
+      tone: "cyan",
+      Icon: UsersRound,
+    },
+
+    {
+      key: "students",
+      label: "Students",
+      value: summary.students,
+      helper: "Attendance participants",
+      tone: "green",
+      Icon: GraduationCap,
+    },
+
+    {
+      key: "teachers",
+      label: "Teachers",
+      value: summary.teachers,
+      helper: "Teaching staff accounts",
+      tone: "amber",
+      Icon: BriefcaseBusiness,
+    },
+
+    {
+      key: "pending",
+      label: "Pending Enrollment",
+      value:
+        summary.pendingEnrollment,
+      helper: "Biometrics not completed",
+      tone: "red",
+      Icon: Fingerprint,
+    },
+  ];
+
+
+  /* =======================================================
      FILTERED USERS
   ======================================================= */
 
@@ -1336,79 +1380,43 @@ function UserManagement() {
       {/* SUMMARY */}
 
       <section className="um-summary-grid">
-        <div className="um-summary-card">
-          <div className="um-summary-icon blue">
-            <UsersRound
-              size={21}
-            />
-          </div>
+        {summaryCards.map(
+          ({
+            key,
+            label,
+            value,
+            helper,
+            tone,
+            Icon,
+          }) => (
+            <article
+              key={key}
+              className={`um-summary-card um-summary-${tone}`}
+            >
+              <div className="um-summary-glow" />
 
-          <div>
-            <span>
-              Total Users
-            </span>
+              <div className="um-summary-icon">
+                <Icon
+                  size={19}
+                />
+              </div>
 
-            <strong>
-              {summary.total}
-            </strong>
-          </div>
-        </div>
+              <div>
+                <span>
+                  {label}
+                </span>
 
-        <div className="um-summary-card">
-          <div className="um-summary-icon cyan">
-            <GraduationCap
-              size={21}
-            />
-          </div>
+                <strong>
+                  {value}
+                </strong>
 
-          <div>
-            <span>
-              Students
-            </span>
-
-            <strong>
-              {summary.students}
-            </strong>
-          </div>
-        </div>
-
-        <div className="um-summary-card">
-          <div className="um-summary-icon purple">
-            <BriefcaseBusiness
-              size={21}
-            />
-          </div>
-
-          <div>
-            <span>
-              Teachers
-            </span>
-
-            <strong>
-              {summary.teachers}
-            </strong>
-          </div>
-        </div>
-
-        <div className="um-summary-card">
-          <div className="um-summary-icon red">
-            <Fingerprint
-              size={21}
-            />
-          </div>
-
-          <div>
-            <span>
-              Pending Enrollment
-            </span>
-
-            <strong>
-              {
-                summary.pendingEnrollment
-              }
-            </strong>
-          </div>
-        </div>
+                <small>
+                  {helper}
+                </small>
+              </div>
+            </article>
+          )
+        )}
       </section>
 
 

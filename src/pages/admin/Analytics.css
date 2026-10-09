@@ -470,13 +470,28 @@
 
 .aaa-pie-layout {
   display: grid;
-  grid-template-columns: minmax(170px, 0.9fr) minmax(130px, 0.6fr);
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 16px;
+}
+
+/* fixed-height box so the donut scales to fit it */
+.aaa-pie-chart {
+  width: 100%;
+  min-width: 0;
+  height: 230px;
+}
+
+.aaa-pie-chart .recharts-wrapper,
+.aaa-pie-chart .recharts-surface {
+  max-width: 100%;
 }
 
 .aaa-method-list {
   display: flex;
+  min-width: 0;
   flex-direction: column;
 }
 
