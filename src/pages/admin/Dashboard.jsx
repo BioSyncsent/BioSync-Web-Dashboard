@@ -1,1042 +1,604 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  AlertCircle,
-  CheckCircle,
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import {
+  Activity,
+  ArrowUpRight,
+  BarChart3,
+  CheckCircle2,
   Clock3,
-  Eye,
-  Filter,
+  Fingerprint,
   MessageSquareWarning,
-  RefreshCw,
+  Monitor,
   Search,
   ShieldCheck,
-  Trash2,
+  Users,
   XCircle,
 } from "lucide-react";
 
-import {
-  useMemo,
-  useState,
-} from "react";
+import { db } from "../../firebase/firebase";
+import { useFirestoreSubscription } from "../../hooks/useFirestoreSubscription";
+import { subscribeToDisputesManagement } from "../../services/disputeService";
 
-import toast, {
-  Toaster,
-} from "react-hot-toast";
+import "./Dashboard.css";
 
-import {
-  useAuth,
-} from "../../contexts/AuthContext";
+/* Change this only if your attendance timestamp field has another name. */
+const ATTENDANCE_TIME_FIELD = "time";
 
-import {
-  useFirestoreSubscription,
-} from "../../hooks/useFirestoreSubscription";
+function toDate(value) {
+  if (!value) return null;
 
-import DisputeDetailsModal from "../../components/DisputeDetailsModal";
+  const date =
+    typeof value.toDate === "function"
+      ? value.toDate()
+      : value instanceof Date
+        ? value
+        : new Date(value);
 
-import {
-  deleteDisputeByAdmin,
-  subscribeToDisputesManagement,
-} from "../../services/disputeService";
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-import "./Disputes.css";
+function dayKey(date) {
+  if (!date) return "";
 
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kuala_Lumpur",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
 
-/* =========================================================
-   SUMMARY CARD (matches dashboard / analytics metric cards)
-========================================================= */
+function formatTime(date) {
+  if (!date) return "Unavailable";
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-  tone,
-  helper,
-}) {
+  return date.toLocaleString("en-MY", {
+    timeZone: "Asia/Kuala_Lumpur",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function statusOf(value) {
+  return String(value || "unknown").trim().toLowerCase();
+}
+
+function readable(value) {
+  return String(value || "Unavailable").replaceAll("_", " ");
+}
+
+function Metric({ icon: Icon, label, value, helper, tone = "cyan" }) {
   return (
-    <div
-      className={`dp-card dp-summary-card dp-tone-${tone}`}
-    >
-      <div
-        className="dp-summary-glow"
-        aria-hidden="true"
-      />
-
-      <div className="dp-summary-icon">
-        <Icon
-          size={21}
-          aria-hidden="true"
-        />
-      </div>
-
-      <div className="dp-summary-body">
+    <div className={`bad-metric bad-tone-${tone}`}>
+      <span className="bad-metric-icon">
+        <Icon size={21} aria-hidden="true" />
+      </span>
+      <div>
         <span>{label}</span>
-
-        <strong>
-          {value}
-        </strong>
-
-        {helper && (
-          <small>
-            {helper}
-          </small>
-        )}
+        <strong>{value}</strong>
+        <small>{helper}</small>
       </div>
     </div>
   );
 }
 
+export default function Dashboard() {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [fromCache, setFromCache] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+  const [scope, setScope] = useState("today");
+  const [search, setSearch] = useState("");
+  const [now, setNow] = useState(() => new Date());
 
-function StatusBadge({
-  status,
-}) {
-  const labels = {
-    pending:
-      "Pending",
+  const disputesSubscription = useFirestoreSubscription(
+    subscribeToDisputesManagement,
+    []
+  );
 
-    approved:
-      "Approved",
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
-    rejected:
-      "Rejected",
+  useEffect(() => {
+    setLoading(true);
+    setError("");
 
-    cancelled:
-      "Cancelled",
+    const attendanceQuery = query(
+      collection(db, "attendance"),
+      orderBy(ATTENDANCE_TIME_FIELD, "desc"),
+      limit(200)
+    );
 
-    under_review:
-      "Under Review",
+    return onSnapshot(
+      attendanceQuery,
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        setRecords(
+          snapshot.docs.map((document) => {
+            const data = document.data();
 
-    awaiting_information:
-      "Awaiting Information",
+            return {
+              ...data,
+              id: document.id,
+              recordTime: toDate(data[ATTENDANCE_TIME_FIELD]),
+              normalizedStatus: statusOf(data.status),
+            };
+          })
+        );
+        setFromCache(snapshot.metadata.fromCache);
+        setLoading(false);
+      },
+      (subscriptionError) => {
+        setError(subscriptionError.message || "Unable to load attendance.");
+        setLoading(false);
+      }
+    );
+  }, [retryKey]);
 
-    closed:
-      "Closed",
-  };
+  const today = dayKey(now);
+
+  const scopedRecords = useMemo(
+    () =>
+      scope === "today"
+        ? records.filter((record) => dayKey(record.recordTime) === today)
+        : records,
+    [records, scope, today]
+  );
+
+  const summary = useMemo(() => {
+    const count = (status) =>
+      scopedRecords.filter(
+        (record) => record.normalizedStatus === status
+      ).length;
+
+    const present = count("present");
+    const late = count("late");
+    const absent = count("absent");
+    const classified = present + late + absent;
+
+    return {
+      total: scopedRecords.length,
+      present,
+      late,
+      absent,
+      other: scopedRecords.length - classified,
+      rate: classified ? Math.round(((present + late) / classified) * 100) : null,
+    };
+  }, [scopedRecords]);
+
+  const visibleRecords = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    return scopedRecords.filter((record) =>
+      [
+        record.name,
+        record.studentName,
+        record.studentId,
+        record.status,
+        record.method,
+        record.authMethod,
+        record.authenticationMethod,
+        record.terminalId,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(term)
+    );
+  }, [scopedRecords, search]);
+
+  const week = useMemo(() => {
+    /* UTC dates here represent calendar days in Malaysia. */
+    const anchor = new Date(`${today}T12:00:00+08:00`);
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(anchor);
+      date.setUTCDate(date.getUTCDate() - (6 - index));
+
+      const key = dayKey(date);
+      const daily = records.filter(
+        (record) => dayKey(record.recordTime) === key
+      );
+
+      return {
+        key,
+        label: date.toLocaleDateString("en-MY", {
+          timeZone: "Asia/Kuala_Lumpur",
+          weekday: "short",
+        }),
+        present: daily.filter((r) => r.normalizedStatus === "present").length,
+        late: daily.filter((r) => r.normalizedStatus === "late").length,
+        absent: daily.filter((r) => r.normalizedStatus === "absent").length,
+      };
+    });
+  }, [records, today]);
+
+  const chartMax = Math.max(
+    1,
+    ...week.map((day) => day.present + day.late + day.absent)
+  );
+
+  const pendingDisputes = (disputesSubscription.data || []).filter(
+    (dispute) =>
+      ["pending", "under_review", "awaiting_information"].includes(
+        statusOf(dispute.status)
+      )
+  );
+
+  const unavailable = loading || Boolean(error);
+  const metricValue = (value) => (unavailable ? "—" : value);
+  const rateText =
+    unavailable || summary.rate === null ? "—" : `${summary.rate}%`;
 
   return (
-    <span
-      className={`dp-status dp-status-${status}`}
-    >
-      {labels[status] ||
-        status}
-    </span>
-  );
-}
+    <div className="bad-page">
+      <header className="bad-hero">
+        <div className="bad-hero-grid" aria-hidden="true" />
 
+        <div className="bad-hero-copy">
+          <span className="bad-eyebrow">
+            <ShieldCheck size={15} />
+            BioSync administration
+          </span>
 
-function formatDate(
-  value
-) {
-  if (!value) {
-    return "N/A";
-  }
+          <h1>Admin Dashboard</h1>
 
-  try {
-    const date =
-      value instanceof Date
-        ? value
-        : typeof value?.toDate ===
-            "function"
-          ? value.toDate()
-          : new Date(value);
+          <p>
+            Monitor attendance activity, follow up on disputes and access
+            your BioSync management tools.
+          </p>
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return "N/A";
-    }
-
-    return date.toLocaleString(
-      "en-MY",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
-  } catch {
-    return "N/A";
-  }
-}
-
-
-function Disputes() {
-  const {
-    user,
-  } = useAuth();
-
-  const subscription =
-    useFirestoreSubscription(
-      subscribeToDisputesManagement,
-      []
-    );
-
-  const disputes =
-    subscription.data ||
-    [];
-
-  const [
-    search,
-    setSearch,
-  ] = useState("");
-
-  const [
-    statusFilter,
-    setStatusFilter,
-  ] = useState("all");
-
-  const [
-    departmentFilter,
-    setDepartmentFilter,
-  ] = useState("all");
-
-  const [
-    sortBy,
-    setSortBy,
-  ] = useState("newest");
-
-  const [
-    selectedDispute,
-    setSelectedDispute,
-  ] = useState(null);
-
-  const [
-    deletingId,
-    setDeletingId,
-  ] = useState("");
-
-
-  /* =======================================================
-     DEPARTMENTS
-  ======================================================= */
-
-  const departments =
-    useMemo(() => {
-      return Array.from(
-        new Set(
-          disputes
-            .map(
-              (item) =>
-                item.department
-            )
-            .filter(Boolean)
-        )
-      ).sort();
-    }, [
-      disputes,
-    ]);
-
-
-  /* =======================================================
-     FILTER
-  ======================================================= */
-
-  const filtered =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase();
-
-      let result =
-        disputes.filter(
-          (dispute) => {
-            const searchable =
-              [
-                dispute.studentName,
-                dispute.studentId,
-                dispute.email,
-                dispute.department,
-                dispute.course,
-                dispute.reason,
-                dispute.description,
-                dispute.id,
-              ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-
-            const matchesSearch =
-              !query ||
-              searchable.includes(
-                query
-              );
-
-            const matchesStatus =
-              statusFilter ===
-                "all" ||
-              dispute.status ===
-                statusFilter;
-
-            const matchesDepartment =
-              departmentFilter ===
-                "all" ||
-              dispute.department ===
-                departmentFilter;
-
-            return (
-              matchesSearch &&
-              matchesStatus &&
-              matchesDepartment
-            );
-          }
-        );
-
-      result = [
-        ...result,
-      ];
-
-      result.sort(
-        (
-          first,
-          second
-        ) => {
-          const firstTime =
-            first.submittedAt
-              ?.getTime?.() ||
-            0;
-
-          const secondTime =
-            second.submittedAt
-              ?.getTime?.() ||
-            0;
-
-          if (
-            sortBy ===
-            "oldest"
-          ) {
-            return (
-              firstTime -
-              secondTime
-            );
-          }
-
-          return (
-            secondTime -
-            firstTime
-          );
-        }
-      );
-
-      return result;
-    }, [
-      disputes,
-      search,
-      statusFilter,
-      departmentFilter,
-      sortBy,
-    ]);
-
-
-  /* =======================================================
-     SUMMARY
-  ======================================================= */
-
-  const summary =
-    useMemo(
-      () => ({
-        total:
-          disputes.length,
-
-        pending:
-          disputes.filter(
-            (item) =>
-              item.status ===
-              "pending"
-          ).length,
-
-        approved:
-          disputes.filter(
-            (item) =>
-              item.status ===
-              "approved"
-          ).length,
-
-        rejected:
-          disputes.filter(
-            (item) =>
-              item.status ===
-              "rejected"
-          ).length,
-
-        cancelled:
-          disputes.filter(
-            (item) =>
-              item.status ===
-              "cancelled"
-          ).length,
-      }),
-      [
-        disputes,
-      ]
-    );
-
-
-  /* =======================================================
-     DELETE
-  ======================================================= */
-
-  async function handleDelete(
-    dispute
-  ) {
-    const confirmed =
-      window.confirm(
-        `Delete dispute from ${dispute.studentName || "this student"}?\n\nThis removes the dispute record permanently. The deletion will still be recorded in Audit Logs.`
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setDeletingId(
-      dispute.id
-    );
-
-    try {
-      await deleteDisputeByAdmin(
-        dispute,
-        user
-      );
-
-      if (
-        selectedDispute?.id ===
-        dispute.id
-      ) {
-        setSelectedDispute(
-          null
-        );
-      }
-
-      toast.success(
-        "Dispute deleted successfully"
-      );
-    } catch (error) {
-      console.error(
-        "Delete dispute error:",
-        error
-      );
-
-      toast.error(
-        error?.message ||
-          "Unable to delete dispute."
-      );
-    } finally {
-      setDeletingId("");
-    }
-  }
-
-
-  /* =======================================================
-     LOADING
-  ======================================================= */
-
-  if (
-    subscription.loading
-  ) {
-    return (
-      <div className="dp-page">
-        <div className="dp-loading-card">
-          <div className="dp-skeleton" />
-          <div className="dp-skeleton" />
-          <div className="dp-skeleton" />
-        </div>
-      </div>
-    );
-  }
-
-
-  /* =======================================================
-     ERROR
-  ======================================================= */
-
-  if (
-    subscription.error
-  ) {
-    return (
-      <div className="dp-page">
-        <div className="dp-card dp-error-state">
-          <AlertCircle
-            size={34}
-          />
-
-          <div>
-            <h2>
-              Unable to load disputes
-            </h2>
-
-            <p>
-              {subscription.error
-                .message ||
-                "Unable to load dispute records."}
-            </p>
+          <div className="bad-hero-tags">
+            <span>
+              <Activity size={14} />
+              {loading
+                ? "Loading attendance"
+                : error
+                  ? "Attendance unavailable"
+                  : fromCache
+                    ? "Cached attendance data"
+                    : "Attendance subscription active"}
+            </span>
+            <span>
+              <Clock3 size={14} />
+              {now.toLocaleDateString("en-MY", {
+                timeZone: "Asia/Kuala_Lumpur",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
           </div>
+        </div>
 
+        <div className="bad-hero-score">
+          <div
+            className="bad-ring"
+            style={{
+              "--score":
+                unavailable || summary.rate === null ? 0 : summary.rate,
+            }}
+            aria-label={`Recorded attendance rate: ${rateText}`}
+          >
+            <div>
+              <strong>{rateText}</strong>
+              <span>Recorded rate</span>
+            </div>
+          </div>
+          <strong>{scope === "today" ? "Today’s attendance" : "Recent attendance"}</strong>
+          <small>Present + late / classified records</small>
+        </div>
+      </header>
+
+      <div className="bad-toolbar">
+        <div>
+          <h2>Attendance overview</h2>
+          <p>Based on the latest 200 records · Malaysia time</p>
+        </div>
+
+        <div className="bad-scope" aria-label="Attendance period">
           <button
             type="button"
-            className="dp-btn dp-btn-primary"
-            onClick={
-              subscription.retry
-            }
+            aria-pressed={scope === "today"}
+            onClick={() => setScope("today")}
           >
-            <RefreshCw
-              size={16}
-            />
-
-            Retry
+            Today
+          </button>
+          <button
+            type="button"
+            aria-pressed={scope === "recent"}
+            onClick={() => setScope("recent")}
+          >
+            Recent records
           </button>
         </div>
       </div>
-    );
-  }
 
-
-  return (
-    <div className="dp-page">
-      <Toaster position="top-right" />
-
-      {/* ===================================================
-          HERO
-      =================================================== */}
-
-      <section className="dp-admin-hero">
-        <div className="dp-admin-grid" />
-
-        <div className="dp-admin-copy">
-          <span className="dp-admin-eyebrow">
-            <ShieldCheck
-              size={14}
-            />
-
-            Administrator Oversight
-          </span>
-
-          <h1>
-            Attendance Disputes
-          </h1>
-
-          <p>
-            Monitor disputes across BioSync,
-            review teacher decisions and manage
-            obsolete dispute records.
-          </p>
-
-          <div className="dp-admin-meta">
-            <span>
-              <MessageSquareWarning
-                size={13}
-              />
-
-              {
-                summary.total
-              }{" "}
-              total records
-            </span>
-
-            <span>
-              <Clock3
-                size={13}
-              />
-
-              {
-                summary.pending
-              }{" "}
-              awaiting review
-            </span>
-
-            <span className="dp-admin-live">
-              <i />
-
-              Live Firestore sync
-            </span>
-          </div>
+      {error && (
+        <div className="bad-error" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={() => setRetryKey((key) => key + 1)}>
+            Retry attendance
+          </button>
         </div>
+      )}
 
-        <div className="dp-admin-hero-icon">
-          <MessageSquareWarning
-            size={40}
-          />
-
-          <strong>
-            {
-              summary.pending
-            }
-          </strong>
-
-          <span>
-            Pending
-          </span>
-        </div>
-      </section>
-
-
-      {/* ===================================================
-          SUMMARY
-      =================================================== */}
-
-      <div className="dp-summary-grid">
-        <SummaryCard
-          icon={
-            MessageSquareWarning
-          }
-          label="Total"
-          value={
-            summary.total
-          }
-          helper="All disputes"
-          tone="blue"
+      <div className="bad-metrics">
+        <Metric
+          icon={Users}
+          label="Total records"
+          value={metricValue(summary.total)}
+          helper="Selected period"
         />
-
-        <SummaryCard
-          icon={Clock3}
-          label="Pending"
-          value={
-            summary.pending
-          }
-          helper="Needs teacher review"
-          tone="yellow"
-        />
-
-        <SummaryCard
-          icon={CheckCircle}
-          label="Approved"
-          value={
-            summary.approved
-          }
-          helper="Accepted requests"
+        <Metric
+          icon={CheckCircle2}
+          label="Present"
+          value={metricValue(summary.present)}
+          helper="Recorded as present"
           tone="green"
         />
-
-        <SummaryCard
+        <Metric
+          icon={Clock3}
+          label="Late"
+          value={metricValue(summary.late)}
+          helper="Recorded as late"
+          tone="amber"
+        />
+        <Metric
           icon={XCircle}
-          label="Rejected"
-          value={
-            summary.rejected
-          }
-          helper="Rejected requests"
+          label="Absent"
+          value={metricValue(summary.absent)}
+          helper="Explicit absence records"
           tone="red"
         />
-
-        <SummaryCard
-          icon={AlertCircle}
-          label="Cancelled"
-          value={
-            summary.cancelled
-          }
-          helper="Cancelled by students"
-          tone="purple"
+        <Metric
+          icon={Activity}
+          label="Attendance rate"
+          value={rateText}
+          helper="Present + late"
         />
       </div>
 
-
-      {/* ===================================================
-          FILTERS
-      =================================================== */}
-
-      <div className="dp-card dp-filter-card">
-        <div className="dp-filter-heading">
-          <div>
-            <Filter
-              size={17}
-            />
-
+      <div className="bad-content-grid">
+        <section className="bad-card">
+          <div className="bad-card-heading">
             <div>
-              <strong>
-                Find Disputes
-              </strong>
-
-              <span>
-                Search and filter dispute records.
-              </span>
+              <span className="bad-eyebrow">Attendance activity</span>
+              <h2>Last seven days</h2>
+              <p>Daily counts within the loaded attendance records.</p>
             </div>
+            <span className="bad-heading-icon">
+              <BarChart3 size={21} />
+            </span>
           </div>
 
-          <span>
-            {filtered.length} result
-            {filtered.length ===
-            1
-              ? ""
-              : "s"}
-          </span>
-        </div>
+          {unavailable ? (
+            <div className="bad-empty">
+              {loading ? "Loading activity…" : "Activity unavailable."}
+            </div>
+          ) : (
+            <>
+              <div className="bad-chart">
+                {week.map((day) => (
+                  <div className="bad-chart-day" key={day.key}>
+                    <div className="bad-chart-track">
+                      <div
+                        className="bad-chart-stack"
+                        title={`${day.key}: ${day.present} present, ${day.late} late, ${day.absent} absent`}
+                      >
+                        <span
+                          className="bad-bar-absent"
+                          style={{ height: `${(day.absent / chartMax) * 100}%` }}
+                        />
+                        <span
+                          className="bad-bar-late"
+                          style={{ height: `${(day.late / chartMax) * 100}%` }}
+                        />
+                        <span
+                          className="bad-bar-present"
+                          style={{ height: `${(day.present / chartMax) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <strong>{day.present + day.late + day.absent}</strong>
+                    <span>{day.label}</span>
+                  </div>
+                ))}
+              </div>
 
-        <div className="dp-search-box">
-          <Search size={18} />
+              <div className="bad-legend">
+                <span><i className="bad-bar-present" />Present</span>
+                <span><i className="bad-bar-late" />Late</span>
+                <span><i className="bad-bar-absent" />Absent</span>
+              </div>
+            </>
+          )}
 
-          <input
-            value={search}
-            onChange={(
-              event
-            ) =>
-              setSearch(
-                event.target.value
-              )
-            }
-            placeholder="Search student, ID, course, department, reason or dispute ID..."
-          />
-        </div>
+          <p className="bad-footnote">
+            Missing attendance records are not automatically counted as absent.
+            {summary.other > 0 && !unavailable
+              ? ` ${summary.other} records in the selected period have other statuses.`
+              : ""}
+          </p>
+        </section>
 
-        <div className="dp-filter-grid">
-          <div className="dp-filter-group">
-            <label>
-              Status
-            </label>
-
-            <select
-              value={
-                statusFilter
-              }
-              onChange={(
-                event
-              ) =>
-                setStatusFilter(
-                  event.target.value
-                )
-              }
-            >
-              <option value="all">
-                All Statuses
-              </option>
-
-              <option value="pending">
-                Pending
-              </option>
-
-              <option value="under_review">
-                Under Review
-              </option>
-
-              <option value="awaiting_information">
-                Awaiting Information
-              </option>
-
-              <option value="approved">
-                Approved
-              </option>
-
-              <option value="rejected">
-                Rejected
-              </option>
-
-              <option value="cancelled">
-                Cancelled
-              </option>
-
-              <option value="closed">
-                Closed
-              </option>
-            </select>
+        <section className="bad-card">
+          <div className="bad-card-heading">
+            <div>
+              <span className="bad-eyebrow">Requires attention</span>
+              <h2>Dispute follow-up</h2>
+              <p>Open requests awaiting progress.</p>
+            </div>
+            <span className="bad-heading-icon">
+              <MessageSquareWarning size={21} />
+            </span>
           </div>
 
+          {disputesSubscription.loading ? (
+            <div className="bad-empty">Loading disputes…</div>
+          ) : disputesSubscription.error ? (
+            <div className="bad-empty">
+              <p>Unable to load disputes.</p>
+              <button
+                type="button"
+                className="bad-button"
+                onClick={disputesSubscription.retry}
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="bad-attention-count">
+                <strong>{pendingDisputes.length}</strong>
+                <span>open dispute requests</span>
+              </div>
 
-          <div className="dp-filter-group">
-            <label>
-              Department
-            </label>
-
-            <select
-              value={
-                departmentFilter
-              }
-              onChange={(
-                event
-              ) =>
-                setDepartmentFilter(
-                  event.target.value
-                )
-              }
-            >
-              <option value="all">
-                All Departments
-              </option>
-
-              {departments.map(
-                (department) => (
-                  <option
-                    key={
-                      department
-                    }
-                    value={
-                      department
-                    }
+              <div className="bad-dispute-list">
+                {pendingDisputes.slice(0, 3).map((dispute) => (
+                  <Link
+                    to="/admin/disputes"
+                    className="bad-dispute"
+                    key={dispute.id}
                   >
-                    {department}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
+                    <div>
+                      <strong>{dispute.studentName || "Student"}</strong>
+                      <span>{dispute.reason || "Attendance correction"}</span>
+                    </div>
+                    <ArrowUpRight size={16} />
+                  </Link>
+                ))}
 
+                {pendingDisputes.length === 0 && (
+                  <p className="bad-empty">No open disputes.</p>
+                )}
+              </div>
+            </>
+          )}
 
-          <div className="dp-filter-group">
-            <label>
-              Sort
-            </label>
-
-            <select
-              value={sortBy}
-              onChange={(
-                event
-              ) =>
-                setSortBy(
-                  event.target.value
-                )
-              }
-            >
-              <option value="newest">
-                Newest First
-              </option>
-
-              <option value="oldest">
-                Oldest First
-              </option>
-            </select>
-          </div>
-        </div>
+          <Link to="/admin/disputes" className="bad-button">
+            Manage disputes <ArrowUpRight size={15} />
+          </Link>
+        </section>
       </div>
 
-
-      {/* ===================================================
-          TABLE
-      =================================================== */}
-
-      <div className="dp-card dp-table-card">
-        <div className="dp-table-header">
+      <section className="bad-card bad-records">
+        <div className="bad-card-heading">
           <div>
-            <span className="dp-table-eyebrow">
-              Administrative Records
-            </span>
-
-            <h2>
-              All Disputes
-            </h2>
-
-            <p>
-              Teachers approve or reject.
-              Administrators oversee and can
-              remove obsolete records.
-            </p>
+            <span className="bad-eyebrow">Attendance records</span>
+            <h2>Recent activity</h2>
+            <p>Showing up to 10 matching records for the selected period.</p>
           </div>
+          <Link to="/admin/attendance" className="bad-text-link">
+            View attendance <ArrowUpRight size={15} />
+          </Link>
         </div>
 
+        <label className="bad-search">
+          <Search size={17} aria-hidden="true" />
+          <input
+            aria-label="Search attendance records"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search name, student ID, status or terminal…"
+          />
+        </label>
 
-        <div className="dp-table-scroll">
-          <table className="dp-table">
+        <div className="bad-table-scroll">
+          <table className="bad-table">
             <thead>
               <tr>
-                <th>
-                  Student
-                </th>
-
-                <th>
-                  Department
-                </th>
-
-                <th>
-                  Attendance
-                </th>
-
-                <th>
-                  Reason
-                </th>
-
-                <th>
-                  Submitted
-                </th>
-
-                <th>
-                  Status
-                </th>
-
-                <th>
-                  Actions
-                </th>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Verification</th>
+                <th>Terminal</th>
+                <th>Recorded time</th>
               </tr>
             </thead>
-
             <tbody>
-              {filtered.length ===
-              0 ? (
+              {unavailable || visibleRecords.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan="7"
-                    className="dp-empty-cell"
-                  >
-                    <MessageSquareWarning
-                      size={42}
-                    />
-
-                    <p>
-                      No disputes found.
-                    </p>
+                  <td colSpan={5} className="bad-empty">
+                    {loading
+                      ? "Loading attendance…"
+                      : error
+                        ? "Attendance unavailable."
+                        : "No matching attendance records."}
                   </td>
                 </tr>
               ) : (
-                filtered.map(
-                  (
-                    dispute
-                  ) => (
-                    <tr
-                      key={
-                        dispute.id
-                      }
-                    >
-                      <td>
-                        <div className="dp-student-cell">
-                          <span>
-                            {dispute.studentName
-                              ?.charAt(
-                                0
-                              )
-                              .toUpperCase() ||
-                              "S"}
-                          </span>
-
-                          <div>
-                            <strong>
-                              {
-                                dispute.studentName
-                              }
-                            </strong>
-
-                            <small>
-                              {
-                                dispute.studentId
-                              }
-                            </small>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className="dp-department-badge">
-                          {dispute.department ||
-                            "N/A"}
+                visibleRecords.slice(0, 10).map((record) => (
+                  <tr key={record.id}>
+                    <td>
+                      <div className="bad-student">
+                        <span>
+                          {(record.name || record.studentName || "S")
+                            .charAt(0)
+                            .toUpperCase()}
                         </span>
-                      </td>
-
-                      <td>
-                        <div className="dp-attendance-cell">
+                        <div>
                           <strong>
-                            {
-                              dispute.originalStatus
-                            }
+                            {record.name || record.studentName || "Unknown student"}
                           </strong>
-
-                          <small>
-                            Requested:{" "}
-                            {
-                              dispute.requestedStatus
-                            }
-                          </small>
+                          <small>{record.studentId || "ID unavailable"}</small>
                         </div>
-                      </td>
-
-                      <td>
-                        <span className="dp-reason-cell">
-                          {
-                            dispute.reason
-                          }
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="dp-date-cell">
-                          <strong>
-                            {formatDate(
-                              dispute.submittedAt
-                            )}
-                          </strong>
-                        </div>
-                      </td>
-
-                      <td>
-                        <StatusBadge
-                          status={
-                            dispute.status
-                          }
-                        />
-                      </td>
-
-                      <td>
-                        <div className="dp-action-group">
-                          <button
-                            type="button"
-                            className="dp-view-button"
-                            onClick={() =>
-                              setSelectedDispute(
-                                dispute
-                              )
-                            }
-                          >
-                            <Eye
-                              size={15}
-                            />
-
-                            View
-                          </button>
-
-                          <button
-                            type="button"
-                            className="dp-delete-button"
-                            disabled={
-                              deletingId ===
-                              dispute.id
-                            }
-                            onClick={() =>
-                              handleDelete(
-                                dispute
-                              )
-                            }
-                          >
-                            {deletingId ===
-                            dispute.id ? (
-                              <RefreshCw
-                                size={15}
-                                className="dp-spin"
-                              />
-                            ) : (
-                              <Trash2
-                                size={15}
-                              />
-                            )}
-
-                            {deletingId ===
-                            dispute.id
-                              ? "Deleting"
-                              : "Delete"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                )
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className={`bad-status bad-status-${["present", "late", "absent"].includes(record.normalizedStatus) ? record.normalizedStatus : "other"}`}
+                      >
+                        {readable(record.normalizedStatus)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="bad-method">
+                        <Fingerprint size={14} />
+                        {readable(
+                          record.method ||
+                          record.authMethod ||
+                          record.authenticationMethod
+                        )}
+                      </span>
+                    </td>
+                    <td>{record.terminalId || "Unavailable"}</td>
+                    <td>{formatTime(record.recordTime)}</td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-
-      {/* ===================================================
-          DETAILS
-      =================================================== */}
-
-      {selectedDispute && (
-        <DisputeDetailsModal
-          dispute={
-            selectedDispute
-          }
-          readOnly
-          onClose={() =>
-            setSelectedDispute(
-              null
-            )
-          }
-        />
-      )}
+      <nav className="bad-quick-links" aria-label="Admin quick actions">
+        {[
+          ["/admin/attendance", "Attendance", "Manage attendance records", Activity],
+          ["/admin/disputes", "Disputes", "Follow up on correction requests", MessageSquareWarning],
+          ["/admin/analytics", "Analytics", "Explore attendance performance", BarChart3],
+          ["/admin/devices", "Devices", "Track terminal development", Monitor],
+        ].map(([path, label, description, Icon]) => (
+          <Link to={path} key={path}>
+            <span className="bad-heading-icon"><Icon size={20} /></span>
+            <div>
+              <strong>{label}</strong>
+              <small>{description}</small>
+            </div>
+            <ArrowUpRight size={17} />
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }
-
-export default Disputes;
