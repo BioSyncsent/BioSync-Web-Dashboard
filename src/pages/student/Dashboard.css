@@ -340,6 +340,8 @@
 
 /* =========================================================
    STAT CARDS
+   (same design as the attendance page summary cards:
+    left accent bar, rounded-square icon tile, corner glow)
 ========================================================= */
 
 .sd-stat-grid {
@@ -351,15 +353,20 @@
 
 .sd-stat-card {
   --sd-tone: var(--sd-cyan);
+  --sd-tone-soft: rgba(0, 221, 235, 0.1);
 
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 3px;
   min-width: 0;
-  min-height: 130px;
-  flex-direction: column;
-  justify-content: space-between;
+  min-height: 140px;
   overflow: hidden;
-  padding: 18px;
+  padding: 20px 16px 20px 24px;
   border: 1px solid var(--sd-border);
   border-radius: 11px;
   background:
@@ -373,9 +380,31 @@
     border-color 160ms ease;
 }
 
-.sd-stat-card::before,
+/* colored accent bar on the left edge */
+.sd-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  width: 3px;
+  background: var(--sd-tone);
+  pointer-events: none;
+}
+
+/* soft tinted circle in the bottom-right corner */
 .sd-stat-card::after {
-  display: none;
+  content: "";
+  position: absolute;
+  right: -34px;
+  bottom: -52px;
+  display: block;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: var(--sd-tone-soft);
+  pointer-events: none;
 }
 
 .sd-stat-card:hover {
@@ -383,74 +412,96 @@
   background: rgba(0, 221, 235, 0.065);
 }
 
+/* let icon + label sit directly on the card grid */
 .sd-stat-top {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: contents;
 }
 
+/* rounded-square icon tile, spans the full height on the left */
 .sd-stat-icon {
+  position: relative;
+  z-index: 1;
   display: grid;
-  width: 36px;
-  height: 36px;
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  align-self: center;
+  width: 46px;
+  height: 46px;
   flex-shrink: 0;
   place-items: center;
-  border: 1px solid rgba(125, 190, 207, 0.18);
-  border-radius: 50%;
-  background: rgba(125, 190, 207, 0.025);
+  border: 1px solid rgba(125, 190, 207, 0.14);
+  border-radius: 13px;
+  background: var(--sd-tone-soft);
   color: var(--sd-tone);
 }
 
 .sd-stat-label {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
   color: var(--sd-text);
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .sd-stat-value {
   position: relative;
   z-index: 1;
-  margin-top: 12px;
-  color: var(--sd-tone);
-  font-size: 30px;
-  font-weight: 600;
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 0;
+  color: #f2fbff;
+  font-size: 28px;
+  font-weight: 700;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
 }
 
 .sd-stat-helper {
   position: relative;
   z-index: 1;
-  margin-top: 6px;
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+  margin-top: 0;
   color: var(--sd-muted);
   font-size: 10px;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .sd-stat-primary {
   --sd-tone: var(--sd-cyan);
+  --sd-tone-soft: rgba(0, 221, 235, 0.1);
 }
 
 .sd-stat-success {
   --sd-tone: var(--sd-green);
+  --sd-tone-soft: rgba(82, 227, 170, 0.1);
 }
 
 .sd-stat-warning {
   --sd-tone: var(--sd-amber);
+  --sd-tone-soft: rgba(251, 191, 36, 0.1);
 }
 
 .sd-stat-danger {
   --sd-tone: var(--sd-red);
+  --sd-tone-soft: rgba(251, 139, 130, 0.1);
 }
 
 .sd-stat-info {
   --sd-tone: var(--sd-blue);
+  --sd-tone-soft: rgba(124, 196, 255, 0.1);
 }
 
 .sd-stat-purple {
   --sd-tone: var(--sd-violet);
+  --sd-tone-soft: rgba(183, 166, 255, 0.1);
 }
 
 /* =========================================================
@@ -458,12 +509,26 @@
 ========================================================= */
 
 .sd-insight-card {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 13px;
-  padding: 15px 17px;
+  overflow: hidden;
+  padding: 15px 17px 15px 22px;
   border: 1px solid;
   border-radius: 11px;
+}
+
+/* accent bar on the left edge, same as the stat cards */
+.sd-insight-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: currentColor;
+  pointer-events: none;
 }
 
 .sd-insight-icon {
@@ -472,7 +537,7 @@
   height: 39px;
   flex-shrink: 0;
   place-items: center;
-  border-radius: 50%;
+  border-radius: 12px;
 }
 
 .sd-insight-card strong {
@@ -1157,7 +1222,7 @@
 }
 
 .sd-skeleton-card {
-  min-height: 130px;
+  min-height: 140px;
   padding: 18px;
   border: 1px solid var(--sd-border);
   border-radius: 11px;

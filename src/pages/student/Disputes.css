@@ -347,6 +347,8 @@
 
 /* =========================================================
    SUMMARY
+   (same card design as the attendance summary cards:
+    left accent bar, rounded-square icon tile, corner glow)
 ========================================================= */
 
 .student-disputes-page .sd-summary-grid {
@@ -357,15 +359,50 @@
 
 .student-disputes-page .sd-summary-card {
   --sdp-tone: var(--sdp-cyan);
+  --sdp-tone-soft: rgba(0, 221, 235, 0.1);
 
+  position: relative;
   display: flex;
-  min-height: 112px;
+  min-width: 0;
+  min-height: 148px;
   align-items: center;
-  gap: 12px;
-  padding: 18px;
+  gap: 14px;
+  overflow: hidden;
+  padding: 22px 16px 22px 26px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 221, 235, 0.035),
+      rgba(0, 0, 0, 0.04)
+    );
   transition:
     background 160ms ease,
     border-color 160ms ease;
+}
+
+/* colored accent bar on the left edge */
+.student-disputes-page .sd-summary-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--sdp-tone);
+  pointer-events: none;
+}
+
+/* soft tinted circle in the bottom-right corner */
+.student-disputes-page .sd-summary-card::after {
+  content: "";
+  position: absolute;
+  right: -34px;
+  bottom: -52px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: var(--sdp-tone-soft);
+  pointer-events: none;
 }
 
 .student-disputes-page .sd-summary-card:hover {
@@ -375,65 +412,89 @@
   box-shadow: none;
 }
 
+/* keep content above the corner glow */
+.student-disputes-page .sd-summary-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* rounded-square icon tile */
 .student-disputes-page .sd-summary-icon {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 46px;
+  height: 46px;
   flex-shrink: 0;
   place-items: center;
-  border: 1px solid rgba(125, 190, 207, 0.18);
-  border-radius: 50%;
-  background: rgba(125, 190, 207, 0.025);
+  border: 1px solid rgba(125, 190, 207, 0.14);
+  border-radius: 14px;
+  background: var(--sdp-tone-soft);
   color: var(--sdp-tone);
 }
 
-.student-disputes-page .sd-summary-blue {
+/* text column (label + value) */
+.student-disputes-page .sd-summary-card > :not(.sd-summary-icon) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* tone classes — work whether they sit on the card or on the icon */
+.student-disputes-page .sd-summary-blue,
+.student-disputes-page .sd-summary-card:has(.sd-summary-blue) {
   --sdp-tone: var(--sdp-cyan);
-  background: rgba(125, 190, 207, 0.025);
-  color: var(--sdp-cyan);
+  --sdp-tone-soft: rgba(0, 221, 235, 0.1);
 }
 
-.student-disputes-page .sd-summary-yellow {
+.student-disputes-page .sd-summary-yellow,
+.student-disputes-page .sd-summary-card:has(.sd-summary-yellow) {
   --sdp-tone: var(--sdp-amber);
-  background: rgba(125, 190, 207, 0.025);
-  color: var(--sdp-amber);
+  --sdp-tone-soft: rgba(251, 191, 36, 0.1);
 }
 
-.student-disputes-page .sd-summary-purple {
+.student-disputes-page .sd-summary-purple,
+.student-disputes-page .sd-summary-card:has(.sd-summary-purple) {
   --sdp-tone: var(--sdp-violet);
-  background: rgba(125, 190, 207, 0.025);
-  color: var(--sdp-violet);
+  --sdp-tone-soft: rgba(183, 166, 255, 0.1);
 }
 
-.student-disputes-page .sd-summary-green {
+.student-disputes-page .sd-summary-green,
+.student-disputes-page .sd-summary-card:has(.sd-summary-green) {
   --sdp-tone: var(--sdp-green);
-  background: rgba(125, 190, 207, 0.025);
-  color: var(--sdp-green);
+  --sdp-tone-soft: rgba(82, 227, 170, 0.1);
 }
 
-.student-disputes-page .sd-summary-red {
+.student-disputes-page .sd-summary-red,
+.student-disputes-page .sd-summary-card:has(.sd-summary-red) {
   --sdp-tone: var(--sdp-red);
-  background: rgba(125, 190, 207, 0.025);
-  color: var(--sdp-red);
+  --sdp-tone-soft: rgba(251, 139, 130, 0.1);
 }
 
 .student-disputes-page .sd-summary-card span {
   display: block;
   color: var(--sdp-text);
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
   text-transform: none;
 }
 
 .student-disputes-page .sd-summary-card strong {
   display: block;
-  margin-top: 4px;
-  color: var(--sdp-text);
+  margin-top: 0;
+  color: #f2fbff;
   font-size: 30px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
+}
+
+/* optional helper line under the value */
+.student-disputes-page .sd-summary-card small {
+  color: var(--sdp-muted);
+  font-size: 10px;
+  font-weight: 400;
 }
 
 /* =========================================================
