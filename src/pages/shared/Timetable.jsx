@@ -6,6 +6,7 @@ import {
   Info,
   Pencil,
   Plus,
+  ShieldCheck,
   Trash2,
   Users,
   X,
@@ -36,13 +37,30 @@ function emptyForm() {
   };
 }
 
-function malaysiaDay() {
-  const name = new Intl.DateTimeFormat("en-US", {
+function malaysiaClock() {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Kuala_Lumpur",
     weekday: "long",
-  }).format(new Date());
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
 
-  return DAYS.indexOf(name) + 1;
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value])
+  );
+
+  return {
+    day: DAYS.indexOf(values.weekday) + 1,
+    label: new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kuala_Lumpur",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date()),
+    time: `${values.hour}:${values.minute}`,
+  };
 }
 
 function readableError(error) {
@@ -77,11 +95,13 @@ export default function Timetable() {
   const [form, setForm] = useState(emptyForm);
   const [formRevision, setFormRevision] = useState(0);
   const [formError, setFormError] = useState("");
-  const [today, setToday] = useState(malaysiaDay);
+  const [clock, setClock] = useState(malaysiaClock);
 
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
   const actionRef = useRef(false);
+
+  const today = clock.day;
 
   useEffect(() => {
     if (!canRead) {
@@ -105,9 +125,15 @@ export default function Timetable() {
   }, [canRead, user?.uid]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setToday(malaysiaDay()), 60000);
+    const update = () => setClock(malaysiaClock());
+    const timer = window.setInterval(update, 15000);
 
-    return () => window.clearInterval(timer);
+    window.addEventListener("focus", update);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", update);
+    };
   }, []);
 
   useEffect(() => {
@@ -263,7 +289,7 @@ export default function Timetable() {
   if (!canRead) {
     return (
       <section className="tt-page">
-        <div className="tt-message">
+        <div className="tt-panel">
           This timetable is currently available to CID accounts only.
         </div>
       </section>
@@ -272,187 +298,244 @@ export default function Timetable() {
 
   return (
     <section className="tt-page" aria-label="CID weekly timetable">
-      <div className="tt-toolbar">
-        <p>
-          {isAdmin
-            ? "Manage the shared weekly schedule for CID students."
-            : "View the shared weekly schedule for CID students."}
-        </p>
+      <header className="tt-hero">
+        <div>
+          <span className="tt-eyebrow">
+            <ShieldCheck size={14} />
+            {isAdmin ? "ADMIN WORKSPACE" : "CID WORKSPACE"}
+          </span>
+          <h1>Class <span>Timetable</span></h1>
+          <p>
+            {isAdmin
+              ? "Manage the shared weekly schedule for CID students."
+              : "View the shared weekly schedule for CID students."}
+          </p>
+          <div className="tt-tags">
+            <span>Shared CID schedule</span>
+            <span>{isAdmin ? "Full access" : "View only"}</span>
+            <span>Malaysia time</span>
+          </div>
+        </div>
 
-        {isAdmin && (
-          <button
-            className="tt-primary"
-            disabled={loading || busy || Boolean(error)}
-            onClick={(event) => openForm(null, event)}
-          >
-            <Plus size={18} />
-            Add Session
-          </button>
-        )}
-      </div>
+        <div className="tt-clock">
+          <Clock3 size={20} />
+          <strong>{clock.time}</strong>
+          <span>{clock.label}</span>
+        </div>
+      </header>
 
       {error && <div className="tt-message tt-error" role="alert">{error}</div>}
       {notice && <div className="tt-message" role="status">{notice}</div>}
 
       <div className="tt-summary">
-        <article>
-          <span className="tt-summary-icon"><CalendarDays size={25} /></span>
-          <div>
-            <strong>{loading ? "…" : sessions.length}</strong>
-            <span>Weekly Sessions</span>
-          </div>
+        <article className="tt-panel">
+          <span><CalendarDays size={17} /> Weekly Sessions</span>
+          <strong>{loading ? "…" : sessions.length}</strong>
+          <small>Monday – Friday</small>
         </article>
 
-        <article>
-          <span className="tt-summary-icon"><Users size={25} /></span>
-          <div><strong>CID</strong><span>Shared Timetable</span></div>
+        <article className="tt-panel">
+          <span><Users size={17} /> Shared Timetable</span>
+          <strong>CID</strong>
+          <small>Teachers and students</small>
         </article>
 
-        <article>
-          <span className="tt-summary-icon"><Clock3 size={25} /></span>
-          <div><strong>MYT</strong><span>Malaysia Time · UTC+8</span></div>
+        <article className="tt-panel">
+          <span><Clock3 size={17} /> Time Zone</span>
+          <strong>MYT</strong>
+          <small>Malaysia · UTC+8</small>
         </article>
       </div>
 
-      {loading ? (
-        <div className="tt-empty" role="status">Loading timetable…</div>
-      ) : error ? null : sessions.length === 0 ? (
-        <div className="tt-empty">
-          <CalendarDays size={35} />
-          <h2>No sessions yet</h2>
-          <p>
-            {isAdmin
-              ? "Add your first session or load the example schedule."
-              : "The administrator has not added any sessions yet."}
-          </p>
+      <section className="tt-panel">
+        <div className="tt-section-header">
+          <div>
+            <span className="tt-eyebrow">SHARED CID SCHEDULE</span>
+            <h2>Weekly Timetable</h2>
+            <p>
+              {isAdmin
+                ? "Changes you save appear for teachers and students automatically."
+                : "Administrator changes appear here automatically."}
+            </p>
+          </div>
 
-          {isAdmin && (
-            <button className="tt-primary" disabled={busy} onClick={loadExample}>
-              {busy ? "Saving…" : "Load Example CID Timetable"}
-            </button>
-          )}
+          <div className="tt-section-actions">
+            <span className="tt-count">{sessions.length} session(s)</span>
+
+            {isAdmin && (
+              <button
+                type="button"
+                className="tt-primary"
+                disabled={loading || busy || Boolean(error)}
+                onClick={(event) => openForm(null, event)}
+              >
+                <Plus size={18} />
+                Add Session
+              </button>
+            )}
+          </div>
         </div>
-      ) : (
-        <>
-          <div className="tt-calendar-scroll">
-            <div className="tt-calendar">
-              <div className="tt-calendar-header">
-                <span>Time</span>
-                {DAYS.map((day, index) => (
-                  <span key={day} className={today === index + 1 ? "is-today" : ""}>
-                    {day}
-                  </span>
-                ))}
-              </div>
 
-              <div className="tt-calendar-body">
-                <div className="tt-time-rail" style={{ height: gridHeight }}>
-                  {Array.from({ length: hours + 1 }, (_, index) => {
-                    const hour = gridStart / 60 + index;
+        {loading ? (
+          <div className="tt-empty" role="status">Loading timetable…</div>
+        ) : error ? null : sessions.length === 0 ? (
+          <div className="tt-empty">
+            <CalendarDays size={28} />
+            <h3>No sessions yet</h3>
+            <p>
+              {isAdmin
+                ? "Add your first session or load the example schedule."
+                : "The administrator has not added any sessions yet."}
+            </p>
 
-                    return (
-                      <span
-                        key={hour}
-                        style={{ top: index * 64 }}
-                        className={
-                          index === 0 ? "tt-first-time" :
-                          index === hours ? "tt-last-time" : ""
-                        }
-                      >
-                        {String(hour).padStart(2, "0")}:00
-                      </span>
-                    );
-                  })}
+            {isAdmin && (
+              <button
+                type="button"
+                className="tt-primary"
+                disabled={busy}
+                onClick={loadExample}
+              >
+                {busy ? "Saving…" : "Load Example CID Timetable"}
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="tt-calendar-scroll">
+              <div className="tt-calendar">
+                <div className="tt-calendar-header">
+                  <span>Time</span>
+                  {DAYS.map((day, index) => (
+                    <span key={day} className={today === index + 1 ? "is-today" : ""}>
+                      {day}
+                    </span>
+                  ))}
                 </div>
 
-                {DAYS.map((day, index) => (
-                  <div
-                    key={day}
-                    className={`tt-day-column${today === index + 1 ? " is-today" : ""}`}
-                    style={{ height: gridHeight }}
-                  >
-                    {sessions
-                      .filter((session) => session.day === index + 1)
-                      .map((session) => {
-                        const start = timeToMinutes(session.startTime);
-                        const end = timeToMinutes(session.endTime);
+                <div className="tt-calendar-body">
+                  <div className="tt-time-rail" style={{ height: gridHeight }}>
+                    {Array.from({ length: hours + 1 }, (_, index) => {
+                      const hour = gridStart / 60 + index;
 
-                        const style = {
-                          top: ((start - gridStart) / 60) * 64,
-                          height: ((end - start) / 60) * 64,
-                        };
-
-                        const content = (
-                          <>
-                            <strong>{session.subjectCode}</strong>
-                            <span>{session.startTime} – {session.endTime}</span>
-                            {isAdmin && <Pencil size={14} />}
-                          </>
-                        );
-
-                        return isAdmin ? (
-                          <button
-                            key={session.id}
-                            className={`tt-session tt-session-${session.color}`}
-                            style={style}
-                            title={`${session.subjectCode}: ${session.startTime}–${session.endTime}. Edit session`}
-                            onClick={(event) => openForm(session, event)}
-                          >
-                            {content}
-                          </button>
-                        ) : (
-                          <article
-                            key={session.id}
-                            className={`tt-session tt-session-${session.color}`}
-                            style={style}
-                            title={`${session.subjectCode}: ${session.startTime}–${session.endTime}`}
-                          >
-                            {content}
-                          </article>
-                        );
-                      })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="tt-mobile-list">
-            {DAYS.map((day, index) => {
-              const daily = sessions
-                .filter((session) => session.day === index + 1)
-                .sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-              return (
-                <article className="tt-mobile-day" key={day}>
-                  <h2>{day}{today === index + 1 && <small>Today</small>}</h2>
-
-                  {daily.length === 0 ? (
-                    <p>No sessions</p>
-                  ) : daily.map((session) => (
-                    <div className="tt-mobile-session" key={session.id}>
-                      <div>
-                        <strong>{session.subjectCode}</strong>
-                        <span>{session.startTime} – {session.endTime}</span>
-                      </div>
-
-                      {isAdmin && (
-                        <button
-                          className="tt-icon-button"
-                          aria-label={`Edit ${session.subjectCode}`}
-                          onClick={(event) => openForm(session, event)}
+                      return (
+                        <span
+                          key={hour}
+                          style={{ top: index * 64 }}
+                          className={
+                            index === 0 ? "tt-first-time" :
+                            index === hours ? "tt-last-time" : ""
+                          }
                         >
-                          <Pencil size={17} />
-                        </button>
-                      )}
+                          {String(hour).padStart(2, "0")}:00
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  {DAYS.map((day, index) => (
+                    <div
+                      key={day}
+                      className={`tt-day-column${today === index + 1 ? " is-today" : ""}`}
+                      style={{ height: gridHeight }}
+                    >
+                      {sessions
+                        .filter((session) => session.day === index + 1)
+                        .map((session) => {
+                          const start = timeToMinutes(session.startTime);
+                          const end = timeToMinutes(session.endTime);
+
+                          const style = {
+                            top: ((start - gridStart) / 60) * 64,
+                            height: ((end - start) / 60) * 64,
+                          };
+
+                          const content = (
+                            <>
+                              <strong>{session.subjectCode}</strong>
+                              <span>{session.startTime} – {session.endTime}</span>
+                              {isAdmin && <Pencil size={14} />}
+                            </>
+                          );
+
+                          return isAdmin ? (
+                            <button
+                              type="button"
+                              key={session.id}
+                              className={`tt-session tt-session-${session.color}`}
+                              style={style}
+                              title={`${session.subjectCode}: ${session.startTime}–${session.endTime}. Edit session`}
+                              onClick={(event) => openForm(session, event)}
+                            >
+                              {content}
+                            </button>
+                          ) : (
+                            <article
+                              key={session.id}
+                              className={`tt-session tt-session-${session.color}`}
+                              style={style}
+                              title={`${session.subjectCode}: ${session.startTime}–${session.endTime}`}
+                            >
+                              {content}
+                            </article>
+                          );
+                        })}
                     </div>
                   ))}
-                </article>
-              );
-            })}
-          </div>
-        </>
-      )}
+                </div>
+              </div>
+            </div>
+
+            <div className="tt-mobile-list">
+              {DAYS.map((day, index) => {
+                const daily = sessions
+                  .filter((session) => session.day === index + 1)
+                  .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+                return (
+                  <article
+                    key={day}
+                    className={`tt-mobile-day${today === index + 1 ? " is-today" : ""}`}
+                  >
+                    <header>
+                      <h3>{day}</h3>
+                      {today === index + 1 && <span>Today</span>}
+                    </header>
+
+                    <div className="tt-mobile-sessions">
+                      {daily.length === 0 ? (
+                        <p className="tt-no-session">No sessions</p>
+                      ) : daily.map((session) => (
+                        <div
+                          className={`tt-mobile-session${session.color === "blue" ? " is-blue" : ""}`}
+                          key={session.id}
+                        >
+                          <div>
+                            <strong>{session.subjectCode}</strong>
+                            <span>
+                              <Clock3 size={14} /> {session.startTime} – {session.endTime}
+                            </span>
+                          </div>
+
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              className="tt-icon-button"
+                              aria-label={`Edit ${session.subjectCode}`}
+                              onClick={(event) => openForm(session, event)}
+                            >
+                              <Pencil size={17} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </section>
 
       <div className="tt-note">
         <Info size={18} />
@@ -477,8 +560,13 @@ export default function Timetable() {
             aria-labelledby="tt-form-title"
           >
             <div className="tt-modal-heading">
-              <h2 id="tt-form-title">{editing ? "Edit Session" : "Add Session"}</h2>
+              <div>
+                <span className="tt-eyebrow">SHARED CID SCHEDULE</span>
+                <h2 id="tt-form-title">{editing ? "Edit Session" : "Add Session"}</h2>
+              </div>
+
               <button
+                type="button"
                 className="tt-icon-button"
                 onClick={closeForm}
                 disabled={busy}

@@ -344,45 +344,56 @@ function DetailsDialog({ row, onClose }) {
         if (event.target === ref.current) onClose();
       }}
     >
-      <div className="ta-dialog-content">
-        <header>
+      <div className="ta-dialog-inner">
+        <header className="ta-dialog-header">
           <div>
             <span className="ta-eyebrow">ATTENDANCE DETAILS</span>
             <h2 id="ta-details-title">{row.studentName}</h2>
           </div>
-          <button type="button" aria-label="Close details" onClick={onClose}>
+          <button
+            type="button"
+            className="ta-icon-button"
+            aria-label="Close details"
+            onClick={onClose}
+          >
             <X size={19} />
           </button>
         </header>
 
-        <dl className="ta-details-grid">
-          {[
-            ["Student ID", row.studentId],
-            ["Email", row.email],
-            ["Department", row.department],
-            ["Course", row.course],
-            ["Date", displayDate(row.timestamp)],
-            ["Time · MYT", displayTime(row.timestamp)],
-            ["Status", LABELS[row.status]],
-            ["Authentication", row.authMethod],
-            ["Verification", row.verificationResult],
-            ["Device", row.deviceId],
-            ["Source", row.source],
-            ["Liveness result", row.raw.livenessResult ?? row.raw.livenessStatus],
-            ["Notes", row.notes],
-            ["Record ID", row.recordId],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{String(value ?? "—") || "—"}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="ta-dialog-body">
+          <dl className="ta-details-grid">
+            {[
+              ["Student ID", row.studentId],
+              ["Email", row.email],
+              ["Department", row.department],
+              ["Course", row.course],
+              ["Date", displayDate(row.timestamp)],
+              ["Time · MYT", displayTime(row.timestamp)],
+              ["Status", LABELS[row.status]],
+              ["Authentication", row.authMethod],
+              ["Verification", row.verificationResult],
+              ["Device", row.deviceId],
+              ["Source", row.source],
+              ["Liveness result", row.raw.livenessResult ?? row.raw.livenessStatus],
+              ["Notes", row.notes],
+              ["Record ID", row.recordId],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{String(value ?? "—") || "—"}</dd>
+              </div>
+            ))}
+          </dl>
 
-        <p className="ta-note">
-          Details reflect saved database fields. Attendance status alone
-          does not prove biometric verification.
-        </p>
+          <p className="ta-note">
+            Details reflect saved database fields. Attendance status alone
+            does not prove biometric verification.
+          </p>
+        </div>
+
+        <footer className="ta-dialog-footer">
+          <button type="button" onClick={onClose}>Close</button>
+        </footer>
       </div>
     </dialog>
   );
@@ -847,7 +858,11 @@ export default function TeacherAttendance() {
           </div>
         </div>
 
-        <button type="button" onClick={() => navigate("/teacher/disputes")}>
+        <button
+          type="button"
+          className="ta-primary"
+          onClick={() => navigate("/teacher/disputes")}
+        >
           Review Disputes <ArrowRight size={15} />
         </button>
       </header>
@@ -892,17 +907,25 @@ export default function TeacherAttendance() {
               }
             }}
           >
-            <span>{label}<Icon size={18} /></span>
-            <strong>
-              {!ready || invalidRange || (key === "not_recorded" && mode === "records")
-                ? "—"
-                : value}
-            </strong>
-            <small>
-              {key === "not_recorded" && mode === "records"
-                ? "Click for a daily student view"
-                : "Click to filter"}
-            </small>
+            <span className="ta-stat-glow" aria-hidden="true" />
+
+            <span className="ta-stat-icon">
+              <Icon size={19} />
+            </span>
+
+            <span className="ta-stat-copy">
+              <span className="ta-stat-label">{label}</span>
+              <strong>
+                {!ready || invalidRange || (key === "not_recorded" && mode === "records")
+                  ? "—"
+                  : value}
+              </strong>
+              <small>
+                {key === "not_recorded" && mode === "records"
+                  ? "Click for a daily student view"
+                  : "Click to filter"}
+              </small>
+            </span>
           </button>
         ))}
       </div>
@@ -1066,7 +1089,7 @@ export default function TeacherAttendance() {
               ) : !visibleRows.length ? (
                 <tr><td colSpan={6}>
                   <div className="ta-empty">
-                    <Search size={28} />
+                    <Search size={30} />
                     <h3>No matching results</h3>
                     <p>Try resetting the filters or choosing another date.</p>
                   </div>

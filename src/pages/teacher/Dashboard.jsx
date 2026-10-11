@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Activity,
   AlertTriangle,
-  ArrowRight,
+  ArrowUpRight,
+  BarChart3,
   CalendarDays,
   CheckCircle2,
   Clock3,
   Download,
   FileWarning,
   Fingerprint,
+  MessageSquareWarning,
   Radio,
   RefreshCw,
   ScanFace,
@@ -23,15 +25,6 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 import { db } from "../../firebase/firebase";
 import { useAuth } from "../../contexts/AuthContext";
@@ -44,15 +37,6 @@ import "./Dashboard.css";
 
 const TIMEZONE = "Asia/Kuala_Lumpur";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-const STATUS_COLORS = {
-  present: "#52e3aa",
-  late: "#fbbf24",
-  absent: "#fb8b82",
-  excused: "#79c5ff",
-  unknown: "#a0b4bf",
-  not_recorded: "#00ddeb",
-};
 
 function safeDate(value) {
   if (value == null || value === "") return null;
@@ -566,6 +550,11 @@ export default function TeacherDashboard() {
     (day) => day.present || day.late || day.absent
   );
 
+  const chartMax = Math.max(
+    1,
+    ...chartData.map((day) => day.present + day.late + day.absent)
+  );
+
   const pendingDisputes = useMemo(
     () =>
       data.disputes
@@ -699,7 +688,7 @@ export default function TeacherDashboard() {
   if (!allowed) {
     return (
       <section className="teacher-dashboard">
-        <div className="td-panel">An active teacher account is required.</div>
+        <div className="td-card">An active teacher account is required.</div>
       </section>
     );
   }
@@ -707,25 +696,37 @@ export default function TeacherDashboard() {
   return (
     <section className="teacher-dashboard">
       <header className="td-hero">
-        <div>
-          <span className="td-eyebrow">
-            <ShieldCheck size={14} /> TEACHER WORKSPACE
-          </span>
-          <h1>{greeting}, <span>{displayName}</span></h1>
-          <p>Review attendance, follow today’s classes, and respond to student disputes.</p>
+        <div className="td-hero-grid" aria-hidden="true" />
 
-          <div className="td-tags">
+        <div className="td-hero-copy">
+          <span className="td-eyebrow">
+            <ShieldCheck size={15} />
+            BioSync teacher workspace
+          </span>
+
+          <h1>{greeting}, {displayName}</h1>
+
+          <p>
+            Review attendance, follow today’s classes, and respond to
+            student disputes.
+          </p>
+
+          <div className="td-hero-tags">
             <span>{department || "Department not configured"}</span>
-            <span>{clock.label}</span>
+            <span>
+              <Clock3 size={14} />
+              {clock.label}
+            </span>
             <span className={ready && online && !data.cached ? "td-live" : ""}>
-              <Activity size={12} /> {connectionLabel}
+              <Activity size={14} />
+              {connectionLabel}
             </span>
           </div>
         </div>
 
         <div className="td-class-preview">
           <span className="td-eyebrow">
-            {currentSession ? "CURRENT CLASS" : "NEXT CLASS"}
+            {currentSession ? "Current class" : "Next class"}
           </span>
           <strong>
             {timetable.loading
@@ -743,22 +744,35 @@ export default function TeacherDashboard() {
                 ? `${nextSession.daysAway === 0 ? "Today" : DAYS[nextSession.session.day]} · ${nextSession.session.startTime}${nextSession.daysAway === 7 ? " · next week" : ""}`
                 : "Shared CID timetable"}
           </small>
-          <button type="button" onClick={() => navigate("/teacher/timetable")}>
-            View Timetable <ArrowRight size={15} />
+          <button
+            type="button"
+            className="td-button td-button-block"
+            onClick={() => navigate("/teacher/timetable")}
+          >
+            View timetable <ArrowUpRight size={15} />
           </button>
         </div>
       </header>
 
+      <div className="td-toolbar">
+        <div>
+          <h2>Attendance overview</h2>
+          <p>Latest record per active student · Malaysia time</p>
+        </div>
+      </div>
+
       {!department && (
         <div className="td-message td-warning" role="alert">
-          Ask the administrator to set your account department to CID
-          to monitor CID student attendance. Shared timetable access
-          remains available.
+          <span>
+            Ask the administrator to set your account department to CID
+            to monitor CID student attendance. Shared timetable access
+            remains available.
+          </span>
         </div>
       )}
 
       {data.error && (
-        <div className="td-message td-warning" role="alert">
+        <div className="td-message td-error" role="alert">
           <span>{data.error}</span>
           <button type="button" onClick={() => setRetry((value) => value + 1)}>
             <RefreshCw size={15} /> Retry
@@ -766,184 +780,117 @@ export default function TeacherDashboard() {
         </div>
       )}
 
-      <div className="td-stat-grid">
+      <div className="td-metrics">
         {[
-          { key: "all", label: "Active Students", value: studentRows.length, icon: Users, tone: "cyan", hint: "All students in your department" },
-          { key: "present", label: "Present Today", value: counts.present, icon: CheckCircle2, tone: "green", hint: "Latest saved status today" },
-          { key: "late", label: "Late Today", value: counts.late, icon: Clock3, tone: "amber", hint: "Recorded late arrivals" },
-          { key: "not_recorded", label: "Not Recorded", value: counts.not_recorded, icon: FileWarning, tone: "cyan", hint: "No attendance record today" },
+          { key: "all", label: "Active students", value: studentRows.length, icon: Users, tone: "cyan", hint: "All students in your department" },
+          { key: "present", label: "Present today", value: counts.present, icon: CheckCircle2, tone: "green", hint: "Latest saved status today" },
+          { key: "late", label: "Late today", value: counts.late, icon: Clock3, tone: "amber", hint: "Recorded late arrivals" },
+          { key: "not_recorded", label: "Not recorded", value: counts.not_recorded, icon: FileWarning, tone: "cyan", hint: "No attendance record today" },
         ].map(({ key, label, value, icon: Icon, tone, hint }) => (
           <button
             type="button"
             key={key}
-            className={`td-stat td-tone-${tone} ${statusFilter === key ? "is-selected" : ""}`}
+            className={`td-metric td-tone-${tone} ${statusFilter === key ? "is-selected" : ""}`}
             disabled={!ready}
             aria-pressed={statusFilter === key}
             onClick={() => setStatusFilter(key)}
           >
-            <span><Icon size={19} /> {label}</span>
-            <strong>{ready ? value : "—"}</strong>
-            <small>{hint}</small>
+            <span className="td-metric-icon">
+              <Icon size={21} aria-hidden="true" />
+            </span>
+            <div>
+              <span>{label}</span>
+              <strong>{ready ? value : "—"}</strong>
+              <small>{hint}</small>
+            </div>
           </button>
         ))}
       </div>
 
-      <section className="td-panel">
-        <div className="td-section-heading">
-          <div>
-            <span className="td-eyebrow">SHARED CID SCHEDULE</span>
-            <h2>Today’s Classes</h2>
-            <p>{clock.time} MYT · Session status follows scheduled times.</p>
-          </div>
-          <button type="button" onClick={() => navigate("/teacher/timetable")}>
-            Full Timetable <ArrowRight size={15} />
-          </button>
-        </div>
-
-        {timetable.error ? (
-          <div className="td-message td-warning" role="alert">
-            <span>{timetable.error}</span>
-            <button type="button" onClick={() => setRetry((value) => value + 1)}>
-              Retry
-            </button>
-          </div>
-        ) : timetable.loading ? (
-          <p className="td-empty" role="status">Loading classes…</p>
-        ) : !todaySessions.length ? (
-          <div className="td-empty">
-            <CalendarDays size={26} />
-            <h3>No classes scheduled today</h3>
-            <p>Open the timetable to view the next scheduled class.</p>
-          </div>
-        ) : (
-          <div className="td-session-grid">
-            {todaySessions.map((session) => {
-              const state = sessionState(session, clock);
-
-              return (
-                <button
-                  type="button"
-                  key={session.id}
-                  className={`td-session ${state === "In progress" ? "is-current" : ""}`}
-                  onClick={() => navigate("/teacher/timetable")}
-                >
-                  <span className="td-session-status">{state}</span>
-                  <strong>{session.subjectCode}</strong>
-                  <span><Clock3 size={14} /> {session.startTime} – {session.endTime}</span>
-                  <small>Open timetable <ArrowRight size={13} /></small>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <div className="td-work-grid">
-        <section className="td-panel td-attendance-panel">
-          <div className="td-section-heading">
+      <div className="td-content-grid">
+        <section className="td-card">
+          <div className="td-card-heading">
             <div>
-              <span className="td-eyebrow">TODAY’S STUDENT TOTALS</span>
-              <h2>Attendance Register</h2>
-              <p>One row per active student, using their latest record today.</p>
+              <span className="td-eyebrow">Last seven days</span>
+              <h2>Attendance trend</h2>
+              <p>Latest recorded daily status per currently active student.</p>
             </div>
-            <div className="td-actions">
-              <button type="button" disabled={!ready || !visibleRows.length} onClick={exportCSV}>
-                <Download size={14} /> CSV
-              </button>
-              <button type="button" onClick={() => navigate("/teacher/attendance")}>
-                All Records <ArrowRight size={14} />
-              </button>
-            </div>
+            <span className="td-heading-icon">
+              <BarChart3 size={21} />
+            </span>
           </div>
 
-          <div className="td-table-filters">
-            <label className="td-search">
-              <Search size={17} />
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search student, ID, method, or device…"
-                aria-label="Search attendance register"
-              />
-            </label>
-
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              aria-label="Filter attendance status"
-            >
-              <option value="all">All students</option>
-              {["present", "late", "absent", "excused", "not_recorded", "unknown"].map((status) => (
-                <option key={status} value={status}>{statusLabel(status)}</option>
-              ))}
-            </select>
-          </div>
-
-          {exportError && <p className="td-warning" role="alert">{exportError}</p>}
-
-          <div className="td-table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Time · MYT</th>
-                  <th>Status</th>
-                  <th>Method</th>
-                  <th>Device</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!ready ? (
-                  <tr><td colSpan={5} className="td-table-empty">
-                    {data.error ? "Attendance data unavailable." : data.loading ? "Loading attendance…" : "Set your account department to load attendance."}
-                  </td></tr>
-                ) : !visibleRows.length ? (
-                  <tr><td colSpan={5} className="td-table-empty">
-                    No students match this view.
-                  </td></tr>
-                ) : visibleRows.map((row) => (
-                  <tr key={row.uid}>
-                    <td>
-                      <div className="td-student">
-                        <span className="td-avatar">{row.name.slice(0, 1).toUpperCase()}</span>
-                        <div><strong>{row.name}</strong><small>{row.studentId}</small></div>
-                      </div>
-                    </td>
-                    <td>{displayTime(row.timestamp)}</td>
-                    <td>
-                      <span
-                        className="td-status-badge"
-                        style={{ color: STATUS_COLORS[row.status] }}
+          {!ready || !hasChartData ? (
+            <div className="td-empty">
+              <AlertTriangle size={25} />
+              <h3>{ready ? "No recorded trend yet" : "Trend unavailable"}</h3>
+              <p>{ready ? "Saved Present, Late, and Absent records will appear here." : "Waiting for attendance data."}</p>
+            </div>
+          ) : (
+            <>
+              <div className="td-chart">
+                {chartData.map((day) => (
+                  <div className="td-chart-day" key={day.date}>
+                    <div className="td-chart-track">
+                      <div
+                        className="td-chart-stack"
+                        title={`${day.date}: ${day.present} present, ${day.late} late, ${day.absent} absent`}
                       >
-                        {statusLabel(row.status)}
-                      </span>
-                    </td>
-                    <td>{row.method}</td>
-                    <td>{row.device}</td>
-                  </tr>
+                        <span
+                          className="td-bar-absent"
+                          style={{ height: `${(day.absent / chartMax) * 100}%` }}
+                        />
+                        <span
+                          className="td-bar-late"
+                          style={{ height: `${(day.late / chartMax) * 100}%` }}
+                        />
+                        <span
+                          className="td-bar-present"
+                          style={{ height: `${(day.present / chartMax) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <strong>{day.present + day.late + day.absent}</strong>
+                    <span>{day.day}</span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-          <footer className="td-table-footer">
-            <span>{ready ? `${visibleRows.length} of ${studentRows.length} students` : "Waiting for data"}</span>
-            <span>Recorded absent: {ready ? counts.absent : "—"} · Excused: {ready ? counts.excused : "—"}</span>
-          </footer>
+              <div className="td-legend">
+                <span><i className="td-bar-present" />Present</span>
+                <span><i className="td-bar-late" />Late</span>
+                <span><i className="td-bar-absent" />Recorded absent</span>
+              </div>
+            </>
+          )}
+
+          <p className="td-footnote">
+            Not Recorded means no saved attendance record today. It does not
+            mean absent. Dashboard totals are daily student totals and are
+            not yet linked to individual timetable sessions.
+          </p>
         </section>
 
-        <aside className="td-side-panels">
-          <section className="td-panel">
-            <span className="td-eyebrow td-amber">NEEDS REVIEW</span>
-            <h2>Student Disputes</h2>
-            <div className="td-dispute-total">
-              <strong>{ready ? pendingDisputes.length : "—"}</strong>
-              <span>Pending departmental reviews</span>
+        <section className="td-card">
+          <div className="td-card-heading">
+            <div>
+              <span className="td-eyebrow">Requires attention</span>
+              <h2>Student disputes</h2>
+              <p>Pending departmental reviews.</p>
             </div>
+            <span className="td-heading-icon">
+              <MessageSquareWarning size={21} />
+            </span>
+          </div>
 
+          <div className="td-attention-count">
+            <strong>{ready ? pendingDisputes.length : "—"}</strong>
+            <span>pending dispute requests</span>
+          </div>
+
+          <div className="td-dispute-list">
             {ready && !pendingDisputes.length && (
-              <p className="td-note">No pending disputes.</p>
+              <p className="td-empty">No pending disputes.</p>
             )}
 
             {ready && pendingDisputes.slice(0, 3).map((dispute) => {
@@ -955,28 +902,103 @@ export default function TeacherDashboard() {
                 <button
                   type="button"
                   key={dispute.id}
-                  className="td-dispute-item"
+                  className="td-dispute"
                   onClick={() => navigate("/teacher/disputes")}
                 >
-                  <strong>{student ? nameOf(student) : dispute.studentName || "Student dispute"}</strong>
-                  <span>{dispute.reason || dispute.description || "Attendance review requested"}</span>
+                  <div>
+                    <strong>{student ? nameOf(student) : dispute.studentName || "Student dispute"}</strong>
+                    <span>{dispute.reason || dispute.description || "Attendance review requested"}</span>
+                  </div>
+                  <ArrowUpRight size={16} />
                 </button>
               );
             })}
+          </div>
 
+          <button
+            type="button"
+            className="td-button"
+            onClick={() => navigate("/teacher/disputes")}
+          >
+            Review disputes <ArrowUpRight size={15} />
+          </button>
+        </section>
+      </div>
+
+      <div className="td-content-grid">
+        <section className="td-card">
+          <div className="td-card-heading">
+            <div>
+              <span className="td-eyebrow">Shared CID schedule</span>
+              <h2>Today’s classes</h2>
+              <p>{clock.time} MYT · Session status follows scheduled times.</p>
+            </div>
+            <span className="td-heading-icon">
+              <CalendarDays size={21} />
+            </span>
+          </div>
+
+          {timetable.error ? (
+            <div className="td-message td-error td-message-inline" role="alert">
+              <span>{timetable.error}</span>
+              <button type="button" onClick={() => setRetry((value) => value + 1)}>
+                Retry
+              </button>
+            </div>
+          ) : timetable.loading ? (
+            <p className="td-empty" role="status">Loading classes…</p>
+          ) : !todaySessions.length ? (
+            <div className="td-empty">
+              <CalendarDays size={26} />
+              <h3>No classes scheduled today</h3>
+              <p>Open the timetable to view the next scheduled class.</p>
+            </div>
+          ) : (
+            <div className="td-session-grid">
+              {todaySessions.map((session) => {
+                const state = sessionState(session, clock);
+
+                return (
+                  <button
+                    type="button"
+                    key={session.id}
+                    className={`td-session ${state === "In progress" ? "is-current" : ""}`}
+                    onClick={() => navigate("/teacher/timetable")}
+                  >
+                    <span className="td-session-status">{state}</span>
+                    <strong>{session.subjectCode}</strong>
+                    <span><Clock3 size={14} /> {session.startTime} – {session.endTime}</span>
+                    <small>Open timetable <ArrowUpRight size={13} /></small>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="td-card-action">
             <button
               type="button"
-              className="td-wide-button"
-              onClick={() => navigate("/teacher/disputes")}
+              className="td-button"
+              onClick={() => navigate("/teacher/timetable")}
             >
-              Review Disputes <ArrowRight size={15} />
+              Full timetable <ArrowUpRight size={15} />
             </button>
-          </section>
+          </div>
+        </section>
 
-          <section className="td-panel">
-            <span className="td-eyebrow">RECORDED METHODS</span>
-            <h2>Authentication Today</h2>
+        <section className="td-card">
+          <div className="td-card-heading">
+            <div>
+              <span className="td-eyebrow">Recorded methods</span>
+              <h2>Authentication today</h2>
+              <p>Methods from each student’s latest record today.</p>
+            </div>
+            <span className="td-heading-icon">
+              <Fingerprint size={21} />
+            </span>
+          </div>
 
+          <div className="td-method-list">
             {[
               [ScanFace, "Face", methods.face],
               [Fingerprint, "Fingerprint", methods.fingerprint],
@@ -989,70 +1011,127 @@ export default function TeacherDashboard() {
                 <strong>{ready ? value : "—"}</strong>
               </div>
             ))}
+          </div>
 
-            <p className="td-note">
-              Methods from each student’s latest record today.
-              These counts do not prove biometric verification.
-            </p>
-          </section>
-        </aside>
+          <p className="td-footnote">
+            These counts do not prove biometric verification.
+          </p>
+        </section>
       </div>
 
-      <section className="td-panel">
-        <div className="td-section-heading">
+      <section className="td-card td-records">
+        <div className="td-card-heading">
           <div>
-            <span className="td-eyebrow">LAST SEVEN DAYS</span>
-            <h2>Attendance Trend</h2>
-            <p>Latest recorded daily status per currently active student.</p>
+            <span className="td-eyebrow">Today’s student totals</span>
+            <h2>Attendance register</h2>
+            <p>One row per active student, using their latest record today.</p>
           </div>
-          <button type="button" onClick={() => navigate("/teacher/analytics")}>
-            View Analytics <ArrowRight size={15} />
-          </button>
+          <div className="td-actions">
+            <button
+              type="button"
+              className="td-button"
+              disabled={!ready || !visibleRows.length}
+              onClick={exportCSV}
+            >
+              <Download size={14} /> CSV
+            </button>
+            <Link to="/teacher/attendance" className="td-text-link">
+              All records <ArrowUpRight size={15} />
+            </Link>
+          </div>
         </div>
 
-        <div className="td-chart-legend">
-          <span><i style={{ background: STATUS_COLORS.present }} /> Present</span>
-          <span><i style={{ background: STATUS_COLORS.late }} /> Late</span>
-          <span><i style={{ background: STATUS_COLORS.absent }} /> Recorded absent</span>
+        <div className="td-table-filters">
+          <label className="td-search">
+            <Search size={17} aria-hidden="true" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search student, ID, method, or device…"
+              aria-label="Search attendance register"
+            />
+          </label>
+
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            aria-label="Filter attendance status"
+          >
+            <option value="all">All students</option>
+            {["present", "late", "absent", "excused", "not_recorded", "unknown"].map((status) => (
+              <option key={status} value={status}>{statusLabel(status)}</option>
+            ))}
+          </select>
         </div>
 
-        {!ready || !hasChartData ? (
-          <div className="td-empty">
-            <AlertTriangle size={25} />
-            <h3>{ready ? "No recorded trend yet" : "Trend unavailable"}</h3>
-            <p>{ready ? "Saved Present, Late, and Absent records will appear here." : "Waiting for attendance data."}</p>
-          </div>
-        ) : (
-          <div className="td-chart">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 12, right: 12, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(137,167,181,0.15)" vertical={false} strokeDasharray="3 3" />
-                <XAxis dataKey="day" stroke="#89a7b5" tickLine={false} axisLine={false} fontSize={11} />
-                <YAxis allowDecimals={false} stroke="#89a7b5" tickLine={false} axisLine={false} fontSize={11} />
-                <Tooltip
-                  cursor={{ fill: "rgba(0,221,235,0.04)" }}
-                  contentStyle={{
-                    background: "#09212c",
-                    border: "1px solid #23505f",
-                    borderRadius: 9,
-                    color: "#eaf7fc",
-                    fontSize: 12,
-                  }}
-                />
-                <Bar dataKey="present" name="Present" fill={STATUS_COLORS.present} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="late" name="Late" fill={STATUS_COLORS.late} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="absent" name="Recorded absent" fill={STATUS_COLORS.absent} radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+        {exportError && <p className="td-message td-error" role="alert">{exportError}</p>}
+
+        <div className="td-table-scroll">
+          <table className="td-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Time · MYT</th>
+                <th>Status</th>
+                <th>Method</th>
+                <th>Device</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!ready ? (
+                <tr><td colSpan={5} className="td-empty">
+                  {data.error ? "Attendance data unavailable." : data.loading ? "Loading attendance…" : "Set your account department to load attendance."}
+                </td></tr>
+              ) : !visibleRows.length ? (
+                <tr><td colSpan={5} className="td-empty">
+                  No students match this view.
+                </td></tr>
+              ) : visibleRows.map((row) => (
+                <tr key={row.uid}>
+                  <td>
+                    <div className="td-student">
+                      <span>{row.name.slice(0, 1).toUpperCase()}</span>
+                      <div><strong>{row.name}</strong><small>{row.studentId}</small></div>
+                    </div>
+                  </td>
+                  <td>{displayTime(row.timestamp)}</td>
+                  <td>
+                    <span className={`td-status td-status-${row.status}`}>
+                      {statusLabel(row.status)}
+                    </span>
+                  </td>
+                  <td>{row.method}</td>
+                  <td>{row.device}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="td-table-footer">
+          <span>{ready ? `${visibleRows.length} of ${studentRows.length} students` : "Waiting for data"}</span>
+          <span>Recorded absent: {ready ? counts.absent : "—"} · Excused: {ready ? counts.excused : "—"}</span>
+        </footer>
       </section>
 
-      <p className="td-footnote">
-        Not Recorded means no saved attendance record today. It does not
-        mean absent. Dashboard totals are daily student totals and are
-        not yet linked to individual timetable sessions.
-      </p>
+      <nav className="td-quick-links" aria-label="Teacher quick actions">
+        {[
+          ["/teacher/timetable", "Timetable", "View the shared class schedule", CalendarDays],
+          ["/teacher/attendance", "Attendance", "Browse attendance records", Activity],
+          ["/teacher/disputes", "Disputes", "Review correction requests", MessageSquareWarning],
+          ["/teacher/analytics", "Analytics", "Explore attendance performance", BarChart3],
+        ].map(([path, label, description, Icon]) => (
+          <Link to={path} key={path}>
+            <span className="td-heading-icon"><Icon size={20} /></span>
+            <div>
+              <strong>{label}</strong>
+              <small>{description}</small>
+            </div>
+            <ArrowUpRight size={17} />
+          </Link>
+        ))}
+      </nav>
     </section>
   );
 }

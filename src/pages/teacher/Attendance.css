@@ -1,3 +1,6 @@
+/* Teacher attendance page only — preserves the shared navbar and sidebar.
+   Mirrors the admin attendance page design. */
+
 .db-shell-content:has(> .teacher-attendance) {
   padding: 0;
   max-width: none;
@@ -6,28 +9,31 @@
 
 .teacher-attendance,
 .ta-dialog {
+  --ta-bg: #04151c;
+  --ta-panel: #061c25;
+  --ta-input: #041820;
+  --ta-border: rgba(0, 218, 235, 0.19);
+  --ta-cyan: #00ddeb;
   --ta-text: #eaf7fc;
   --ta-muted: #89a7b5;
-  --ta-border: rgba(0, 218, 235, 0.2);
-  --ta-cyan: #00ddeb;
 
   color: var(--ta-text);
   font-family: "Inter", sans-serif;
   font-size: 13px;
   color-scheme: dark;
-  box-sizing: border-box;
 }
 
 .teacher-attendance {
   width: 100%;
   min-height: 100%;
+  box-sizing: border-box;
   padding: 26px;
   display: flex;
   flex-direction: column;
   gap: 20px;
   background:
-    radial-gradient(ellipse at top right, rgba(0, 221, 235, 0.045), transparent 50%),
-    #04151c;
+    radial-gradient(ellipse at top right, rgba(0, 221, 235, 0.045), transparent 45%),
+    var(--ta-bg);
 }
 
 .teacher-attendance *,
@@ -56,7 +62,7 @@
   background: #0a2631;
   color: var(--ta-text);
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }
@@ -67,7 +73,8 @@
   border-color: rgba(0, 221, 235, 0.5);
 }
 
-.teacher-attendance button:disabled {
+.teacher-attendance button:disabled,
+.ta-dialog button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -78,40 +85,47 @@
   outline-offset: 3px;
 }
 
+.teacher-attendance .ta-primary,
+.ta-dialog .ta-primary {
+  background: linear-gradient(135deg, #00ddeb, #08a8c0);
+  color: #03202a;
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: 0 5px 22px rgba(0, 221, 235, 0.12);
+}
+
+.teacher-attendance .ta-primary:hover:not(:disabled),
+.ta-dialog .ta-primary:hover:not(:disabled) {
+  background: #46e9f2;
+}
+
+/* =========================================================
+   HERO (grid background + single cyan left border, as admin)
+========================================================= */
+
 .ta-hero {
   position: relative;
-  isolation: isolate;
   overflow: hidden;
+  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 28px 32px;
-  border: 1px solid var(--ta-border);
+  padding: 29px 32px;
+  border: 1px solid rgba(0, 221, 235, 0.3);
+  border-left: 4px solid #00ddeb;
   border-radius: 18px;
-  background: linear-gradient(115deg, #092734, #06212b 65%, #073039);
-}
-
-.ta-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image:
-    linear-gradient(rgba(0, 221, 235, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 221, 235, 0.035) 1px, transparent 1px);
-  background-size: 36px 36px;
-}
-
-.ta-hero::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 24px;
-  bottom: 24px;
-  width: 3px;
-  background: var(--ta-cyan);
-  box-shadow: 0 0 18px rgba(0, 221, 235, 0.45);
+  background:
+    linear-gradient(to right, rgba(0, 221, 235, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 221, 235, 0.045) 1px, transparent 1px),
+    radial-gradient(ellipse at top right, rgba(0, 221, 235, 0.12), transparent 65%),
+    linear-gradient(110deg, #082530, #06212a);
+  background-size: 36px 36px, 36px 36px, 100% 100%, 100% 100%;
+  background-position: 0 0;
+  background-repeat: repeat, repeat, no-repeat, no-repeat;
+  box-shadow:
+    inset 0 1px 0 rgba(194, 245, 255, 0.05),
+    0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .ta-eyebrow {
@@ -121,18 +135,19 @@
   color: var(--ta-cyan);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.7px;
 }
 
 .ta-hero h1 {
   margin: 12px 0 9px;
-  font-size: clamp(27px, 2.6vw, 37px);
-  letter-spacing: -0.9px;
-  line-height: 1.2;
+  font-size: clamp(25px, 2.6vw, 37px);
+  line-height: 1.15;
+  letter-spacing: -1px;
 }
 
 .ta-hero h1 span {
-  background: linear-gradient(90deg, #dcfbff, #00ddeb);
+  color: #46e7ef;
+  background: linear-gradient(90deg, #e0fbff, #00ddeb);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -142,33 +157,42 @@
 .ta-section-heading p {
   margin: 0;
   color: var(--ta-muted);
-  line-height: 1.7;
   font-size: 12px;
+  line-height: 1.6;
 }
 
 .ta-hero > button {
   flex-shrink: 0;
+  min-height: 43px;
 }
 
 .ta-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 17px;
+  margin-top: 18px;
 }
 
 .ta-tags span {
-  padding: 5px 9px;
-  border: 1px solid var(--ta-border);
-  border-radius: 20px;
-  background: rgba(0, 221, 235, 0.035);
-  color: #9cc6d2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(140, 194, 212, 0.16);
+  border-radius: 9px;
+  background: rgba(2, 15, 22, 0.2);
+  color: #b8d0dc;
   font-size: 10px;
+  font-weight: 600;
 }
 
 .ta-tags .ta-live {
   color: #52e3aa;
 }
+
+/* =========================================================
+   SUMMARY CARDS (same design as the admin attendance cards)
+========================================================= */
 
 .ta-summary {
   display: grid;
@@ -177,69 +201,139 @@
 }
 
 .teacher-attendance .ta-stat {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 12px;
-  padding: 18px;
-  border-left: 3px solid var(--ta-tone);
-  border-radius: 14px;
-  background: #061c25;
-  text-align: left;
-}
-
-.ta-tone-cyan { --ta-tone: #00ddeb; }
-.ta-tone-green { --ta-tone: #52e3aa; }
-.ta-tone-amber { --ta-tone: #fbbf24; }
-.ta-tone-red { --ta-tone: #fb8b82; }
-
-.ta-stat > span {
-  display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: #a9c0ca;
-  font-size: 11px;
+  justify-content: flex-start;
+  gap: 13px;
+  min-height: 110px;
+  padding: 15px 15px 15px 18px;
+  overflow: hidden;
+  border: 1px solid var(--ta-border);
+  border-radius: 11px;
+  background:
+    linear-gradient(135deg, rgba(0, 221, 235, 0.035), rgba(0, 0, 0, 0.04)),
+    var(--ta-panel);
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease;
 }
 
-.ta-stat svg {
-  color: var(--ta-tone);
+.teacher-attendance .ta-stat:hover:not(:disabled) {
+  background:
+    linear-gradient(135deg, rgba(0, 221, 235, 0.06), rgba(0, 0, 0, 0.03)),
+    var(--ta-panel);
+  border-color: rgba(0, 221, 235, 0.55);
+}
+
+/* colored accent bar on the left edge */
+.ta-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--ta-tone);
+}
+
+/* soft tinted circle in the bottom-right corner */
+.ta-stat-glow {
+  position: absolute;
+  right: -32px;
+  bottom: -45px;
+  width: 105px;
+  height: 105px;
+  border-radius: 50%;
+  background: var(--ta-tone);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.ta-stat-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 39px;
+  height: 39px;
   flex-shrink: 0;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--ta-tone-soft);
+  color: var(--ta-tone);
+}
+
+.ta-stat-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ta-stat-label {
+  color: #bdd3df;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .ta-stat strong {
-  color: var(--ta-tone);
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 32px;
-  line-height: 1;
+  color: var(--ta-text);
+  font-family: "Inter", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .ta-stat small {
   color: var(--ta-muted);
   font-size: 10px;
-  line-height: 1.5;
+}
+
+.ta-tone-cyan {
+  --ta-tone: #00ddeb;
+  --ta-tone-soft: rgba(0, 221, 235, 0.08);
+}
+
+.ta-tone-green {
+  --ta-tone: #52e3aa;
+  --ta-tone-soft: rgba(82, 227, 170, 0.08);
+}
+
+.ta-tone-amber {
+  --ta-tone: #fbbf24;
+  --ta-tone-soft: rgba(251, 191, 36, 0.08);
+}
+
+.ta-tone-red {
+  --ta-tone: #fb8b82;
+  --ta-tone-soft: rgba(251, 139, 130, 0.08);
 }
 
 .teacher-attendance .ta-stat.is-active {
   border-color: var(--ta-tone);
-  background: #08242e;
+  box-shadow: inset 0 0 18px rgba(0, 221, 235, 0.04);
 }
 
+/* =========================================================
+   PANELS
+========================================================= */
+
 .ta-panel {
-  min-width: 0;
   padding: 22px;
   border: 1px solid var(--ta-border);
   border-radius: 16px;
-  background: #061c25;
+  background: var(--ta-panel);
+  min-width: 0;
 }
 
 .ta-section-heading {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
+  align-items: center;
+  gap: 18px;
   margin-bottom: 19px;
 }
 
@@ -248,7 +342,7 @@
   align-items: center;
   gap: 9px;
   margin: 8px 0 6px;
-  font-size: 22px;
+  font-size: 21px;
   letter-spacing: -0.5px;
 }
 
@@ -259,8 +353,8 @@
 .ta-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
-  gap: 7px;
 }
 
 .ta-count {
@@ -275,8 +369,8 @@
 .ta-view-switch {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-bottom: 15px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .teacher-attendance .ta-view-switch .is-active {
@@ -293,7 +387,7 @@
   margin-bottom: 16px;
   border: 1px solid var(--ta-border);
   border-radius: 10px;
-  background: #041820;
+  background: var(--ta-input);
   color: var(--ta-muted);
 }
 
@@ -302,11 +396,11 @@
 }
 
 .teacher-attendance .ta-search input {
-  min-height: 43px;
-  padding: 10px 0;
   border: none;
-  outline: none;
   background: transparent;
+  min-height: 44px;
+  padding: 10px 0;
+  outline: none;
 }
 
 .ta-filter-grid {
@@ -319,8 +413,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #aac1cc;
+  color: #abc2cc;
   font-size: 11px;
+  font-weight: 500;
 }
 
 .teacher-attendance input,
@@ -331,15 +426,19 @@
   padding: 10px 11px;
   border: 1px solid var(--ta-border);
   border-radius: 8px;
-  background: #041820;
+  background: var(--ta-input);
   color: var(--ta-text);
   font-family: "Inter", sans-serif;
   font-size: 12px;
 }
 
 .teacher-attendance input::placeholder {
-  color: #6f91a0;
+  color: #678795;
 }
+
+/* =========================================================
+   TABLE
+========================================================= */
 
 .ta-table-scroll {
   overflow-x: auto;
@@ -357,7 +456,7 @@
 .ta-table th {
   padding: 13px 11px;
   background: #09242e;
-  color: #95bac8;
+  color: #91b6c4;
   text-align: left;
   font-size: 10px;
   font-weight: 600;
@@ -372,6 +471,31 @@
   border-radius: 0 8px 8px 0;
 }
 
+.ta-table td {
+  padding: 16px 11px;
+  border-bottom: 1px solid rgba(0, 221, 235, 0.08);
+  color: #bdd0d9;
+  vertical-align: middle;
+}
+
+.ta-table tbody tr:hover {
+  background: rgba(0, 221, 235, 0.035);
+}
+
+.ta-table td strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e1eef4;
+}
+
+.ta-table td small {
+  display: block;
+  margin-top: 5px;
+  color: var(--ta-muted);
+  font-size: 10px;
+}
+
 .teacher-attendance .ta-sort {
   min-height: 0;
   padding: 0;
@@ -382,31 +506,6 @@
   font-weight: inherit;
 }
 
-.ta-table td {
-  padding: 16px 11px;
-  border-bottom: 1px solid rgba(0, 221, 235, 0.08);
-  color: #bdd1db;
-  vertical-align: middle;
-}
-
-.ta-table tbody tr:hover {
-  background: rgba(0, 221, 235, 0.03);
-}
-
-.ta-table td strong {
-  display: block;
-  color: #e0eef4;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.ta-table td small {
-  display: block;
-  margin-top: 5px;
-  color: var(--ta-muted);
-  font-size: 10px;
-}
-
 .ta-student {
   display: flex;
   align-items: center;
@@ -415,14 +514,14 @@
 
 .ta-avatar {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 35px;
   height: 35px;
-  flex-shrink: 0;
   border: 1px solid var(--ta-border);
   border-radius: 10px;
-  background: rgba(0, 221, 235, 0.06);
+  background: rgba(0, 221, 235, 0.07);
   color: var(--ta-cyan);
   font-family: "Space Grotesk", sans-serif;
   font-weight: 700;
@@ -430,6 +529,7 @@
 
 .ta-badge {
   display: inline-flex;
+  align-items: center;
   padding: 5px 9px;
   border: 1px solid currentColor;
   border-radius: 20px;
@@ -437,12 +537,19 @@
   white-space: nowrap;
 }
 
-.ta-status-present { color: #52e3aa; }
-.ta-status-late { color: #fbbf24; }
-.ta-status-absent { color: #fb8b82; }
-.ta-status-excused { color: #79c5ff; }
-.ta-status-not_recorded { color: #00ddeb; }
-.ta-status-unknown { color: #a0b4bf; }
+.ta-status-present { color: #52e3aa; background: rgba(82, 227, 170, 0.06); }
+.ta-status-late { color: #fbbf24; background: rgba(251, 191, 36, 0.06); }
+.ta-status-absent { color: #fb8b82; background: rgba(251, 139, 130, 0.06); }
+.ta-status-excused { color: #73d8f4; background: rgba(115, 216, 244, 0.06); }
+.ta-status-not_recorded { color: #00ddeb; background: rgba(0, 221, 235, 0.06); }
+.ta-status-unknown { color: #89a7b5; }
+
+.teacher-attendance .ta-icon-button,
+.ta-dialog .ta-icon-button {
+  width: 32px;
+  min-height: 32px;
+  padding: 6px;
+}
 
 .ta-pagination {
   display: flex;
@@ -450,7 +557,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 14px;
-  padding-top: 18px;
+  padding: 17px 0;
   color: var(--ta-muted);
   font-size: 11px;
 }
@@ -468,14 +575,19 @@
 }
 
 .ta-empty {
-  padding: 38px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 45px 20px;
   text-align: center;
   color: var(--ta-muted);
 }
 
-.ta-empty > svg { color: #59b5c4; }
-.ta-empty h3 { margin: 14px 0 7px; }
-.ta-empty p { margin: 0; font-size: 12px; }
+.ta-empty > svg { color: #4ba4b5; }
+.ta-empty h2,
+.ta-empty h3 { margin: 15px 0 5px; }
+.ta-empty p { margin: 4px 0; line-height: 1.6; }
 
 .ta-table .ta-empty-cell {
   padding: 45px 15px;
@@ -488,16 +600,11 @@
 .ta-muted {
   color: var(--ta-muted);
   font-size: 11px;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
-.ta-note {
-  margin: 14px 0 0;
-}
-
-.ta-footnote {
-  margin: -3px 2px 0;
-}
+.ta-note { margin: 14px 0 0; }
+.ta-footnote { margin: -3px 2px 0; }
 
 .ta-message {
   display: flex;
@@ -515,17 +622,22 @@
 .ta-warning {
   color: #f7c27c;
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
+/* =========================================================
+   DIALOG
+   Native dialog: keyboard focus containment and Escape handling.
+========================================================= */
+
 .ta-dialog {
-  width: min(650px, calc(100vw - 30px));
+  width: min(620px, calc(100vw - 30px));
   max-height: calc(100dvh - 40px);
   padding: 0;
-  border: 1px solid rgba(0, 221, 235, 0.35);
+  border: 1px solid rgba(0, 221, 235, 0.3);
   border-radius: 16px;
   background: #061c25;
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 100px rgba(0, 0, 0, 0.55);
   overflow-y: auto;
 }
 
@@ -534,102 +646,87 @@
   backdrop-filter: blur(5px);
 }
 
-.ta-dialog-content {
-  padding: 24px;
-}
-
-.ta-dialog header {
+.ta-dialog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
+  padding: 22px;
+  border-bottom: 1px solid var(--ta-border);
 }
 
-.ta-dialog h2 {
-  margin: 9px 0 0;
-  font-size: 26px;
+.ta-dialog-header h2 {
+  margin: 7px 0 0;
+  font-size: 24px;
+  letter-spacing: -0.5px;
   overflow-wrap: anywhere;
 }
 
+.ta-dialog-body { padding: 22px; }
+
+.ta-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 17px 22px;
+  border-top: 1px solid var(--ta-border);
+  background: #051820;
+}
+
 .ta-details-grid {
+  margin: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 21px;
-  margin: 25px 0;
+  gap: 18px;
 }
 
 .ta-details-grid dt {
-  margin-bottom: 7px;
   color: var(--ta-muted);
   font-size: 11px;
+  margin-bottom: 6px;
 }
 
 .ta-details-grid dd {
   margin: 0;
   color: var(--ta-text);
   line-height: 1.6;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
 @media (max-width: 1100px) {
-  .ta-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  .ta-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ta-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ta-hero { padding: 25px; }
 }
 
 @media (max-width: 760px) {
-  .teacher-attendance {
-    padding: 17px;
-    gap: 16px;
-  }
-
-  .ta-hero {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 25px;
-  }
-
+  .teacher-attendance { padding: 18px; gap: 16px; }
+  .ta-hero { flex-direction: column; align-items: flex-start; }
+  .ta-section-heading { align-items: flex-start; flex-direction: column; }
   .ta-summary,
-  .ta-filter-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .ta-panel {
-    padding: 18px;
-  }
+  .ta-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ta-panel { padding: 17px; }
 }
 
 @media (max-width: 450px) {
-  .teacher-attendance {
-    padding: 12px;
-  }
-
-  .ta-hero {
-    padding: 22px 18px;
-  }
-
+  .teacher-attendance { padding: 12px; }
+  .ta-hero { padding: 22px 18px; }
+  .ta-hero h1 { font-size: 27px; }
   .ta-filter-grid,
-  .ta-details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .teacher-attendance .ta-stat {
-    padding: 14px;
-  }
-
-  .ta-stat strong {
-    font-size: 28px;
-  }
-
-  .ta-dialog-content {
-    padding: 18px;
-  }
+  .ta-details-grid,
+  .ta-summary { grid-template-columns: 1fr; }
+  .ta-stat strong { font-size: 24px; }
+  .ta-dialog-header,
+  .ta-dialog-body { padding: 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .teacher-attendance button,
-  .ta-dialog button {
-    transition: none;
-  }
+  .ta-dialog button,
+  .teacher-attendance .ta-stat { transition: none; }
 }

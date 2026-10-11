@@ -319,111 +319,151 @@
 
 /* =========================================================
    SUMMARY
+   (same card design as the attendance summary cards:
+    left accent bar, rounded-square icon tile, corner glow)
 ========================================================= */
 
 .dp-summary-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 13px;
+  gap: 16px;
 }
 
 .dp-summary-card {
+  --dp-tone: var(--dp-cyan);
+  --dp-tone-soft: rgba(0, 221, 235, 0.1);
+
   position: relative;
   display: flex;
-  min-height: 108px;
+  min-width: 0;
+  min-height: 148px;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   overflow: hidden;
-  padding: 15px;
+  padding: 22px 16px 22px 26px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 221, 235, 0.035),
+      rgba(0, 0, 0, 0.04)
+    );
   transition:
-    background 0.16s ease,
-    border-color 0.16s ease;
+    background 160ms ease,
+    border-color 160ms ease;
 }
 
+/* colored accent bar on the left edge */
+.dp-summary-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--dp-tone);
+  pointer-events: none;
+}
+
+/* soft tinted circle in the bottom-right corner */
 .dp-summary-card::after {
   content: "";
   position: absolute;
-  right: -30px;
-  bottom: -45px;
-  width: 105px;
-  height: 105px;
+  right: -34px;
+  bottom: -52px;
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
-  background:
-    radial-gradient(
-      circle,
-      rgba(0, 221, 235, 0.07),
-      transparent 70%
-    );
+  background: var(--dp-tone-soft);
+  pointer-events: none;
 }
 
 .dp-summary-card:hover {
   border-color: rgba(0, 221, 235, 0.55);
-  background-color: rgba(0, 221, 235, 0.065);
+  background: rgba(0, 221, 235, 0.065);
 }
 
+/* rounded-square icon tile */
 .dp-summary-icon {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
   place-items: center;
-  border-radius: 11px;
+  border: 1px solid rgba(125, 190, 207, 0.14);
+  border-radius: 14px;
+  background: var(--dp-tone-soft);
+  color: var(--dp-tone);
 }
 
-.dp-summary-blue {
-  background: rgba(0, 221, 235, 0.08);
-  color: var(--dp-cyan);
+/* tones — set on the icon (for the tile) and on the card (for bar + glow) */
+.dp-summary-blue,
+.dp-summary-card:has(.dp-summary-blue) {
+  --dp-tone: var(--dp-cyan);
+  --dp-tone-soft: rgba(0, 221, 235, 0.1);
 }
 
-.dp-summary-yellow {
-  background: rgba(251, 191, 36, 0.08);
-  color: var(--dp-amber);
+.dp-summary-yellow,
+.dp-summary-card:has(.dp-summary-yellow) {
+  --dp-tone: var(--dp-amber);
+  --dp-tone-soft: rgba(251, 191, 36, 0.1);
 }
 
-.dp-summary-green {
-  background: rgba(82, 227, 170, 0.08);
-  color: var(--dp-green);
+.dp-summary-green,
+.dp-summary-card:has(.dp-summary-green) {
+  --dp-tone: var(--dp-green);
+  --dp-tone-soft: rgba(82, 227, 170, 0.1);
 }
 
-.dp-summary-red {
-  background: rgba(251, 139, 130, 0.08);
-  color: var(--dp-red);
+.dp-summary-red,
+.dp-summary-card:has(.dp-summary-red) {
+  --dp-tone: var(--dp-red);
+  --dp-tone-soft: rgba(251, 139, 130, 0.1);
 }
 
-.dp-summary-purple {
-  background: rgba(140, 171, 185, 0.08);
-  color: #9eb9c5;
+.dp-summary-purple,
+.dp-summary-card:has(.dp-summary-purple) {
+  --dp-tone: #9eb9c5;
+  --dp-tone-soft: rgba(158, 185, 197, 0.1);
 }
 
+/* text column (label + value + helper) */
 .dp-summary-card > div:last-child {
   position: relative;
   z-index: 1;
+  display: flex;
   min-width: 0;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .dp-summary-card span {
   display: block;
-  color: var(--dp-muted);
-  font-size: 7px;
-  font-weight: 780;
-  text-transform: uppercase;
+  color: var(--dp-text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-transform: none;
 }
 
 .dp-summary-card strong {
   display: block;
-  margin-top: 3px;
-  color: var(--dp-text);
-  font-size: 22px;
+  margin-top: 0;
+  color: #f2fbff;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
 }
 
 .dp-summary-card small {
   display: block;
-  margin-top: 2px;
-  color: var(--dp-faint);
-  font-size: 6.5px;
+  margin-top: 0;
+  color: var(--dp-muted);
+  font-size: 10px;
+  font-weight: 400;
 }
 
 /* =========================================================

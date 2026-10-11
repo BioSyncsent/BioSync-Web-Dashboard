@@ -242,82 +242,150 @@
   font-size: 12px;
 }
 
-/* Summary cards */
+/* =========================================================
+   SUMMARY CARDS (mirrors Attendance .aa-stat)
+   Grid layout works whether or not label/value are wrapped in a <div>:
+   icon in column 1, text in column 2.
+========================================================= */
 
 .teacher-analytics-page .taa-metrics {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 14px;
+  gap: 13px;
 }
 
 .teacher-analytics-page .taa-metric {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 39px minmax(0, 1fr);
+  grid-auto-rows: auto;
+  column-gap: 13px;
+  row-gap: 0;
   align-items: center;
-  gap: 13px;
+  align-content: center;
   min-width: 0;
   min-height: 110px;
-  padding: 17px;
+  padding: 15px 15px 15px 18px;
   overflow: hidden;
   border: 1px solid var(--td-border);
-  border-radius: 14px;
-  background: var(--td-card);
+  border-radius: 11px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 221, 235, 0.035),
+      rgba(0, 0, 0, 0.04)
+    ),
+    var(--td-card);
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease;
 }
 
+.teacher-analytics-page .taa-metric:hover {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 221, 235, 0.06),
+      rgba(0, 0, 0, 0.03)
+    ),
+    var(--td-card);
+  border-color: rgba(0, 221, 235, 0.55);
+}
+
+/* coloured accent bar on the left edge */
 .teacher-analytics-page .taa-metric::before {
   content: "";
   position: absolute;
-  inset: 0 auto 0 0;
+  top: 0;
+  left: 0;
   width: 3px;
+  height: 100%;
   background: var(--metric-colour, #00ddeb);
 }
 
+/* soft tinted circle in the bottom-right corner */
+.teacher-analytics-page .taa-metric::after {
+  content: "";
+  position: absolute;
+  right: -32px;
+  bottom: -45px;
+  width: 105px;
+  height: 105px;
+  border-radius: 50%;
+  background: var(--metric-colour, #00ddeb);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* icon tile */
 .teacher-analytics-page .taa-metric > svg {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  position: relative;
+  z-index: 1;
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  align-self: center;
+  width: 39px;
+  height: 39px;
   padding: 10px;
-  border: 1px solid var(--td-border-soft);
+  border: none;
   border-radius: 11px;
-  background: rgba(125, 190, 207, 0.05);
+  background: var(--metric-soft, rgba(0, 221, 235, 0.08));
   color: var(--metric-colour, #00ddeb);
 }
 
+/* text column: direct children, or an optional wrapper <div> */
+.teacher-analytics-page .taa-metric > div,
+.teacher-analytics-page .taa-metric > span,
+.teacher-analytics-page .taa-metric > strong,
+.teacher-analytics-page .taa-metric > small {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+  min-width: 0;
+}
+
+.teacher-analytics-page .taa-metric > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .teacher-analytics-page .taa-metric span {
-  color: var(--td-text-2);
+  display: block;
+  color: #bdd3df;
   font-size: 11px;
+  font-weight: 600;
 }
 
 .teacher-analytics-page .taa-metric strong {
   display: block;
-  margin-top: 5px;
+  margin: 3px 0 0;
   color: var(--td-text);
-  font-family: "Space Grotesk", "Inter", sans-serif;
-  font-size: 28px;
+  font-family: "Inter", sans-serif;
+  font-size: 26px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 
-.teacher-analytics-page .taa-blue {
-  --metric-colour: #00ddeb;
+.teacher-analytics-page .taa-metric small {
+  display: block;
+  margin-top: 3px;
+  color: var(--td-muted);
+  font-size: 10px;
 }
 
-.teacher-analytics-page .taa-green {
-  --metric-colour: #52e3aa;
+/* inside a wrapper the flex gap handles spacing */
+.teacher-analytics-page .taa-metric > div strong,
+.teacher-analytics-page .taa-metric > div small {
+  margin-top: 0;
 }
 
-.teacher-analytics-page .taa-amber {
-  --metric-colour: #fbbf24;
-}
-
-.teacher-analytics-page .taa-red {
-  --metric-colour: #fb8b82;
-}
-
-.teacher-analytics-page .taa-purple {
-  --metric-colour: #c4b5fd;
-}
+/* tones */
+.teacher-analytics-page .taa-blue   { --metric-colour: #00ddeb; --metric-soft: rgba(0, 221, 235, 0.08); }
+.teacher-analytics-page .taa-green  { --metric-colour: #52e3aa; --metric-soft: rgba(82, 227, 170, 0.08); }
+.teacher-analytics-page .taa-amber  { --metric-colour: #fbbf24; --metric-soft: rgba(251, 191, 36, 0.08); }
+.teacher-analytics-page .taa-red    { --metric-colour: #fb8b82; --metric-soft: rgba(251, 139, 130, 0.08); }
+.teacher-analytics-page .taa-purple { --metric-colour: #c4b5fd; --metric-soft: rgba(196, 181, 253, 0.08); }
 
 /* Chart and information panels */
 
@@ -737,9 +805,13 @@
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 450px) {
   .teacher-analytics-page .taa-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .teacher-analytics-page .taa-metric strong {
+    font-size: 24px;
   }
 }
 

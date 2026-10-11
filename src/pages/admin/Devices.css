@@ -88,11 +88,17 @@
 
 .bdev-page .bdev-hero h1 {
   margin-top: 10px;
-  color: var(--bdev-text);
   font-size: clamp(26px, 3vw, 36px);
   font-weight: 700;
   letter-spacing: -1.1px;
   line-height: 1.15;
+
+  /* White fading into cyan */
+  background: linear-gradient(90deg, #edf7fc, #00ddeb);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 .bdev-page .bdev-hero-copy > p {
@@ -138,12 +144,17 @@
   color: var(--bdev-cyan);
 }
 
-/* Summary cards */
+/* =========================================================
+   Summary cards (mirrors the Attendance stat card design)
+   - left accent bar, tinted icon tile, soft corner glow
+   - tone is read from the existing .bdev-tone-* class on the
+     icon, so no JSX changes are needed
+========================================================= */
 
 .bdev-page .bdev-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 13px;
   margin: 20px 0;
   padding: 0;
   border: 0;
@@ -151,18 +162,79 @@
 }
 
 .bdev-page .bdev-stat {
+  --bdev-tone: #00ddeb;
+  --bdev-tone-soft: rgba(0, 221, 235, 0.08);
+
+  position: relative;
   display: flex;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
   gap: 13px;
   min-width: 0;
-  padding: 20px 16px;
+  min-height: 110px;
+  padding: 15px 15px 15px 18px;
+  overflow: hidden;
   border: 1px solid var(--bdev-border);
-  border-radius: 14px;
-  background: var(--bdev-bg);
+  border-radius: 11px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 221, 235, 0.035),
+      rgba(0, 0, 0, 0.04)
+    ),
+    var(--bdev-panel);
+  text-align: left;
+}
+
+/* tone per card, derived from the icon's tone class */
+.bdev-page .bdev-stat:has(.bdev-tone-green) {
+  --bdev-tone: #52e3aa;
+  --bdev-tone-soft: rgba(82, 227, 170, 0.08);
+}
+
+.bdev-page .bdev-stat:has(.bdev-tone-amber) {
+  --bdev-tone: #fbbf24;
+  --bdev-tone-soft: rgba(251, 191, 36, 0.08);
+}
+
+.bdev-page .bdev-stat:has(.bdev-tone-muted) {
+  --bdev-tone: #a4bdca;
+  --bdev-tone-soft: rgba(164, 189, 202, 0.08);
+}
+
+/* colored accent bar on the left edge */
+.bdev-page .bdev-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--bdev-tone);
+}
+
+/* soft tinted circle in the bottom-right corner */
+.bdev-page .bdev-stat::after {
+  content: "";
+  position: absolute;
+  right: -32px;
+  bottom: -45px;
+  width: 105px;
+  height: 105px;
+  border-radius: 50%;
+  background: var(--bdev-tone);
+  opacity: 0.08;
+  pointer-events: none;
 }
 
 .bdev-page .bdev-stat > div {
+  position: relative;
+  z-index: 1;
+  display: flex;
   min-width: 0;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .bdev-page .bdev-stat-icon,
@@ -175,6 +247,16 @@
   border-radius: 11px;
   background: rgba(0, 221, 235, 0.08);
   color: var(--bdev-cyan);
+}
+
+/* stat icon tile: 39px, tinted by the card tone */
+.bdev-page .bdev-stat .bdev-stat-icon {
+  position: relative;
+  z-index: 1;
+  width: 39px;
+  height: 39px;
+  background: var(--bdev-tone-soft);
+  color: var(--bdev-tone);
 }
 
 .bdev-page .bdev-tone-green {
@@ -194,17 +276,21 @@
 
 .bdev-page .bdev-stat-label {
   display: block;
-  color: var(--bdev-muted);
-  font-size: 10px;
-  line-height: 1.5;
+  color: #bdd3df;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .bdev-page .bdev-stat strong {
   display: block;
-  margin-top: 6px;
+  margin: 0;
   color: var(--bdev-text);
-  font-size: 27px;
-  line-height: 1.2;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .bdev-page .bdev-stat strong > span {
@@ -215,12 +301,12 @@
 
 .bdev-page .bdev-stat .bdev-stat-word {
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .bdev-page .bdev-stat small {
   display: block;
-  margin-top: 7px;
+  margin: 0;
   color: var(--bdev-muted);
   font-size: 10px;
   line-height: 1.5;
@@ -804,6 +890,14 @@
   .bdev-page .bdev-summary,
   .bdev-page .bdev-spec-grid {
     grid-template-columns: 1fr;
+  }
+
+  .bdev-page .bdev-stat strong {
+    font-size: 24px;
+  }
+
+  .bdev-page .bdev-stat .bdev-stat-word {
+    font-size: 15px;
   }
 
   .bdev-page .bdev-terminal-banner {

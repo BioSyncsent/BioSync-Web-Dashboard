@@ -129,10 +129,16 @@
 
 .aaa-hero h1 {
   margin: 8px 0 0;
-  color: #f2fbff;
   font-family: "Space Grotesk", "Inter", sans-serif;
   font-size: clamp(29px, 3vw, 41px);
   letter-spacing: -1.2px;
+
+  /* White fading into cyan */
+  background: linear-gradient(90deg, #edf7fc, #00ddeb);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 .aaa-hero p {
