@@ -968,3 +968,16 @@
     background: rgba(0, 0, 0, 0.48);
   }
 }
+/* Remove the unwanted box around the left introduction */
+.bs-login-page .bs-login-intro {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.bs-login-page .bs-login-intro::before,
+.bs-login-page .bs-login-intro::after {
+  content: none !important;
+  display: none !important;
+}
