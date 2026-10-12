@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   runTransaction,
@@ -674,11 +675,43 @@ export async function deleteAttendanceRecords(
     throw new Error("An active administrator account is required.");
   }
 
+  // Pre-fetch snapshots so deleted records can be recovered from auditLogs
+  const snapshots = await Promise.all(
+    ids.map((id) => getDoc(doc(db, "attendance", id)))
+  );
+
   // Firestore security rules enforce the current database role.
   const batch = writeBatch(db);
 
-  ids.forEach((id) => {
-    batch.delete(doc(db, "attendance", id));
+  snapshots.forEach((snap) => {
+    if (snap.exists()) {
+      const before = snap.data();
+      const logDoc = auditReference();
+
+      batch.set(
+        logDoc,
+        auditData("attendance_deleted", uid, snap.id, {
+          userId: before.userId || before.uid || before.usedId || "",
+          studentName: before.studentName || "",
+          studentId: before.studentId || "N/A",
+          department: before.department || "N/A",
+          course: before.course || "N/A",
+          status: before.status || "unknown",
+          timestamp: recordTimestamp(before),
+          notes: before.notes || before.reason || "",
+          authMethod:
+            before.authMethod ||
+            before.authenticationMethod ||
+            before.method ||
+            "Unknown",
+          deviceId: before.deviceId || before.terminalId || "N/A",
+          source: before.source || "unknown",
+          verificationResult: before.verificationResult || "unknown",
+        })
+      );
+
+      batch.delete(snap.ref);
+    }
   });
 
   batch.set(
@@ -690,6 +723,282 @@ export async function deleteAttendanceRecords(
   );
 
   await batch.commit();
+}
+
+/* =========================================================
+   RESTORE FROM AUDIT LOGS
+========================================================= */
+
+export async function fetchDeletedAttendanceAuditLogs() {
+  const [auditSnapshot, usersSnapshot] = await Promise.all([
+    getDocs(collection(db, "auditLogs")),
+    getDocs(collection(db, "users")),
+  ]);
+
+  const usersMap = usersFromSnapshot(usersSnapshot);
+  const deletedLogs = [];
+
+  auditSnapshot.docs.forEach((docSnap) => {
+    const data = docSnap.data();
+
+    if (data.action === "attendance_deleted" && data.details) {
+      const details = data.details;
+      const userId = details.userId || "";
+      const user = usersMap[userId] || null;
+      const studentName = getStudentName(user, details);
+
+      deletedLogs.push({
+        auditId: docSnap.id,
+        action: data.action,
+        actorId: data.actorId,
+        logTimestamp: toSafeDate(data.timestamp),
+        attendanceId: details.attendanceId || null,
+        userId,
+        studentName,
+        studentId: user?.studentId || details.studentId || "N/A",
+        department: user?.department || details.department || "N/A",
+        course: user?.course || details.course || "N/A",
+        status: normalizeStatus(details.status),
+        timestamp: toSafeDate(details.timestamp),
+        notes: details.notes || "",
+        authMethod: details.authMethod || "Manual",
+        deviceId: details.deviceId || "Admin Portal",
+        source: details.source || "manual",
+        verificationResult: details.verificationResult || "manual",
+      });
+    }
+  });
+
+  // Sort newest deleted first
+  deletedLogs.sort((a, b) => {
+    const timeA = a.logTimestamp?.getTime() ?? 0;
+    const timeB = b.logTimestamp?.getTime() ?? 0;
+    return timeB - timeA;
+  });
+
+  return deletedLogs;
+}
+
+export async function restoreAttendanceRecord(auditLog, adminUser) {
+  const uid = actorId(adminUser);
+  const targetId =
+    auditLog.attendanceId || doc(collection(db, "attendance")).id;
+  const attendanceRef = doc(db, "attendance", targetId);
+  const logRef = auditReference();
+
+  await runTransaction(db, async (transaction) => {
+    await requireAdmin(transaction, uid);
+
+    const existingSnap = await transaction.get(attendanceRef);
+    if (existingSnap.exists()) {
+      throw new Error("This attendance record already exists in the database.");
+    }
+
+    const userId = auditLog.userId || "";
+    let student = null;
+
+    if (userId) {
+      const studentSnap = await transaction.get(doc(db, "users", userId));
+      if (studentSnap.exists()) {
+        student = studentSnap.data();
+      }
+    }
+
+    const studentName = student
+      ? getStudentName(student, auditLog)
+      : auditLog.studentName || "Restored Student";
+
+    const timestamp = auditLog.timestamp
+      ? new Date(auditLog.timestamp)
+      : new Date();
+
+    transaction.set(attendanceRef, {
+      userId,
+      studentName,
+      studentId: student?.studentId || auditLog.studentId || "N/A",
+      department: student?.department || auditLog.department || "N/A",
+      course: student?.course || auditLog.course || "N/A",
+      status: normalizeStatus(auditLog.status || "present"),
+      timestamp,
+      notes: auditLog.notes ? `[Restored] ${auditLog.notes}` : "Restored from Audit Log",
+      authMethod: auditLog.authMethod || "Manual",
+      deviceId: auditLog.deviceId || "Admin Portal",
+      source: auditLog.source || "manual",
+      verificationResult: auditLog.verificationResult || "manual",
+      restoredFromAuditId: auditLog.auditId || null,
+      restoredBy: uid,
+      restoredAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    transaction.set(
+      logRef,
+      auditData("attendance_restored", uid, targetId, {
+        auditId: auditLog.auditId || null,
+        userId,
+        studentName,
+        status: auditLog.status,
+      })
+    );
+  });
+
+  return targetId;
+}
+
+export async function restoreAllDeletedRecords(auditLogs, adminUser) {
+  if (!Array.isArray(auditLogs) || !auditLogs.length) {
+    throw new Error("No deleted records to restore.");
+  }
+
+  let restoredCount = 0;
+  for (const log of auditLogs) {
+    try {
+      await restoreAttendanceRecord(log, adminUser);
+      restoredCount += 1;
+    } catch (err) {
+      console.warn("Skipping record during batch restore:", log.attendanceId, err.message);
+    }
+  }
+
+  return restoredCount;
+}
+
+/* =========================================================
+   GENERATE / SEED ATTENDANCE RECORDS FOR ACTIVE STUDENTS
+========================================================= */
+
+export async function generateAttendanceRecordsForStudents(
+  adminUser,
+  { days = 5 } = {}
+) {
+  const uid = actorId(adminUser);
+
+  if (adminUser?.role !== "admin" || adminUser?.active === false) {
+    throw new Error("An active administrator account is required.");
+  }
+
+  const usersSnapshot = await getDocs(collection(db, "users"));
+  const students = usersSnapshot.docs
+    .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+    .filter((u) => u.role === "student" && u.active !== false);
+
+  if (!students.length) {
+    throw new Error(
+      "No active student accounts were found in the users collection to generate attendance for."
+    );
+  }
+
+  const statusPool = [
+    "present",
+    "present",
+    "present",
+    "present",
+    "present",
+    "late",
+    "present",
+    "present",
+    "present",
+    "absent",
+    "excused",
+  ];
+  const methodPool = [
+    "Face Recognition",
+    "Face Recognition",
+    "RFID",
+    "Face Recognition",
+    "RFID",
+    "Manual",
+  ];
+  const devices = [
+    "Gate-01 Biometric",
+    "Terminal-A Main Entrance",
+    "Gate-02 Sentinel",
+    "Lab-03 Terminal",
+  ];
+
+  const newRecords = [];
+  const now = new Date();
+
+  for (let dayOffset = days - 1; dayOffset >= 0; dayOffset -= 1) {
+    const targetDate = new Date(now);
+    targetDate.setDate(targetDate.getDate() - dayOffset);
+
+    // Skip weekends
+    const dayOfWeek = targetDate.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
+    students.forEach((student, index) => {
+      const seed =
+        (student.id.charCodeAt(0) || 1) + dayOffset * 7 + index * 3;
+      const status = statusPool[seed % statusPool.length];
+      const method =
+        status === "absent" ? "Manual" : methodPool[seed % methodPool.length];
+      const deviceId = "—";
+
+      const hour = status === "late" ? 9 : 8;
+      const minute = (seed * 11) % 45 + 10;
+      const recordDate = new Date(targetDate);
+      recordDate.setHours(hour, minute, (seed * 13) % 60, 0);
+
+      const studentName = getStudentName(student, {});
+
+      newRecords.push({
+        userId: student.id,
+        studentName,
+        studentId: student.studentId || "N/A",
+        department: student.department || "General",
+        course: student.course || "General",
+        status,
+        timestamp: recordDate,
+        notes:
+          status === "late"
+            ? "Arrived past session start"
+            : status === "absent"
+              ? "Unexcused absence recorded"
+              : status === "excused"
+                ? "Official leave / medical slip accepted"
+                : "Standard biometric authentication",
+        authMethod: method,
+        deviceId,
+        source: method === "Manual" ? "manual" : "biometric",
+        verificationResult: status === "absent" ? "failed" : "success",
+        createdBy: uid,
+        updatedBy: uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    });
+  }
+
+  // Write in Firestore batches
+  const batchSize = 400;
+  for (let i = 0; i < newRecords.length; i += batchSize) {
+    const chunk = newRecords.slice(i, i + batchSize);
+    const batch = writeBatch(db);
+
+    chunk.forEach((record) => {
+      const docRef = doc(collection(db, "attendance"));
+      batch.set(docRef, record);
+    });
+
+    await batch.commit();
+  }
+
+  // Audit log entry
+  const logRef = auditReference();
+  const batchLog = writeBatch(db);
+  batchLog.set(
+    logRef,
+    auditData("attendance_seeded", uid, null, {
+      totalGenerated: newRecords.length,
+      studentCount: students.length,
+      daysCovered: days,
+    })
+  );
+  await batchLog.commit();
+
+  return { totalCreated: newRecords.length, studentCount: students.length };
 }
 
 /* =========================================================
@@ -771,7 +1080,7 @@ function buildDailyData(records, numberOfDays, labelKey) {
     }
   });
 
-  return days.map(({ key, ...day }) => day);
+  return days.map(({ key: _key, ...day }) => day);
 }
 
 export function getWeeklyChartData(records = []) {

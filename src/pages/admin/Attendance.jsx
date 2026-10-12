@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArchiveRestore,
   ArrowDown,
   ArrowUp,
   CheckCircle,
@@ -12,8 +13,11 @@ import {
   Eye,
   FilePlus2,
   Filter,
+  History,
+  RotateCcw,
   Search,
   ShieldCheck,
+  Sparkles,
   Trash2,
   Users,
   X,
@@ -28,6 +32,10 @@ import {
   addManualAttendance,
   deleteAttendanceRecord,
   deleteAttendanceRecords,
+  fetchDeletedAttendanceAuditLogs,
+  generateAttendanceRecordsForStudents,
+  restoreAllDeletedRecords,
+  restoreAttendanceRecord,
   subscribeToAttendanceManagement,
   updateAttendanceRecord,
 } from "../../services/attendanceService";
@@ -368,6 +376,321 @@ function RecordForm({
   );
 }
 
+function RestoreModal({ adminUser, canManage, onClose, onSuccess }) {
+  const [activeTab, setActiveTab] = useState("audit");
+  const [loadingAudit, setLoadingAudit] = useState(true);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditError, setAuditError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [restoringId, setRestoringId] = useState(null);
+  const [seedDays, setSeedDays] = useState(5);
+
+  const loadAuditLogs = useCallback(async () => {
+    try {
+      setLoadingAudit(true);
+      setAuditError("");
+      const logs = await fetchDeletedAttendanceAuditLogs();
+      setAuditLogs(logs);
+    } catch (err) {
+      setAuditError(err.message || "Failed to load audit logs.");
+    } finally {
+      setLoadingAudit(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "audit") {
+      loadAuditLogs();
+    }
+  }, [activeTab, loadAuditLogs]);
+
+  async function handleRestoreSingle(log) {
+    if (busy || restoringId || !canManage) return;
+
+    try {
+      setRestoringId(log.auditId);
+      await restoreAttendanceRecord(log, adminUser);
+      setAuditLogs((prev) => prev.filter((item) => item.auditId !== log.auditId));
+      onSuccess?.(`Restored attendance record for ${log.studentName || "student"}.`);
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Restore Failed",
+        text: err.message || "Unable to restore record.",
+        background: "#09212c",
+        color: "#eaf7fc",
+        confirmButtonColor: "#087f91",
+      });
+    } finally {
+      setRestoringId(null);
+    }
+  }
+
+  async function handleRestoreAll() {
+    if (busy || !auditLogs.length || !canManage) return;
+
+    try {
+      setBusy(true);
+      const count = await restoreAllDeletedRecords(auditLogs, adminUser);
+      await loadAuditLogs();
+      onSuccess?.(`Successfully restored ${count} attendance record(s).`);
+      onClose();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Batch Restore Failed",
+        text: err.message || "Failed to restore records.",
+        background: "#09212c",
+        color: "#eaf7fc",
+        confirmButtonColor: "#087f91",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGenerateAttendance(event) {
+    event.preventDefault();
+    if (busy || !canManage) return;
+
+    try {
+      setBusy(true);
+      const result = await generateAttendanceRecordsForStudents(adminUser, {
+        days: Number(seedDays) || 5,
+      });
+      onSuccess?.(
+        `Generated ${result.totalCreated} attendance records across ${result.studentCount} students covering the past ${seedDays} days.`
+      );
+      onClose();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Attendance Generation Failed",
+        text: err.message || "Failed to generate attendance records.",
+        background: "#09212c",
+        color: "#eaf7fc",
+        confirmButtonColor: "#087f91",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog title="Restore Attendance Records" onClose={onClose} busy={busy}>
+      <div className="aa-dialog-body aa-restore-modal-body">
+        <div className="aa-restore-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "audit"}
+            className={`aa-tab-btn ${activeTab === "audit" ? "active" : ""}`}
+            onClick={() => setActiveTab("audit")}
+          >
+            <History size={16} /> Recover from Audit Logs
+            {auditLogs.length > 0 && (
+              <span className="aa-tab-badge">{auditLogs.length}</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "seed"}
+            className={`aa-tab-btn ${activeTab === "seed" ? "active" : ""}`}
+            onClick={() => setActiveTab("seed")}
+          >
+            <Sparkles size={16} /> Generate / Re-seed Student Attendance
+          </button>
+        </div>
+
+        {activeTab === "audit" && (
+          <div className="aa-restore-tab-content">
+            <p className="aa-notice">
+              BioSync records deleted attendance entries in the audit trail.
+              You can restore deleted records individually or all at once.
+            </p>
+
+            {loadingAudit ? (
+              <div className="aa-restore-loading">
+                <span className="aa-spinner" />
+                <p>Checking audit logs for deleted records…</p>
+              </div>
+            ) : auditError ? (
+              <div className="aa-notice aa-notice-error">
+                <p>{auditError}</p>
+                <button
+                  type="button"
+                  className="aa-text-button"
+                  onClick={loadAuditLogs}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : !auditLogs.length ? (
+              <div className="aa-restore-empty">
+                <ArchiveRestore size={36} />
+                <h3>No deleted records in audit logs</h3>
+                <p>
+                  No attendance records are currently marked as deleted in the audit trail.
+                </p>
+                <button
+                  type="button"
+                  className="aa-text-button aa-highlight-link"
+                  onClick={() => setActiveTab("seed")}
+                >
+                  <Sparkles size={14} /> Switch to Generate / Re-seed Attendance
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="aa-restore-list-header">
+                  <span>
+                    <strong>{auditLogs.length}</strong> deleted record
+                    {auditLogs.length === 1 ? "" : "s"} found
+                  </span>
+                  <button
+                    type="button"
+                    className="aa-primary aa-btn-sm"
+                    disabled={busy || !canManage}
+                    onClick={handleRestoreAll}
+                  >
+                    <RotateCcw size={14} /> Restore All
+                  </button>
+                </div>
+
+                <div className="aa-restore-list">
+                  {auditLogs.map((log) => (
+                    <div key={log.auditId} className="aa-restore-item">
+                      <div className="aa-restore-item-info">
+                        <div className="aa-restore-item-title">
+                          <strong>{log.studentName}</strong>
+                          <span className="aa-restore-id">
+                            {log.studentId || log.userId}
+                          </span>
+                          <span
+                            className={`aa-status aa-status-${log.status}`}
+                          >
+                            {titleCase(log.status)}
+                          </span>
+                        </div>
+
+                        <div className="aa-restore-item-meta">
+                          <span>
+                            {displayDate(log.timestamp)} · {displayTime(log.timestamp)}
+                          </span>
+                          <span>Method: {log.authMethod}</span>
+                          <span>Dept: {log.department}</span>
+                          {log.logTimestamp && (
+                            <small className="aa-muted">
+                              Deleted on {displayDate(log.logTimestamp)}
+                            </small>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="aa-secondary aa-btn-sm"
+                        disabled={busy || restoringId === log.auditId || !canManage}
+                        onClick={() => handleRestoreSingle(log)}
+                      >
+                        {restoringId === log.auditId ? (
+                          "Restoring…"
+                        ) : (
+                          <>
+                            <RotateCcw size={13} /> Restore
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {activeTab === "seed" && (
+          <form onSubmit={handleGenerateAttendance} className="aa-restore-tab-content">
+            <div className="aa-seed-card">
+              <div className="aa-seed-intro">
+                <span className="aa-seed-icon">
+                  <Sparkles size={24} />
+                </span>
+                <div>
+                  <h3>Generate Student Attendance</h3>
+                  <p>
+                    Recreates realistic attendance logs for all active students registered
+                    in the database across recent weekdays.
+                  </p>
+                </div>
+              </div>
+
+              <div className="aa-form-grid">
+                <label className="aa-span">
+                  Days to cover (excluding weekends)
+                  <select
+                    value={seedDays}
+                    onChange={(e) => setSeedDays(Number(e.target.value))}
+                    disabled={busy}
+                  >
+                    <option value={3}>Past 3 Days</option>
+                    <option value={5}>Past 5 Days (1 Week)</option>
+                    <option value={7}>Past 7 Days</option>
+                    <option value={10}>Past 10 Days (2 Weeks)</option>
+                    <option value={14}>Past 14 Days</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="aa-seed-features">
+                <h4>What will be generated:</h4>
+                <ul>
+                  <li>
+                    Authentic records for <strong>every active student</strong> in the users collection
+                  </li>
+                  <li>
+                    Realistic status distribution: <strong>Present, Late, Absent, Excused</strong>
+                  </li>
+                  <li>
+                    Biometric authentication methods: <strong>Face Recognition, RFID Card, Manual</strong>
+                  </li>
+                  <li>
+                    Simulated morning check-in timestamps during class entry hours
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                type="submit"
+                className="aa-primary aa-btn-generate"
+                disabled={busy || !canManage}
+              >
+                {busy ? (
+                  <>
+                    <span className="aa-spinner" /> Generating Attendance…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} /> Generate Attendance Records
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      <footer className="aa-dialog-footer">
+        <button type="button" onClick={onClose} disabled={busy}>
+          Close
+        </button>
+      </footer>
+    </Dialog>
+  );
+}
+
 export default function AdminAttendance() {
   const { user } = useAuth();
 
@@ -684,14 +1007,26 @@ export default function AdminAttendance() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="aa-primary"
-          disabled={!canManage || busy || Boolean(subscription.loading) || Boolean(subscription.error)}
-          onClick={() => setModal({ mode: "add" })}
-        >
-          <FilePlus2 size={17} /> Add Manual Record
-        </button>
+        <div className="aa-hero-actions">
+          <button
+            type="button"
+            className="aa-secondary aa-restore-btn"
+            disabled={!canManage || busy}
+            onClick={() => setModal({ mode: "restore" })}
+            title="Restore deleted attendance records or generate student records"
+          >
+            <RotateCcw size={17} /> Restore Records
+          </button>
+
+          <button
+            type="button"
+            className="aa-primary"
+            disabled={!canManage || busy || Boolean(subscription.loading) || Boolean(subscription.error)}
+            onClick={() => setModal({ mode: "add" })}
+          >
+            <FilePlus2 size={17} /> Add Manual Record
+          </button>
+        </div>
       </section>
 
       {subscription.error ? (
@@ -908,7 +1243,7 @@ export default function AdminAttendance() {
                         <strong>{record.authMethod || "Unknown"}</strong>
                         <small>{titleCase(record.verificationResult)}</small>
                       </td>
-                      <td>{record.deviceId || "—"}</td>
+                      <td>—</td>
                       <td>
                         <div className="aa-row-actions">
                           <button type="button" className="aa-icon-button" aria-label="View attendance details" onClick={() => setModal({ mode: "view", id: record.id })}>
@@ -988,9 +1323,8 @@ export default function AdminAttendance() {
                   ["Status", titleCase(detailRecord.status)],
                   ["Authentication", detailRecord.authMethod],
                   ["Verification", titleCase(detailRecord.verificationResult)],
-                  ["Device", detailRecord.deviceId],
-                  ["Source", detailRecord.source],
                   ["RFID card", detailRecord.rfidCardId],
+                  ["Device", "—"],
                   ["Notes", detailRecord.notes],
                   ["Record ID", detailRecord.id],
                 ].map(([label, value]) => (
@@ -1005,6 +1339,23 @@ export default function AdminAttendance() {
             <button type="button" onClick={() => setModal(null)}>Close</button>
           </footer>
         </Dialog>
+      )}
+
+      {modal?.mode === "restore" && (
+        <RestoreModal
+          adminUser={user}
+          canManage={canManage}
+          onClose={() => setModal(null)}
+          onSuccess={(msg) => {
+            notify({
+              icon: "success",
+              title: "Restoration Complete",
+              text: msg,
+              timer: 3500,
+              showConfirmButton: false,
+            });
+          }}
+        />
       )}
     </div>
   );
